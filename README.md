@@ -1,8 +1,14 @@
 # Cwcloud CE RESTful API
 
-# Getting started with docker
+## Git mirrors
 
-## Prepare configurations
+* Main mirror: https://gitlab.comwork.io/oss/cwcloud/cwcloud-api.git
+* Github mirror: https://github.com/comworkio/cwcloud-api.git
+* Gitlab mirror: https://gitlab.com/ineumann/cwcloud-api.git
+
+## Getting started with docker
+
+### Prepare configurations
 
 ```shell
 cp .env.dist .env
@@ -11,13 +17,13 @@ cp cloud_environments_local.yml.dist cloud_environments_local.yml
 
 You can let run the API with thoses files, and you can also update the configurations or environment variables inside those files if needed.
 
-## Run the containers
+### Run the containers
 
 ```shell
 docker-compose -f docker-compose-local.yml up --build --force-recreate
 ```
 
-## Test the database
+### Test the database
 
 ```shell
 $ docker exec -it comwork_cloud_db psql -U cloud cloud
@@ -40,13 +46,13 @@ cloud=# \d
  public | flyway_schema_history            | table    | cloud
 ```
 
-## Init the FaaS token
+### Init the FaaS token
 
 ```shell
 docker exec -it comwork_cloud_db psql -U cloud cloud -c "INSERT INTO public.api_keys(name, access_key, secret_key, user_id) VALUES('faas', 'faas_access', 'faas_secret', (select id from public.user where is_admin = True and confirmed = True limit 1))"
 ```
 
-## Test the API
+### Test the API
 
 ```shell
 $ curl localhost:5002/v1/health
@@ -57,7 +63,7 @@ $ curl localhost:5002/v1/manifest
 
 You can open the swagger GUI in your browser with this URL: http://localhost:5002
 
-## Test the front (fullstack dev)
+### Test the front (fullstack dev)
 
 You can also run the front following the `README.md` of this repository: https://gitlab.comwork.io/comwork/infrastructure/comwork-cloud-ui
 
@@ -66,7 +72,7 @@ And updating this environment variable: `REACT_APP_APIURL=http://localhost:5002`
 * Login: `sre-devops@comwork.io`
 * Password: `cloud456`
 
-## Unit tests
+### Unit tests
 
 Here's how to run the unit test locally:
 
@@ -74,7 +80,7 @@ Here's how to run the unit test locally:
 docker-compose -f docker-compose-build.yml up --build --abort-on-container-exit comwork_cloud_tests
 ```
 
-# Documentation
+## Documentation
 
 The restful API documentation is available here: https://doc.cloud.comwork.io/docs/tutorials/api/
 
