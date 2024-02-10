@@ -1,0 +1,25 @@
+import requests
+import os
+import json
+import yaml
+from datetime import datetime
+
+def cwcloud_parse_response(r):
+    payload = {}
+    try:
+        payload = r.json()
+    except:
+        payload['raw_body'] = r.content
+
+    if 'status' not in payload:
+        payload['status'] = r.status_code >= 200 and r.status_code < 400
+
+    if 'status_code' not in payload:
+        payload['status_code'] = r.status_code
+
+    return payload
+
+{{ handle_definition }}
+
+r = {{ handle_call }}
+print(r)

@@ -1,0 +1,406 @@
+import random
+import gitlab
+import os
+import yaml
+import requests
+
+from urllib.error import HTTPError
+from datetime import datetime, timedelta
+from utils.bytes_generator import generate_random_bytes
+
+from utils.mail import send_email
+from utils.logger import log_msg
+from utils.common import exists_entry, is_disabled, is_empty, is_not_empty, safe_compare_entry, safe_contain_entry
+
+GITLAB_URL = os.environ['GITLAB_URL']
+
+def get_public_instances():
+    config_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'cloud_environments.yml'))
+    result = ["https://gitlab.com"]
+    with open(config_path, "r") as stream:
+        loaded_data = yaml.safe_load(stream)
+        if is_not_empty(loaded_data) and 'gitlab_public_instances' in loaded_data and is_not_empty(loaded_data['gitlab_public_instances']):
+            result = loaded_data['gitlab_public_instances']
+
+    log_msg("INFO", "[gitlab][get_public_instances] gitlab loaded public instances are : {}".format(result))
+    return result
+
+def create_project_label(name, color):
+    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')):
+        return {}
+
+    GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
+    token = os.getenv('GIT_PRIVATE_TOKEN')
+    labelJson = {
+        "name": name,
+        "color": color
+    }
+    requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', json = labelJson, headers = {"PRIVATE-TOKEN": token})
+
+def check_create_labels_support():
+    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')):
+        return {}
+    GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
+    token = os.getenv('GIT_PRIVATE_TOKEN')
+    projectLabelsReponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', headers = {"PRIVATE-TOKEN": token})
+    project_labels = projectLabelsReponse.json()
+    label_names = [label['name'] for label in project_labels]
+    if not 'support' in label_names:
+        create_project_label('support', "#00b140")
+    if not 's-low' in label_names:
+        create_project_label('s-low', "#eee600")
+    if not 's-medium' in label_names:
+        create_project_label('s-medium', "#ed9121")
+    if not 's-high' in label_names:
+        create_project_label('s-high', "#ff0000")
+
+def close_gitlab_issue(issue_id):
+    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')) or is_disabled(GITLAB_URL):
+        return {}
+    GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
+    token = os.getenv('GIT_PRIVATE_TOKEN')
+
+    issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers = {"PRIVATE-TOKEN": token}).json()
+    newLabels = [label for label in issue['labels'] if label not in ['doing', 'todo', 'review']]
+    data = {
+        "state_event": "close",
+        "labels": newLabels
+    }
+    requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json = data, headers = {"PRIVATE-TOKEN": token})
+
+def reopen_gitlab_issue(issue_id):
+    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')) or is_disabled(GITLAB_URL):
+        return {}
+
+    GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
+    token = os.getenv('GIT_PRIVATE_TOKEN')
+    issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers = {"PRIVATE-TOKEN": token}).json()
+    newLabels = [label for label in issue['labels'] if label not in ['doing', 'todo', 'review']]
+    newLabels.append("todo")
+    data = {
+        "state_event": "reopen",
+        "labels": newLabels
+    }
+    requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json = data, headers = {"PRIVATE-TOKEN": token})
+
+def add_gitlab_issue(ticketId, user_email, title, description, severity, product):
+    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')) or is_disabled(GITLAB_URL):
+        return {}
+
+    GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
+    check_create_labels_support()
+    token = os.getenv('GIT_PRIVATE_TOKEN')
+
+    issue_description = "* __Ticket:__ [# {}]({}/admin/support/{}) \n\n * __User:__ {} \n\n * __Service:__ {} \n\n * __Description:__ {}".format(ticketId, os.getenv("DOMAIN"), ticketId, user_email, product, description)
+
+    data = {
+        "title": title,
+        "description": issue_description,
+        "labels": "todo, support, s-{} ".format(severity)
+    }
+    res = requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues', json = data, headers = {"PRIVATE-TOKEN": token})
+    return res.json()['iid']
+
+def add_gitlab_issue_comment(issue_id, user_email, message):
+    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')) or is_disabled(GITLAB_URL):
+        return {}
+
+    GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
+    check_create_labels_support()
+    token = os.getenv('GIT_PRIVATE_TOKEN')
+    issue_comment = "* __User:__ {} \n\n * __Message:__ {}".format(user_email, message)
+    data = {
+        "body": issue_comment,
+    }
+    requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}/notes', json = data, headers = {"PRIVATE-TOKEN": token})
+
+def inject_git_credentials_to_url(remote, username, token):
+    splittedRemote = remote.split('//')
+    return f'{splittedRemote[0]}//{username}:{token}@{splittedRemote[1]}'
+
+def inject_default_credentials_to_url(remote):
+    token = os.getenv('GIT_PRIVATE_TOKEN')
+    username = os.getenv('GIT_USERNAME')
+    splittedRemote = remote.split('//')
+    return f'{splittedRemote[0]}//{username}:{token}@{splittedRemote[1]}'
+
+def create_gitlab_user(user_email):
+    if GITLAB_URL in get_public_instances() or is_disabled(GITLAB_URL):
+        return
+
+    user_password = generate_random_bytes(24)
+    gl = gitlab.Gitlab(url = "{}/".format(GITLAB_URL), private_token = os.getenv('GIT_PRIVATE_TOKEN'))
+
+    try:
+        if not gl.users.list(search = user_email):
+            name = user_email.split('@')[0]
+
+            user_data = {
+                'email': user_email,
+                'username': name,
+                'name': name,
+                'password': user_password
+            }
+
+            gl.users.create(user_data)
+
+            subject = "GitLab Credentials"
+            message = "New Gitlab account credentials: <ul> <li>user_name: "+ name\
+                    + "<li> password : " + user_password + "</ul>"
+            send_email(user_email, message, subject)
+    except gitlab.exceptions.GitlabCreateError as exn:
+       log_msg("WARN", "[gitlab][create_gitlab_user] The gitlab user already exists: e.code = {}, e.msg = {}".format(exn.response_code, exn.error_message))
+
+def attach_default_gitlab_project_to_user(projectid, user_email):
+    default_token = os.getenv('GIT_PRIVATE_TOKEN')
+    if is_disabled(GITLAB_URL) or is_disabled(default_token):
+        return
+    attach_gitlab_project_to_user(projectid, user_email, GITLAB_URL, default_token)
+
+def detach_user_gitlab_project(projectid, user_email):
+    access_token = os.getenv('GIT_PRIVATE_TOKEN')
+    gitlab_host = GITLAB_URL
+    if is_disabled(GITLAB_URL) or is_disabled(access_token):
+        return
+
+    gl = gitlab.Gitlab(url = "{}/".format(gitlab_host), private_token = access_token)
+    project = gl.projects.get(projectid)
+    # add user as gitlab project member
+    users = gl.users.list(search = user_email)
+    try:
+        if len(users) == 0:
+            log_msg("WARN", "user {} not found".format(user_email))
+        log_msg("INFO", "[gitlab][detach_gitlab_project_to_user] gitlab_user_id = {}".format(users[0].id))
+        project.members.delete(users[0].id)
+    except Exception as exn:
+        log_msg("WARN", "[gitlab][attach_gitlab_project_to_user] Gitlab user {} is already a member of this project due to a greater inherited membership., e = {}".format(user_email, exn))
+
+def attach_gitlab_project_to_user(projectid, user_email, gitlab_host, access_token):
+    gl = gitlab.Gitlab(url = "{}/".format(gitlab_host), private_token = access_token)
+    project = gl.projects.get(projectid)
+    # add user as gitlab project member
+    users = gl.users.list(search = user_email)
+    try:
+        if len(users) == 0:
+            log_msg("WARN", "[gitlab][attach_gitlab_project_to_user] Gitlab user {} not found, creating a new user".format(user_email))
+            create_gitlab_user(user_email)
+            users = gl.users.list(search = user_email)
+        log_msg("INFO", "[gitlab][attach_gitlab_project_to_user] gitlab_user_id = {}".format(users[0].id))
+        project.members.create({'user_id': users[0].id, 'access_level': gitlab.const.MAINTAINER_ACCESS})
+    except Exception as exn:
+        log_msg("WARN", "[gitlab][attach_gitlab_project_to_user] Gitlab user {} is already a member of this project due to a greater inherited membership., e = {}".format(user_email, exn))
+
+def get_user_project_by_url(project_url, userid, db):
+    from entities.Project import Project
+    gitlab_project = Project.getUserProjectByUrl(project_url, userid, db)
+    return gitlab_project
+
+def get_user_project_by_name(project_name, userid, db):
+    from entities.Project import Project
+    gitlab_project = Project.getUserProjectByName(project_name, userid, db)
+    return gitlab_project
+
+def get_user_project_by_id(projectid, userid, db):
+    from entities.Project import Project
+    return Project.getUserProject(projectid, userid, db)
+
+def create_project_access_token(project_id, project_name, gitlab_host, access_token):
+    if is_disabled(gitlab_host):
+        return None
+
+    expires_at = datetime.now().date() + timedelta(days = 365)
+
+    json_data = {
+        "name": f"{project_name}_token",
+        "scopes": ["api", "read_api", "read_repository", "write_repository"],
+        "expires_at": expires_at.strftime('%Y-%m-%d')
+    }
+    access_token_response = requests.post(f'{gitlab_host}/api/v4/projects/{project_id}/access_tokens', json = json_data,
+                                         headers = {"PRIVATE-TOKEN": access_token})
+    project_access_token = access_token_response.json()
+    log_msg("DEBUG", "[gitlab][create_project_access_token] access token body response = {}".format(project_access_token))
+    return project_access_token['token']
+
+def get_gitlab_project(project_id, gitlab_host, access_token):
+    if is_disabled(gitlab_host) or is_disabled(access_token):
+        return {'id': project_id}
+
+    projectReponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}', headers = {"PRIVATE-TOKEN": access_token})
+    if projectReponse.status_code == 404:
+        raise HTTPError("204", 404, "project not found", hdrs = {"i18n_code": "204"}, fp = None)
+    project = projectReponse.json()
+    return project
+
+def is_not_project_found_in_gitlab(gitlab_project):
+    return is_empty(gitlab_project) or 'id' not in gitlab_project or is_empty(gitlab_project['id'])
+
+def get_project_quietly(exist_project):
+    if is_empty(exist_project) or is_empty(exist_project.id):
+        return None
+
+    gitlab_project = None
+    try:
+        gitlab_project = get_gitlab_project(exist_project.id, exist_project.gitlab_host, exist_project.access_token)
+    except HTTPError as he:
+        log_msg("WARN", "[gitlab][get_project_quietly] the gitlab project doesn't seems exist: {}".format(he))
+        gitlab_project = None
+
+    return gitlab_project
+
+def get_gitlab_project_tree(project_id, gitlab_host, access_token):
+    if is_disabled(gitlab_host) or is_disabled(access_token):
+        return []
+
+    projectTreeReponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}/repository/tree', headers = {"PRIVATE-TOKEN": access_token})
+    if projectTreeReponse.status_code == 404:
+        return []
+
+    project_tree = projectTreeReponse.json()
+    return project_tree
+
+def get_gitlab_project_playbooks(project_id, gitlab_host, access_token):
+    gitlab_project_tree = get_gitlab_project_tree(project_id, gitlab_host, access_token)
+    playbooks = [file for file in gitlab_project_tree if safe_compare_entry(file, "type", "blob") and safe_contain_entry(file, "name", "playbook-")]
+    playbooks_names = [playbook['name'].split('.yml')[0] for playbook in playbooks]
+    return playbooks_names
+
+def get_gitlab_file_content(project_id, instance_name, gitlab_host, access_token):
+    if is_disabled(gitlab_host) or is_disabled(access_token):
+        return []
+
+    fileResponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}/repository/files/playbook-{instance_name}.yml/blame?ref=main', headers = {"PRIVATE-TOKEN": access_token})
+    if fileResponse.status_code == 404:
+        raise HTTPError("204", 404, "project not found", hdrs = {"i18n_code": "204"}, fp = None)
+    fileJson = fileResponse.json()
+    fileLines = fileJson[0]['lines']
+    return fileLines
+
+def get_roles_from_playbook(project_id, instance_name, gitlab_host, access_token):
+    file_content_lines = get_gitlab_file_content(project_id, instance_name, gitlab_host, access_token)
+    try:
+        while True:
+            file_content_lines.remove('')
+    except ValueError:
+        pass
+
+    rolesIndex = file_content_lines.index('  roles:')
+    roles = []
+    for i in range(rolesIndex+1, len(file_content_lines)-1):
+        roles.append(file_content_lines[i].strip().split('- ')[1])
+
+    return roles
+
+def verify_gitlab_host(host):
+    if not host:
+        return False
+    res = requests.get(f'{host}/health')
+    if res.status_code!= 200:
+        raise HTTPError("1120", 400, "gitlab host not available", hdrs = {"i18n_code": "1120"}, fp = None)
+
+    return True
+
+def create_gitlab_project(project_name, userid, user_email, host, git_username, access_token, namespace_id, db):
+    default_namespace_id = os.getenv('DYNAMIC_REPO_GROUPID')
+    default_token = os.getenv('GIT_PRIVATE_TOKEN')
+
+    from entities.Project import Project
+    namespace = namespace_id if namespace_id else default_namespace_id
+    token = access_token if access_token else default_token
+    gitlab_host = host if verify_gitlab_host(host) else GITLAB_URL
+    gitUsername = git_username if git_username else os.getenv('GIT_USERNAME')
+
+    if is_disabled(GITLAB_URL) or is_disabled(default_token) or is_disabled(default_namespace_id):
+        random_id = random.randrange(1, 1000)
+        project = Project()
+        project.id = random_id
+        project.name = project_name
+        project.url = "{}/{}".format(gitlab_host, project_name)
+        project.git_username = gitUsername
+        project.access_token = token
+        project.gitlab_host = gitlab_host
+        project.namespace_id = namespace
+        project.userid = userid
+        project.save(db)
+        return project
+
+    data = {
+        "name": project_name,
+        "path": project_name,
+        "namespace_id": namespace
+    }
+
+    projectReponse = requests.post(f'{gitlab_host}/api/v4/projects', json = data, headers = {"PRIVATE-TOKEN": token})
+    if projectReponse.status_code == 400:
+        raise HTTPError("208", 400, "project already exists", hdrs = {"i18n_code": "208"}, fp = None)
+    elif projectReponse.status_code != 201:
+        raise HTTPError("1121", 400, "a problem accured when creating the project, check your access token", hdrs = {"i18n_code": "1121"}, fp = None)
+    projectJson = projectReponse.json()
+
+    if gitlab_host == GITLAB_URL and not gitlab_host in get_public_instances():
+        log_msg("DEBUG", "[gitlab][create_gitlab_project] attach_gitlab_project_to_user : {}".format(user_email))
+        attach_gitlab_project_to_user(projectJson['id'], user_email, gitlab_host, token)
+        token = create_project_access_token(projectJson['id'], projectJson['name'], gitlab_host, token)
+
+    project = Project()
+    project.id = projectJson['id']
+    project.name = projectJson['name']
+    project.url = projectJson['http_url_to_repo']
+    project.git_username = gitUsername
+    project.access_token = token
+    project.gitlab_host = gitlab_host
+    project.namespace_id = namespace
+    project.userid = userid
+    project.save(db)
+    return project
+
+def get_infra_playbook_roles():
+    playbook_project_id = os.getenv('PLAYBOOK_REPO_PROJECTID')
+    token = os.getenv('GIT_PRIVATE_TOKEN')
+    if is_disabled(GITLAB_URL) or is_disabled(playbook_project_id) or is_disabled(token):
+        return {}
+
+    rolesResponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{playbook_project_id}/repository/tree?path=roles&per_page=200&ref=main', headers = {"PRIVATE-TOKEN": token})
+    rolesJson = rolesResponse.json()
+    return rolesJson
+
+def get_project_runners(project_id, gitlab_host, access_token):
+    if is_disabled(gitlab_host) or is_disabled(access_token):
+        return {}
+
+    runnersResponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}/runners', headers = {"PRIVATE-TOKEN": access_token})
+    if runnersResponse.status_code == 404:
+        raise HTTPError("204", 404, "project not found", hdrs = {"i18n_code": "204"}, fp = None)
+
+    runnersJson = runnersResponse.json()
+    return runnersJson
+
+def delete_runner(runnerId, gitlab_host, access_token):
+    if is_disabled(gitlab_host) or is_disabled(access_token):
+        return
+
+    deleteResponse = requests.delete(f'{gitlab_host}/api/v4/runners/{runnerId}', headers = {"PRIVATE-TOKEN": access_token})
+    if deleteResponse.status_code == 404:
+        raise HTTPError("1114", 400, "runner not found", hdrs = {"i18n_code": "1114"}, fp = None)
+
+def delete_project_runners(project_id, gitlab_host, access_token):
+    if is_disabled(gitlab_host) or is_disabled(access_token):
+        return
+
+    runners = get_project_runners(project_id, gitlab_host, access_token)
+    for runner in runners:
+        if exists_entry(runner, "id"):
+            delete_runner(runner['id'], gitlab_host, access_token)
+
+def delete_gitlab_project(project_id, gitlab_host, access_token):
+    default_token = os.getenv('GIT_PRIVATE_TOKEN')
+    if is_disabled(GITLAB_URL) or is_disabled(access_token):
+        return
+
+    delete_project_runners(project_id, gitlab_host, access_token)
+    if is_disabled(default_token):
+        return
+
+    token = default_token if GITLAB_URL == gitlab_host else access_token
+    res = requests.delete(f'{gitlab_host}/api/v4/projects/{project_id}', headers = {"PRIVATE-TOKEN": token})
+    if res.status_code != 202:
+        log_msg("WARN", "[delete_gitlab_project] something went wrong when deleting project : status = {}".format(res.status_code))

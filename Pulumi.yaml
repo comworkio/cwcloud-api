@@ -1,0 +1,6 @@
+name: cwcloud
+runtime:
+  name: python
+  options:
+    virtualenv: venv
+description: Comwork cloud pulumi program

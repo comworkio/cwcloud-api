@@ -1,0 +1,3 @@
+
+MAX_RETRY = 3
+WAIT_TIME = 2

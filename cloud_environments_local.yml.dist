@@ -1,0 +1,263 @@
+---
+name: cloud environments configuration
+description: cloud environments configuration
+
+gitlab_public_instances:
+  - https://gitlab.com
+  - https://lab.frogg.it
+
+adapters:
+  emails: log
+  payments: log
+  pubsub: nats
+  cache: redis
+
+aws_instance_types: &awsInstanceTypes
+  - type: t1.micro
+    core: 1 X86 64bit
+    ram: 1GB
+    disk: 0
+    bandwidth: 100 GB
+    localstorage: 0
+    price_variable: PRICE_t1_MICRO
+  - type: t2.micro
+    core: 1 X86 64bit
+    ram: 1GB
+    disk: 0
+    bandwidth: 100 GB
+    localstorage: 0
+    price_variable: PRICE_t2_MICRO
+
+scw_instance_types: &scwInstancesTypes
+  - type: DEV1-S
+    core: 2 X86 64bit
+    ram: 2 GB
+    disk: 20 GB NVMe
+    bandwidth: 200 Mbps
+    localstorage: 20 GB
+    price_variable: PRICE_DEV1_S
+  - type: DEV1-M
+    core: 3 X86 64bit
+    ram: 4 GB
+    disk: 40 GB NVMe
+    bandwidth: 300 Mbps
+    localstorage: 20 GB
+    price_variable: PRICE_DEV1_M
+  - type: DEV1-L
+    core: 4 X86 64bit
+    ram: 8 GB
+    disk: 80 GB NVMe
+    bandwidth: 400 Mbps
+    localstorage: 80 GB
+    price_variable: PRICE_DEV1_L
+  - type: DEV1-XL
+    core: 4 X86 64bit
+    ram: 12 GB
+    disk: 120 GB NVMe
+    bandwidth: 500 Mbps
+    localstorage: 120 GB
+    price_variable: PRICE_DEV1_XL
+  - type: PLAY2-PICO
+    core: 1 X86 64bit
+    ram: 2 GB
+    disk: Block
+    bandwidth: 100 Mbps
+    localstorage: Block
+    price_variable: PRICE_PLAY2_PICO
+  - type: PLAY2-NANO
+    core: 2 X86 64bit
+    ram: 4 GB
+    disk: Block
+    bandwidth: 200 Mbps
+    localstorage: Block
+    price_variable: PRICE_PLAY2_PICO
+  - type: PLAY2-MICRO
+    core: 4 X86 64bit
+    ram: 8 GB
+    disk: Block
+    bandwidth: 400 Mbps
+    localstorage: Block
+    price_variable: PRICE_PLAY2_PICO
+
+ovh_instance_types: &ovhInstancesTypes
+  - type: d2-2
+    core: 1 X86 64bit
+    ram: 2 GB
+    disk: 25 GB NVMe
+    bandwidth: 100 Mbps
+    localstorage: 0 GB
+    price_variable: PRICE_d2_2
+  - type: d2-4
+    core: 2 X86 64bit
+    ram: 4 GB
+    disk: 50 GB NVMe
+    bandwidth: 250 Mbps
+    localstorage: 0 GB
+    price_variable: PRICE_d2_4
+  - type: d2-8
+    core: 4 X86 64bit
+    ram: 8 GB
+    disk: 50 GB NVMe
+    bandwidth: 500 Mbps
+    localstorage: 0 GB
+    price_variable: PRICE_d2_8
+  - type: b2-15
+    core: 4 X86 64bit
+    ram: 15 GB
+    disk: 100 GB NVMe
+    bandwidth: 250 Mbps
+    localstorage: 0 GB
+    price_variable: PRICE_b2_15
+
+providers:
+  - name: aws
+    driver: AwsDriver
+    regions:  
+      - name: europe-west-1
+        zones: ['a']
+    instance_types: ['']
+    bucket_types: ['public-read', 'private']
+    bucket_available_regions: ['fr-par', 'nl-ams','pl-waw']
+    registry_types: ['public', 'private']
+    registry_available_regions: ['fr-par', 'nl-ams','pl-waw']
+    instance_configs:
+      - region: fr-par
+        zones:
+          - name: "1"
+            instance_types: *scwInstancesTypes
+          - name: "2"
+            instance_types: *scwInstancesTypes
+      - region: nl-ams
+        zones:
+          - name: "1"
+            instance_types: *scwInstancesTypes
+      - region: pl-waw
+        zones:
+          - name: "1"
+            instance_types: *scwInstancesTypes
+  - name: scaleway
+    driver: VoidDriver
+    regions:  
+      - name: fr-par
+        zones: ['1', '2']
+      - name: nl-ams
+        zones: ['1']
+      - name: pl-waw
+        zones: ['1']
+    instance_types: ['DEV1-S', 'DEV1-M', 'DEV1-L', 'DEV1-XL']
+    bucket_types: ['public-read', 'private']
+    bucket_available_regions: ['fr-par', 'nl-ams','pl-waw']
+    registry_types: ['public', 'private']
+    registry_available_regions: ['fr-par', 'nl-ams','pl-waw']
+    instance_configs:
+      - region: fr-par
+        zones:
+          - name: "1"
+            instance_types: *scwInstancesTypes
+          - name: "2"
+            instance_types: *scwInstancesTypes
+      - region: nl-ams
+        zones:
+          - name: "1"
+            instance_types: *scwInstancesTypes
+      - region: pl-waw
+        zones:
+          - name: "1"
+            instance_types: *scwInstancesTypes
+  - name: aws
+    driver: AwsProviderDriver
+    regions:
+      - name: us-east-1
+        zones: ["a", "b", "c", "d", "e"]
+      - name: us-east-2
+        zones: ["a", "b", "c", "d", "e"]
+      - name: us-west-2
+        zones: ["a", "b", "c", "d", "e"]
+    instance_types: ["t1.micro", "t2.micro"]
+    bucket_types: ["public-read", "private"]
+    bucket_available_regions: ["us-east-1", "us-east2", "us-west-2"]
+    registry_types: ["public", "private"]
+    registry_available_regions: ["fr-par", "nl-ams", "pl-waw"]
+    instance_configs:
+      - region: us-east-1
+        zones:
+          - name: "a"
+            instance_types: *awsInstanceTypes
+          - name: "b"
+            instance_types: *awsInstanceTypes
+          - name: "c"
+            instance_types: *awsInstanceTypes
+          - name: "d"
+            instance_types: *awsInstanceTypes
+          - name: "e"
+            instance_types: *awsInstanceTypes
+  - name: ovh
+    driver: VoidDriver
+    regions:  
+      - name: UK1
+        zones: ['nova']
+      - name: DE1
+        zones: ['nova']
+      - name: GRA11
+        zones: ['nova']
+      - name: SBG5
+        zones: ['nova']
+      - name: WAW1
+        zones: ['nova']
+      - name: BHS5
+        zones: ['nova']
+    instance_types: ['d2-2', 'd2-4', 'd2-8', 'b2-15']
+    bucket_types: ['public-read', 'private']
+    bucket_available_regions: ['BHS5', 'GRA11','SBG5']
+    registry_types: []
+    registry_available_regions: ['GRA11']
+    instance_configs:
+      - region: SBG5
+        zones:
+          - name: nova
+            instance_types: *ovhInstancesTypes
+      - region: GRA11
+        zones:
+          - name: nova
+            instance_types: *ovhInstancesTypes
+      - region: UK1
+        zones:
+          - name: nova
+            instance_types: *ovhInstancesTypes
+      - region: DE1
+        zones:
+          - name: nova
+            instance_types: *ovhInstancesTypes
+      - region: WAW1
+        zones:
+          - name: nova
+            instance_types: *ovhInstancesTypes
+      - region: BHS5
+        zones:
+          - name: nova
+            instance_types: *ovhInstancesTypes
+
+dns_zones:
+  - name: comwork.cloud
+    driver: VoidDriver
+  - name: comwork.dev
+    driver: VoidDriver
+  - name: comwork.info
+    driver: VoidDriver
+  - name: comwork.ovh
+    driver: VoidDriver
+  - name: comwork.click
+    driver: VoidDriver
+
+images:
+  - WAW1-nova: 96009942-9261-4c23-9ba5-1b5d589b3d4b
+  - GRA11-nova: 00b4ff52-0bdc-479d-8059-cc55b8f7b22d
+  - DE1-nova: 7ce27b30-4227-4e99-9dcc-6b3b6c612b5d
+  - SBG5-nova: 73b5b9f2-1d46-4655-9cfc-edddf48b5c3a
+  - UK1-nova: c177c00a-c448-415c-bb3f-8a694cc3fd53
+  - BHS5-nova: c7765f7c-a2c1-4f7c-8042-b205eee8e2c9
+  - fr-par-1: 6392f986-c3fb-4b2e-8ac5-9d0872161ab0
+  - fr-par-2: 58aaf1f7-b24b-4bb6-83e1-117346eac703
+  - nl-ams-1: 839b0a5d-ef0a-4848-96b8-4432ca688709
+  - pl-waw-1: af5dc0c9-4acc-44ea-895d-7a5cc5c0d9c3
+

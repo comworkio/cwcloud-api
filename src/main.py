@@ -1,0 +1,52 @@
+import os
+
+from uuid import uuid4
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.responses import JSONResponse
+from asgi_correlation_id import CorrelationIdMiddleware, correlation_id
+
+from restful_resources import import_resources
+from utils.common import is_true
+from utils.logger import log_msg
+
+from exceptions.CwHTTPException import CwHTTPException
+from database.postgres_db import dbEngine
+from database.postgres_db import Base
+
+log_msg("INFO", "[main] the application is starting with version = {}".format(os.environ['APP_VERSION']))
+Base.metadata.create_all(bind = dbEngine)
+
+app = FastAPI(
+    docs_url = "/",
+    title = "Comwork Cloud API",
+    version = os.environ['APP_VERSION'],
+    description = "Official Comwork Cloud API Swagger documentation."
+)
+
+app.add_middleware(
+    CorrelationIdMiddleware,
+    header_name = 'x-comwork-cid',
+    generator = lambda: "{}".format(uuid4())
+)
+
+if os.getenv('APP_ENV') == 'local' or is_true(os.getenv('ENABLE_CORS_ALLOW_ALL')):
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins = ["*"],
+        allow_credentials = True,
+        allow_methods = ["*"],
+        allow_headers = ["*"]
+    )
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    headers = {'x-comwork-cid': correlation_id.get() or "{}".format(uuid4())}
+
+    if (isinstance(exc, CwHTTPException)):
+        return JSONResponse(content = exc.message, status_code = exc.status_code, headers = headers)
+    return await http_exception_handler(request, HTTPException(500, 'Internal server error', headers = headers))
+
+import_resources(app)

@@ -1,0 +1,94 @@
+from datetime import datetime
+from typing import List, Optional
+from pydantic import BaseModel
+
+class UserSchema(BaseModel):
+    email: str
+    registration_number: str
+    address: str
+    company_name: str
+    contact_info: str
+    st_customer_id: str
+    st_payment_method_id: str
+    password: str
+    is_admin: bool
+    confirmed: Optional[bool] = False
+    created_at: Optional[str] = datetime.now().isoformat()
+
+    class config:
+        orm_mode = True
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+
+class ListUserResponse(BaseModel):
+    status: str
+    results: int
+    users: List[UserSchema]
+
+class UserRegisterSchema(BaseModel):
+    email: str
+    password: str
+    registration_number: Optional[str]
+    address: Optional[str]
+    company_name: Optional[str]
+    contact_info: Optional[str]
+
+
+class UserUpdateSchema(BaseModel):
+    email: str
+
+class UserPaymentSchema(BaseModel):
+    status: str
+
+class UserPaymentMethodSchema(BaseModel):
+    payment_method: str
+
+class UserUpdatePasswordSchema(BaseModel):
+    old_password: str
+    new_password: str
+
+class UserLoginSchema(BaseModel):
+    email: str
+    password: str
+
+    class Config:
+        orm_mode = True
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+
+class UserResponse(BaseModel):
+    status: str
+    user: UserSchema
+
+class UserAdminUpdateRoleSchema(BaseModel):
+    is_admin: bool = False
+
+class EnabledFeatures(BaseModel):
+    billable: Optional[bool] = False
+    without_vat: Optional[bool] = False
+    auto_pay: Optional[bool] = False
+    emailapi: Optional[bool] = False
+    cwaiapi: Optional[bool] = False
+    faasapi: Optional[bool] = False
+    disable_emails: Optional[bool] = False
+
+class UserUpdateSchema(BaseModel):
+    email: str
+    is_admin: Optional[bool] = False
+    registration_number: Optional[str]
+    address: Optional[str]
+    company_name: Optional[str]
+    contact_info: Optional[str]
+    confirmed: Optional[bool] = True
+    enabled_features: Optional[EnabledFeatures]
+
+class UserAdminAddSchema(BaseModel):
+    email: str
+    password: str
+    is_admin: bool = False
+    registration_number: Optional[str]
+    address: Optional[str]
+    company_name: Optional[str]
+    contact_info: Optional[str]
+    st_customer_id: Optional[str]
+    enabled_features: Optional[EnabledFeatures]

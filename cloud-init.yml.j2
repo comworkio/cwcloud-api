@@ -1,0 +1,65 @@
+#cloud-config
+
+write_files:
+  - path: /root/cloud-init_handler.sh
+    content: |
+        #!/usr/bin/env bash
+
+        while getopts i: flag
+        do
+            case "${flag}" in
+                i) instance_id=${OPTARG}
+            esac
+        done
+
+        handle_instance_error() {
+          cd /root/{{ gitlab_project_name }}
+          git config --global user.email "{{ git_email }}"
+          git config --global user.name "{{ git_username }}"
+          log=$(cat /var/log/cloud-init-output.log | grep -i 'error\|failed')
+          curl -H 'Content-Type: application/json' -d "{ \"error\" :\"$(echo $log)\" }"  -X POST {{API_URL}}/v1/control/instance/$instance_id
+        }
+
+        handle_instance_success() {
+          curl -H 'Content-Type: application/json' -d '{"status":"activate"}' -X PATCH {{API_URL}}/v1/control/instance/$instance_id
+        }
+
+        if ! cloud-init status --wait ; then
+        echo "Cloud-init failed"
+        {% if not debug is defined or not debug  %}
+        handle_instance_error
+        {% endif %}
+        exit 1
+        fi
+        echo "Cloud init successfully deployed"
+        handle_instance_success
+        exit 1
+    owner: root:root
+    permissions: '0644'
+
+runcmd:
+  - cd /root
+  - yum install -y git
+  - sudo chmod +x /root/cloud-init_handler.sh
+  - |
+    sudo /root/cloud-init_handler.sh -i {{ instance_id }}  > /root/cloud-init_handler.log 2>&1 &
+  - git clone "{{ dynamic_repo }}"
+  - cd {{ gitlab_project_name }}
+  - set -e
+  - ansible-playbook playbook-{{ instance_name }}.yml -e "@env/{{ instance_name }}.yml"   
+  - |
+    sed -i "s/gitlab_runner_token: changeit/gitlab_runner_token: "$(sudo cat /root/.gitlab-runner/config.toml | awk -F "[[:space:]]*=[[:space:]]*" '($0 ~ "token"){gsub("\"", "", $2); print $2}' | head -1)"/" env/{{instance_name}}.yml
+  - sudo gitlab-runner verify
+  - sudo git pull origin main
+{% if centralized == "none"  %}
+  - mv {{ instance_name }}-ci.yml ./.gitlab-ci.yml
+{% elif centralized == "true"  %}
+  - cat {{ instance_name }}-ci.yml >> .gitlab-ci.yml
+  - rm {{ instance_name }}-ci.yml
+{% endif %}
+  - sudo git config --global user.email "{{ git_email }}"
+  - sudo git config --global user.name "{{ git_username }}"
+  - sudo git add .
+  - sudo git commit -m "Finish deployment of {{ instance_name }}"
+  - sudo git push origin main
+  - rm -rf ../{{ gitlab_project_name }}

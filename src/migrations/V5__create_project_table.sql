@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS public.project(
+ id INTEGER NOT NULL PRIMARY KEY,
+ name VARCHAR(100),
+ region VARCHAR(100),
+ url VARCHAR(300) ,
+ userid INTEGER,
+ created_at VARCHAR(100)
+);

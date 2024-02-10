@@ -1,0 +1,1 @@
+ALTER TABLE public.user ALTER COLUMN opt_code TYPE VARCHAR(100);

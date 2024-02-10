@@ -1,0 +1,12 @@
+package main
+
+import (
+	"fmt"
+)
+
+{{ handle_definition }}
+
+func main() {
+	r := {{ handle_call }}
+    fmt.Println(r)
+}

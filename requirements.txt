@@ -1,0 +1,54 @@
+pulumi>=3.0.0, <4.0.0
+markupsafe>=2.1.1
+pulumi-openstack==3.9.0
+pulumi-aws>=5.0.0, <6.0.0
+pulumi-gcp>=6.57.0,<7.0.0
+lbrlabs-pulumi-scaleway==1.7.0
+pulumi-cloudflare==4.13.0
+openstacksdk==0.100.0
+google-cloud-containeranalysis==2.12.1
+google-cloud-storage==2.10.0
+google-cloud-artifact-registry==1.8.1
+google-api-python-client==2.91.0
+google-cloud-compute
+jinja2 >= 2.7
+pyyaml >= 6.0
+Werkzeug==2.2.2
+protobuf~=3.19.0
+python-gitlab >= 3.4.0
+grpcio<=1.43.0
+ovh >= 1.0.0
+stripe==6.2.0
+ansicolors >=1.1.8
+pyotp >= 0.84
+yubico-client >= 1.13.0
+sendgrid
+pdfkit
+minio
+python-dotenv
+boto3
+j2cli-3==0.0.1
+fastapi==0.95.1
+pydantic[email]
+asgi-correlation-id
+requests==2.30.0
+uvicorn==0.22.0
+SQLAlchemy==1.4.46
+redis
+nats-py
+fastapi-utils==0.2.1
+psycopg2==2.9.6
+psycopg2-binary
+bcrypt==4.0.1
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]
+python-multipart==0.0.6
+httpx
+pyjwt
+pytest
+jinja2
+weasyprint
+python-barcode
+nkeys
+croniter
+apscheduler

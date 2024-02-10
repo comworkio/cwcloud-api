@@ -1,0 +1,6 @@
+__pycache__
+.idea
+.env
+node-conv
+cloud_environments_local.yml
+venv
