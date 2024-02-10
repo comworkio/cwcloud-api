@@ -1,4 +1,4 @@
-# Cwcloud Resftful API
+# Cwcloud CE RESTful API
 
 # Getting started with docker
 
