@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-REPO_PATH="${HOME_PROJECT}/cmd-api/"
+REPO_PATH="${PROJECT_HOME}/cwcloud-api/"
 
 cd "${REPO_PATH}" && git pull origin main || :
 git push github main 
