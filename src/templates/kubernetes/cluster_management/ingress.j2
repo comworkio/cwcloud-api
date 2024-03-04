@@ -1,0 +1,74 @@
+{% if apiVersion %}
+apiVersion: {{ apiVersion }}
+{% else %}
+apiVersion: networking.k8s.io/v1
+{% endif %}
+kind: Ingress
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  {% if labels %}
+  labels:
+    {% for key, value in labels.items() %}
+    {{ key }}: {{ value }}
+    {% endfor %}
+  {% endif %}
+  {% if annotations %}
+  annotations:
+    {% for key, value in annotations.items() %}
+    {{ key }}: {{ value|tojson }}
+    {% endfor %}
+  {% endif %}
+spec:
+  rules:
+    {% for rule in rules %}
+    - host: {{ rule.host }}
+      http:
+        paths:
+        {% for path in rule.http_paths %}
+        - path: {{ path.path }}
+          pathType: {{ path.pathType }} 
+          backend:
+            {% if path.backend.resource %}
+              resource:
+                apiGroup: {{ path.backend.resource.apiGroup }}
+                kind: {{ path.backend.resource.kind }}
+                name: {{ path.backend.resource.name }}
+            {% endif %}
+            service:
+              name: {{ path.backend.service.name }}
+              port:
+                {% if path.backend.service.port.name %}
+                name: {{ path.backend.service.port.name }}
+                {% endif %}
+                number: {{ path.backend.service.port.number }}
+        {% endfor %}
+    {% endfor %}
+    
+  {% if tls %}
+  tls:
+    {% for tls_item in tls %}
+    - hosts:
+        {% for host in tls_item.hosts %}
+        - {{ host }}
+        {% endfor %}
+      secretName: {{ tls_item.secretName }}
+    {% endfor %}
+  {% endif %}
+  {% if ingressClassName %}
+  ingressClassName: {{ ingressClassName }}
+  {% endif %}
+  {% if defaultBackend %}
+  defaultBackend:
+    service:
+      name: {{ defaultBackend.service.name }}
+      port:
+        number: {{ defaultBackend.service.port.number }}
+        name: {{ defaultBackend.service.port.name }}
+  {% if defaultBackend.resource %}
+    resource:
+      apiGroup: {{ path.backend.resource.apiGroup }}
+      kind: {{ path.backend.resource.kind }}
+      name: {{ path.backend.resource.name }}
+  {% endif %}
+  {% endif %}

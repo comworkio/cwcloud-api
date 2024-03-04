@@ -2,7 +2,7 @@ from fastapi import Depends, APIRouter
 from sqlalchemy.orm import Session
 from typing import Annotated
 
-from schemas.User import UserRegisterSchema, UserUpdateSchema, UserSchema, UserUpdatePasswordSchema, UserLoginSchema, UserPaymentSchema, UserPaymentMethodSchema
+from schemas.User import UserRegisterSchema, UserEmailUpdateSchema, UserSchema, UserUpdatePasswordSchema, UserLoginSchema, UserPaymentSchema, UserPaymentMethodSchema
 from database.postgres_db import get_db
 from middleware.auth_guard import get_current_active_user
 from controllers.user import add_payment_method, confirm_user_account, confirmation_email, create_user_account, forget_password_email, get_current_user_data, get_payment_methods, get_user_cloud_resources, remove_payment_method, update_payment_method, update_user_informations, update_user_password, user_reset_password, verify_user_token, get_user_cloud_statistics, update_user_autopayment
@@ -34,7 +34,7 @@ def update_password(current_user: Annotated[UserSchema, Depends(get_current_acti
     return update_user_password(current_user, payload, db)
 
 @router.post("/forget-password")
-def forget_password(payload: UserUpdateSchema, db: Session = Depends(get_db)):
+def forget_password(payload: UserEmailUpdateSchema, db: Session = Depends(get_db)):
     return forget_password_email(payload, db)
 
 @router.post("/reset-password")
@@ -54,7 +54,7 @@ def confirm_account(token: str, db: Session = Depends(get_db)):
     return confirm_user_account(token, db)
 
 @router.post("/confirmation-mail")
-def confirm_email(current_user: Annotated[UserSchema, Depends(get_current_active_user)], payload: UserUpdateSchema, db: Session = Depends(get_db)):
+def confirm_email(current_user: Annotated[UserSchema, Depends(get_current_active_user)], payload: UserEmailUpdateSchema, db: Session = Depends(get_db)):
     return confirmation_email(payload, db)
 
 @router.get("/payment-method")

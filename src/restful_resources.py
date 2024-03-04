@@ -48,7 +48,9 @@ def import_resources(app):
     from routes.admin.registry import api_admin_registry
     from routes.admin.support import api_admin_support
     from routes.admin.voucher import api_admin_voucher
-
+    from routes.admin.kubernetes import api_admin_object, api_admin_cluster
+    from routes.kubernetes import api_cluster, api_deployments
+    
     version = os.environ['API_VERSION']
 
     app.include_router(api_root.router, tags = ['Informations and Health checks'], prefix = f'/{version}/health')
@@ -109,3 +111,7 @@ def import_resources(app):
     app.include_router(api_admin_payment.router, tags = ['Admin Payment and Voucher'], prefix = f'/{version}/admin/pay')
     app.include_router(api_admin_relaunch.router, tags = ['Admin Payment and Voucher'], prefix = f'/{version}/admin/relaunch')
     app.include_router(api_admin_voucher.router, tags = ['Admin Payment and Voucher'], prefix = f'/{version}/admin/voucher')
+    app.include_router(api_cluster.router, tags = ['Kubernetes Clusters'], prefix = f'/{version}/kubernetes/cluster')
+    app.include_router(api_admin_cluster.router, tags = ['Admin Kubernetes Clusters'], prefix = f'/{version}/admin/kubernetes/cluster')
+    app.include_router(api_admin_object.router, tags = ['Admin Kubernetes Objects'], prefix = f'/{version}/admin/kubernetes/object')
+    app.include_router(api_deployments.router, tags = ['Kubernetes Apps deployments'], prefix = f'/{version}/kubernetes/deployment')

@@ -87,6 +87,7 @@ def get_dns_zones():
 
 def get_first_dns_zone_doc():
     zones = get_dns_zones()
-    if (len(zones) >= 1):
+    if len(zones) >= 1:
         return zones[0]
+
     return "comwork.cloud"

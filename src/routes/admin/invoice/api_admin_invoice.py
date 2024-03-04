@@ -25,7 +25,7 @@ from utils.logger import log_msg
 from utils.mail import send_invoice_email
 from utils.invoice import generate_invoice_pdf
 from utils.consumption import getUserConsumptionsByDate
-from utils.parse_date import parse_date
+from utils.date import parse_date
 from utils.payment import get_min_amount
 from utils.billing import download_billing_file
 

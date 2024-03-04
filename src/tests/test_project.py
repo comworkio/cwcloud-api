@@ -50,10 +50,12 @@ class TestProject(TestCase):
         new_project.gitlab_username = "amirghedira"
         new_project.gitlab_token = "TOKEN"
         new_project.gitlab_project_id = "1"
+        new_project.type = "vm"
         create_gitlab_project_mock.return_value = new_project
 
         payload = ProjectSchema(
-            name = project_name
+            name = project_name,
+            type = "vm",
         )
 
         # When
@@ -64,7 +66,7 @@ class TestProject(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 201)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}')
+        self.assertEqual(result.body.decode(), '{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}')
 
     @patch('entities.Project.Project.getUserProject')
     @patch('utils.gitlab.get_gitlab_project_tree', side_effect = lambda x, y, z: [])
@@ -82,6 +84,7 @@ class TestProject(TestCase):
         project.gitlab_username = "amirghedira"
         project.gitlab_token = "TOKEN"
         project.gitlab_project_id = "1"
+        project.type = "vm"
         getUserProject.return_value = project
 
         # When
@@ -92,7 +95,7 @@ class TestProject(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null,"playbooks":[]}')
+        self.assertEqual(result.body.decode(), '{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null,"playbooks":[]}')
 
     @patch('controllers.project.delete_gitlab_project', side_effect = lambda x, y, z : "" )
     @patch('entities.Project.Project.deleteOne', side_effect = lambda x, y : "" )

@@ -1,5 +1,5 @@
 from fastapi import Depends, APIRouter
-from typing import Annotated
+from typing import Annotated, Literal
 from sqlalchemy.orm import Session
 
 from schemas.User import UserSchema
@@ -11,13 +11,14 @@ from controllers.admin.admin_environment import admin_get_environments, admin_ge
 router = APIRouter()
 
 @router.get("/all")
-def get_all_environments(current_user: Annotated[UserSchema, Depends(get_current_active_user)], db: Session = Depends(get_db)):
+def get_all_environments(current_user: Annotated[UserSchema, Depends(get_current_active_user)], type: Literal['vm','k8s'] = "vm", db: Session = Depends(get_db)):
     if current_user.is_admin:
-        return admin_get_environments(current_user, db)
-    return get_environments(current_user, db)
+        return admin_get_environments(type, db)
+    return get_environments(type, db)
 
-@router.get("/{environmentId}")
-def get_environment_by_id(current_user: Annotated[UserSchema, Depends(get_current_active_user)], environmentId: str, db: Session = Depends(get_db)):
+@router.get("/{environment_id}")
+def get_environment_by_id(current_user: Annotated[UserSchema, Depends(get_current_active_user)], environment_id: str, db: Session = Depends(get_db)):
     if current_user.is_admin:
-        return admin_get_environment(current_user, environmentId, db)
-    return get_environment(current_user, environmentId, db)
+        return admin_get_environment(environment_id, db)
+
+    return get_environment(environment_id, db)

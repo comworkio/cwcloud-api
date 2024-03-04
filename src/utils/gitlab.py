@@ -1,8 +1,10 @@
-import random
-import gitlab
 import os
 import yaml
 import requests
+
+import base64
+import random
+import gitlab
 
 from urllib.error import HTTPError
 from datetime import datetime, timedelta
@@ -31,19 +33,19 @@ def create_project_label(name, color):
 
     GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
     token = os.getenv('GIT_PRIVATE_TOKEN')
-    labelJson = {
+    label_json = {
         "name": name,
         "color": color
     }
-    requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', json = labelJson, headers = {"PRIVATE-TOKEN": token})
+    requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', json = label_json, headers = {"PRIVATE-TOKEN": token})
 
 def check_create_labels_support():
     if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')):
         return {}
     GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
     token = os.getenv('GIT_PRIVATE_TOKEN')
-    projectLabelsReponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', headers = {"PRIVATE-TOKEN": token})
-    project_labels = projectLabelsReponse.json()
+    project_labels_reponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', headers = {"PRIVATE-TOKEN": token})
+    project_labels = project_labels_reponse.json()
     label_names = [label['name'] for label in project_labels]
     if not 'support' in label_names:
         create_project_label('support', "#00b140")
@@ -61,11 +63,12 @@ def close_gitlab_issue(issue_id):
     token = os.getenv('GIT_PRIVATE_TOKEN')
 
     issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers = {"PRIVATE-TOKEN": token}).json()
-    newLabels = [label for label in issue['labels'] if label not in ['doing', 'todo', 'review']]
+    new_labels = [label for label in issue['labels'] if label not in ['doing', 'todo', 'review']]
     data = {
         "state_event": "close",
-        "labels": newLabels
+        "labels": new_labels
     }
+
     requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json = data, headers = {"PRIVATE-TOKEN": token})
 
 def reopen_gitlab_issue(issue_id):
@@ -75,12 +78,13 @@ def reopen_gitlab_issue(issue_id):
     GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
     token = os.getenv('GIT_PRIVATE_TOKEN')
     issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers = {"PRIVATE-TOKEN": token}).json()
-    newLabels = [label for label in issue['labels'] if label not in ['doing', 'todo', 'review']]
-    newLabels.append("todo")
+    new_labels = [label for label in issue['labels'] if label not in ['doing', 'todo', 'review']]
+    new_labels.append("todo")
     data = {
         "state_event": "reopen",
-        "labels": newLabels
+        "labels": new_labels
     }
+
     requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json = data, headers = {"PRIVATE-TOKEN": token})
 
 def add_gitlab_issue(ticketId, user_email, title, description, severity, product):
@@ -98,6 +102,7 @@ def add_gitlab_issue(ticketId, user_email, title, description, severity, product
         "description": issue_description,
         "labels": "todo, support, s-{} ".format(severity)
     }
+
     res = requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues', json = data, headers = {"PRIVATE-TOKEN": token})
     return res.json()['iid']
 
@@ -112,6 +117,7 @@ def add_gitlab_issue_comment(issue_id, user_email, message):
     data = {
         "body": issue_comment,
     }
+
     requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}/notes', json = data, headers = {"PRIVATE-TOKEN": token})
 
 def inject_git_credentials_to_url(remote, username, token):
@@ -231,6 +237,10 @@ def get_gitlab_project(project_id, gitlab_host, access_token):
     project = projectReponse.json()
     return project
 
+def get_gitlab_project_object(gitlab_url, private_token, project_id):
+    gl = gitlab.Gitlab(gitlab_url, private_token=private_token)
+    return gl.projects.get(project_id)
+
 def is_not_project_found_in_gitlab(gitlab_project):
     return is_empty(gitlab_project) or 'id' not in gitlab_project or is_empty(gitlab_project['id'])
 
@@ -299,7 +309,7 @@ def verify_gitlab_host(host):
 
     return True
 
-def create_gitlab_project(project_name, userid, user_email, host, git_username, access_token, namespace_id, db):
+def create_gitlab_project(project_name, userid, user_email, host, git_username, access_token, namespace_id, project_type, db):
     default_namespace_id = os.getenv('DYNAMIC_REPO_GROUPID')
     default_token = os.getenv('GIT_PRIVATE_TOKEN')
 
@@ -320,6 +330,7 @@ def create_gitlab_project(project_name, userid, user_email, host, git_username, 
         project.gitlab_host = gitlab_host
         project.namespace_id = namespace
         project.userid = userid
+        project.type = project_type
         project.save(db)
         return project
 
@@ -350,6 +361,7 @@ def create_gitlab_project(project_name, userid, user_email, host, git_username, 
     project.gitlab_host = gitlab_host
     project.namespace_id = namespace
     project.userid = userid
+    project.type = project_type
     project.save(db)
     return project
 
@@ -404,3 +416,126 @@ def delete_gitlab_project(project_id, gitlab_host, access_token):
     res = requests.delete(f'{gitlab_host}/api/v4/projects/{project_id}', headers = {"PRIVATE-TOKEN": token})
     if res.status_code != 202:
         log_msg("WARN", "[delete_gitlab_project] something went wrong when deleting project : status = {}".format(res.status_code))
+
+def read_file_from_gitlab(project_id, file_path, branch, access_token, host):
+    gitlab_instance = gitlab.Gitlab(host, private_token=access_token)
+    project = gitlab_instance.projects.get(project_id)
+    file = project.files.get(file_path, ref=branch)
+    file_content = file.decode()
+    return file_content
+
+def push_file_to_repository(file_content, file_path, gitlab_connection: gitlab.Gitlab, git_repo_id: str, branch, commit_message):
+    fetchedProject = gitlab_connection.projects.get(git_repo_id)
+    try:
+        fetchedProject.commits.create({
+            'branch': branch,
+            'commit_message': commit_message,
+            'actions': [
+                {
+                    'action': 'create',
+                    'file_path': file_path,
+                    'content': base64.b64encode(file_content).decode(),
+                    'encoding': 'base64',
+                }
+            ],
+        })
+    except gitlab.GitlabCreateError:
+        fetchedProject.commits.create({
+            'branch': branch,
+            'commit_message': commit_message,
+            'actions': [
+                {
+                    'action': 'update',
+                    'file_path': file_path,
+                    'content': base64.b64encode(file_content).decode(),
+                    'encoding': 'base64',
+                }
+            ],
+        })
+
+def push_files_to_repository(files: list[dict], gitlab_connection: gitlab.Gitlab, git_repo_id: str, branch, commit_message):
+    fetchedProject = gitlab_connection.projects.get(git_repo_id)
+    try:
+        fetchedProject.commits.create({
+            'branch': branch,
+            'commit_message': commit_message,
+            'actions': [{
+                "action": "create",
+                "content": file["content"],
+                "file_path": file["path"]
+            } for file in files]
+        })
+    except gitlab.GitlabCreateError:
+        fetchedProject.commits.create({
+            'branch': branch,
+            'commit_message': commit_message,
+            'actions': [{
+                "action": "update",
+                "content": file["content"],
+                "file_path": file["path"]
+            } for file in files]
+        })
+    
+def remove_file_from_gitlab(project_id, file_path, commit_message, access_token, host, branch):
+    gitlab_instance = gitlab.Gitlab(host, private_token=access_token)
+    project = gitlab_instance.projects.get(project_id)
+    file = project.files.get(file_path, ref=branch)
+    file.delete(branch=branch, commit_message=commit_message)
+
+def init_repository(gitlab_connection: gitlab.Gitlab, git_repo_id: str, branch: str, commit_message: str, readme_content: str):
+    fetchedProject = gitlab_connection.projects.get(git_repo_id)
+    commits = fetchedProject.commits.list(all=True)
+    if not commits:
+        fetchedProject.commits.create({
+            'branch': branch,
+            'commit_message': commit_message,
+            'actions': [
+                {
+                    'action': 'create',
+                    'file_path': 'README.md',
+                    'content': readme_content,
+                }
+            ],
+        })
+
+def remove_folder_from_gitlab(project_id, folder_path, commit_message, access_token, host, branch):
+    try:
+        project = get_gitlab_project_object(host, access_token, project_id)
+        files_in_folder = project.repository_tree(path=folder_path, ref=branch)
+
+        for file_entry in files_in_folder:
+            file_path = file_entry.get('path', '')
+            file_type = file_entry.get('type', '')
+
+            if file_type == 'blob':
+                file = project.files.get(file_path, ref=branch)
+                file.delete(branch=branch, commit_message=commit_message)
+            elif file_type == 'tree':
+                remove_folder_from_gitlab(project_id, file_path, commit_message, access_token, host, branch)
+
+    except gitlab.GitlabError as e:
+        log_msg("WARN", "[delete_gitlab_folder] error = {}".format(e))
+        
+def get_helm_charts():
+    charts_project_id = os.getenv('GIT_HELMCHARTS_REPO_ID')
+    git_charts_url = os.getenv('GIT_HELMCHARTS_REPO_URL')
+    host = git_charts_url.split('/')[0]
+    token = os.getenv('GIT_PRIVATE_TOKEN')
+
+    if is_disabled(GITLAB_URL) or is_disabled(charts_project_id) or is_disabled(token):
+        return {}
+
+    chartsResponse = requests.get(f'https://{host}/api/v4/projects/{charts_project_id}/repository/tree?path=charts&per_page=200&ref=main', headers = {"PRIVATE-TOKEN": token})
+    return chartsResponse.json()
+
+def push_selected_chart(charts:list[str], gitlab_connection: gitlab.Gitlab, git_repo_id: str):
+    fetchedProject = gitlab_connection.projects.get(git_repo_id)
+    fetchedProject.commits.create({
+        'branch': 'main',
+        'commit_message': 'init charts',
+        'actions': [{
+            "action": "create",
+            "content": file["content"],
+            "file_path": file["path"]
+        } for file in charts]
+    })

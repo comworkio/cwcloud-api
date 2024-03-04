@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 
 from urllib.error import HTTPError
@@ -56,6 +57,8 @@ def add_support_ticket(current_user, payload, db):
         issue_id = add_gitlab_issue(ticket.id, current_user.email, payload.subject, payload.message, payload.severity, payload.product)
         SupportTicket.attach_gitlab_issue(ticket.id, issue_id, db)
         ticket.gitlab_issue_id = issue_id
+        ticket.created_at = datetime.now().isoformat()
+        ticket.last_update = datetime.now().isoformat()
         ticket.save(db)
         supportTicketJson = json.loads(json.dumps(ticket, cls = AlchemyEncoder))
         supportTicketJson["id"] = ticket.id
@@ -76,12 +79,14 @@ def reply_support_ticket(current_user, payload, ticket_id, db):
         new_reply = SupportTicketLog(**payload.dict())
         new_reply.user_id = current_user.id
         new_reply.ticket_id = ticket.id
+        new_reply.change_date = datetime.now().isoformat()
         new_reply.save(db)
         add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, payload.message)
         supportTicketReplyJson = json.loads(json.dumps(new_reply, cls = AlchemyEncoder))
         userJson = json.loads(json.dumps(new_reply.user, cls = AlchemyEncoder))
         supportTicketReply = {**supportTicketReplyJson, "user": userJson}
         SupportTicket.updateTicketStatus(ticket.id, "await agent", db)
+        SupportTicket.updateTicketTime(ticket.id, db)
         log_msg("INFO", "[Support] User {} has replied to support ticket # {}".format(current_user.email, ticket.id))
         return JSONResponse(content = supportTicketReply, status_code = 200)
     except HTTPError as e:

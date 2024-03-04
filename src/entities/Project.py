@@ -1,10 +1,13 @@
 from database.postgres_db import Base
-from sqlalchemy import Column, ForeignKey, String, Integer
+from sqlalchemy import Column, ForeignKey, String, Integer,CheckConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
 class Project(Base):
     __tablename__ = "project"
+    __table_args__ = (
+        CheckConstraint('type IN ("vm", "k8s")', name='type_check'),
+    )
     id = Column(Integer, primary_key = True)
     name = Column(String(100))
     url = Column(String(300))
@@ -14,6 +17,7 @@ class Project(Base):
     namespace_id = Column(String(100))
     created_at = Column(String(100), default = datetime.now().isoformat())
     userid = Column(Integer, ForeignKey('user.id'))
+    type = Column(String(100),default = "vm", nullable = False)
     instances = relationship('Instance', backref = 'project', lazy = "select")
 
     def save(self, db):
@@ -21,7 +25,7 @@ class Project(Base):
         db.commit()
 
     @staticmethod
-    def getById(projectId, db):
+    def getById(projectId, db) -> 'Project':
         project = db.query(Project).filter(Project.id == projectId).first()
         return project
 
@@ -65,6 +69,11 @@ class Project(Base):
         projects = db.query(Project).filter(Project.userid == userId).all()
         return projects
 
+    @staticmethod
+    def getUserProjectsByType(userId, type, db):
+        projects = db.query(Project).filter(Project.userid == userId, Project.type == type).all()
+        return projects
+    
     @staticmethod
     def getUserProject(projectId, userId, db):
         project = db.query(Project).filter(Project.id == projectId, Project.userid == userId).first()

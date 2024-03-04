@@ -112,10 +112,10 @@ class TestUser(TestCase):
     def test_forget_password_email(self, getUserByEmail, send_forget_password_email, encode, save):
         # Given
         from controllers.user import forget_password_email
-        from schemas.User import UserUpdateSchema
+        from schemas.User import UserEmailUpdateSchema
         from entities.User import User
         encode.return_value = {"email": "test@example.com"}
-        payload = UserUpdateSchema(
+        payload = UserEmailUpdateSchema(
             email = "example@example.com"
         )
         getUserByEmail.return_value= User(email="test@example.com")
@@ -240,10 +240,10 @@ class TestUser(TestCase):
     def test_confirmation_email(self, getUserByEmail, encode, send_confirmation_email, save):
         # Given
         from controllers.user import confirmation_email
-        from schemas.User import UserUpdateSchema
+        from schemas.User import UserEmailUpdateSchema
         from entities.User import User
         encode.return_value = {"email": "test@example.com"}
-        payload = UserUpdateSchema(
+        payload = UserEmailUpdateSchema(
             email = "example@example.com"
         )
         user = User()

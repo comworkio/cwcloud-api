@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 class FunctionContent(BaseModel):
     code: str = Field(examples=['function foo(arg): {return "bar " + arg;}'])
@@ -10,3 +10,4 @@ class FunctionContent(BaseModel):
     callback_url: Optional[str]
     callback_authorization_header: Optional[str]
     regexp: Optional[str]
+    env: Optional[Dict[str, str]]

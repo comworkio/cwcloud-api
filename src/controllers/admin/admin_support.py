@@ -1,3 +1,4 @@
+from datetime import datetime
 from urllib.error import HTTPError
 from entities.SupportTicket import SupportTicket
 from entities.User import User
@@ -33,6 +34,8 @@ def add_support_ticket(current_user, payload, db):
         ticket = SupportTicket(**dticket)
         ticket.user_id = user.id
         ticket.gitlab_issue_id = None
+        ticket.created_at = datetime.now().isoformat()
+        ticket.last_update = datetime.now().isoformat()
         ticket.save(db)
         issue_id = add_gitlab_issue(ticket.id, payload.email, payload.subject, payload.message, payload.severity, payload.product)
         SupportTicket.attach_gitlab_issue(ticket.id, issue_id, db)
@@ -107,11 +110,13 @@ def reply_support_ticket(current_user, ticket_id, payload, db):
             new_reply.message = message
             new_reply.status = status
             new_reply.is_admin = True
+            new_reply.change_date = datetime.now().isoformat()
             new_reply.save(db)
             supportTicketReplyJson = json.loads(json.dumps(new_reply, cls = AlchemyEncoder))
             userJson = json.loads(json.dumps(new_reply.user, cls = AlchemyEncoder))
             supportTicketReply = {**supportTicketReplyJson, 'user':userJson}
             add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, message)
+            SupportTicket.updateTicketTime(ticket.id, db)
             return JSONResponse(content = {"reply": supportTicketReply}, status_code = 200)
         return JSONResponse(content = {"message": "successfully updated ticket status"}, status_code = 200)
     except HTTPError as e:

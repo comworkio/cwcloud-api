@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 from asgi_correlation_id import CorrelationIdMiddleware, correlation_id
 
 from restful_resources import import_resources
@@ -15,6 +16,12 @@ from utils.logger import log_msg
 from exceptions.CwHTTPException import CwHTTPException
 from database.postgres_db import dbEngine
 from database.postgres_db import Base
+import logging
+
+logger = logging.getLogger('git')
+logger.setLevel(logging.INFO)
+logger = logging.getLogger('kubernetes')
+logger.setLevel(logging.INFO)
 
 log_msg("INFO", "[main] the application is starting with version = {}".format(os.environ['APP_VERSION']))
 Base.metadata.create_all(bind = dbEngine)
@@ -41,11 +48,16 @@ if os.getenv('APP_ENV') == 'local' or is_true(os.getenv('ENABLE_CORS_ALLOW_ALL')
         allow_headers = ["*"]
     )
 
+instrumentator = Instrumentator()
+instrumentator.instrument(app, metric_namespace='cwcloudapi', metric_subsystem='cwcloudapi')
+instrumentator.expose(app, endpoint='/v1/metrics')
+instrumentator.expose(app, endpoint='/metrics')
+
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     headers = {'x-comwork-cid': correlation_id.get() or "{}".format(uuid4())}
 
-    if (isinstance(exc, CwHTTPException)):
+    if isinstance(exc, CwHTTPException):
         return JSONResponse(content = exc.message, status_code = exc.status_code, headers = headers)
     return await http_exception_handler(request, HTTPException(500, 'Internal server error', headers = headers))
 

@@ -52,3 +52,7 @@ python-barcode
 nkeys
 croniter
 apscheduler
+kubernetes==28.1.0
+GitPython==3.1.40 
+ruff
+prometheus-fastapi-instrumentator

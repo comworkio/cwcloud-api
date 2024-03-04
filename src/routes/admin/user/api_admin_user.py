@@ -1,9 +1,9 @@
 from controllers.admin.admin_user import admin_add_user, admin_delete_user_2fa, admin_get_billable_users, admin_get_user, admin_get_users, admin_remove_user, admin_update_user, admin_update_user_confirmation, admin_update_user_role, admin_get_autopayment_users
-from fastapi import Depends, status, APIRouter
+from fastapi import Depends, APIRouter
 from database.postgres_db import get_db
 from typing import Annotated, Union
 from sqlalchemy.orm import Session
-from schemas.User import UserSchema, UserUpdateSchema, UserAdminUpdateRoleSchema, UserAdminAddSchema
+from schemas.User import UserSchema, UserAdminUpdateSchema, UserAdminUpdateRoleSchema, UserAdminAddSchema
 from middleware.auth_guard import admin_required
 
 
@@ -22,7 +22,7 @@ def get_user_by_id(current_user: Annotated[UserSchema, Depends(admin_required)],
     return admin_get_user(current_user, user_id, db)
 
 @router.put("/{user_id}")
-def update_user_by_id(current_user: Annotated[UserSchema, Depends(admin_required)], user_id: str, payload: UserUpdateSchema, db: Session = Depends(get_db)):
+def update_user_by_id(current_user: Annotated[UserSchema, Depends(admin_required)], user_id: str, payload: UserAdminUpdateSchema, db: Session = Depends(get_db)):
     return admin_update_user(current_user, user_id, payload, db)
 
 @router.delete("/{user_id}")

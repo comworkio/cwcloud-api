@@ -117,13 +117,21 @@ async def handle(msg):
         handle_call=handle_call
       )
 
+      if "env" not in serverless_function['content']:
+        serverless_function['content']['env'] = {}
+
+      env = Environment(loader=BaseLoader())
+      template = env.from_string(main_content)
       if is_user_authenticated(payload):
         log_msg("DEBUG", "[consume][handle] user is authenticated, user_auth_key = {}, user_auth_value = {}".format(payload['content']['user_auth']['header_key'], payload['content']['user_auth']['header_value']))
-        env = Environment(loader=BaseLoader())
-        template = env.from_string(main_content)
         main_content = template.render(
           user_auth_key=payload['content']['user_auth']['header_key'] ,
-          user_auth_value=payload['content']['user_auth']['header_value']
+          user_auth_value=payload['content']['user_auth']['header_value'],
+          env=serverless_function['content']['env']
+        )
+      else:
+        main_content = template.render(
+          env=serverless_function['content']['env']
         )
 
       function_file.write(main_content)

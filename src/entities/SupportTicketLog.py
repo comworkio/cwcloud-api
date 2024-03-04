@@ -9,7 +9,7 @@ class SupportTicketLog(Base):
     is_admin = Column(Boolean, default = False)
     ticket_id = Column(Integer)
     message = Column(Text)
-    change_date = Column(String(100), default = datetime.now().isoformat())
+    change_date = Column(String(100))
     user_id = Column(Integer, ForeignKey("user.id"))
 
     def save(self, db):

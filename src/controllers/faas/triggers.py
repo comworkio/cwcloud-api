@@ -7,6 +7,7 @@ from adapters.AdapterConfig import get_adapter
 from entities.faas.Function import FunctionEntity
 from entities.faas.Trigger import TriggerEntity
 from utils.common import is_empty, is_false, is_not_empty, is_not_numeric, is_true
+from utils.date import is_iso_date_valid
 from utils.faas.functions import is_not_owner
 from utils.faas.owner import get_email_owner, get_owner_id, override_owner_id
 from utils.faas.triggers import is_not_supported_kind
@@ -32,6 +33,21 @@ def add_trigger(payload, current_user, db):
             'message': "The cron expr is invalid",
             'i18n_code': 'cron_expr_invalid'
         }
+    if payload.kind == "schedule":
+        if is_empty(payload.content.execution_time):
+            return {
+                'status': 'ko',
+                'code': 400,
+                'message': "The execution time is mandatory",
+                'i18n_code': 'faas_execution_time_mandatory'
+            }
+        elif is_iso_date_valid(payload.content.execution_time):
+            return {
+                'status': 'ko',
+                'code': 400,
+                'message': "The execution time is not a valid ISO date",
+                'i18n_code': 'faas_execution_time_invalid'
+            }
 
     db_function = db.query(FunctionEntity).filter(FunctionEntity.id == payload.content.function_id)
     function = db_function.first()
@@ -89,7 +105,7 @@ def override_trigger(id, current_user, payload, db):
     else:
         db_trigger = db.query(TriggerEntity).filter(TriggerEntity.id == id, TriggerEntity.owner_id == current_user.id)
 
-    old_trigger = old_trigger.first()
+    old_trigger = db_trigger.first()
     if not old_trigger:
         return {
             'status': 'ko',

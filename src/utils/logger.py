@@ -4,6 +4,8 @@ import logging
 import json
 import sys
 
+from datetime import datetime
+
 from utils.common import is_disabled, is_enabled, is_true
 
 SLACK_WEBHOOK_TPL = "https://hooks.slack.com/services/{}"
@@ -48,7 +50,7 @@ def discord_message(log_level, message, is_public):
         requests.post(DISCORD_WEBHOOK_TPL.format(token), json = data)
 
 def is_level_partof(level, levels):
-    return any(l == "{}".format(level).lower() for l in levels)
+    return any(log == "{}".format(level).lower() for log in levels)
 
 def is_debug(level):
     return is_level_partof(level, ["debug", "notice"])
@@ -89,9 +91,15 @@ else:
     logging.basicConfig(stream = sys.stdout, level = "INFO")
 
 def quiet_log_msg (log_level, message):
-    formatted_log = "[{}] {}".format(log_level, message)
+    vdate = datetime.now().isoformat()
+    formatted_log = "[{}][{}] {}".format(log_level, vdate, message)
     if is_enabled(LOG_FORMAT) and LOG_FORMAT == "json":
-        formatted_log = json.dumps({"body": message, "level": log_level})
+        if isinstance(message, dict):
+            message['level'] = log_level
+            message['time'] = vdate
+            formatted_log = json.dumps(message)
+        else:
+            formatted_log = json.dumps({"body": message, "level": log_level, "time": vdate })
 
     if is_debug(log_level):
         logging.debug(formatted_log)

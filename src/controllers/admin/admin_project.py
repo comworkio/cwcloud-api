@@ -1,20 +1,23 @@
+import json
+
 from urllib.error import HTTPError
 from urllib.parse import unquote
-from entities.Project import Project
-from entities.Instance import Instance
-from utils.common import is_numeric
-from utils.encoder import AlchemyEncoder
-import json
-from utils.gitlab import  create_gitlab_project, delete_gitlab_project, get_gitlab_project_playbooks, attach_default_gitlab_project_to_user, detach_user_gitlab_project
 from fastapi.responses import JSONResponse
 
-def admin_transfer_project (current_user, projectId, payload, db):
+from entities.Project import Project
+from entities.Instance import Instance
+
+from utils.common import is_numeric, is_empty
+from utils.encoder import AlchemyEncoder
+from utils.gitlab import  create_gitlab_project, delete_gitlab_project, get_gitlab_project_playbooks, attach_default_gitlab_project_to_user, detach_user_gitlab_project
+
+def admin_transfer_project (project_id, payload, db):
     try:
         email = payload.email
-        if not is_numeric(projectId):
+        if not is_numeric(project_id):
             return JSONResponse(content = {"error": "Invalid project id"}, status_code = 400)
 
-        project = Project.getProjectById(projectId, db)
+        project = Project.getProjectById(project_id, db)
         if not project:
             return JSONResponse(content = {"error": "project not found", "i18n_code": "204"}, status_code = 404)
 
@@ -44,7 +47,7 @@ def admin_transfer_project (current_user, projectId, payload, db):
     except HTTPError as e:
         return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
 
-def admin_add_project(current_user, payload, db):
+def admin_add_project(payload, db):
     try:
         user_email = payload.email
         project_name = payload.name
@@ -52,18 +55,21 @@ def admin_add_project(current_user, payload, db):
         token = payload.token
         git_username = payload.git_username
         namespace = payload.namespace
+        project_type = payload.type
 
         from entities.User import User
         target_user = User.getUserByEmail(user_email, db)
         if not target_user:
             return JSONResponse(content = {"error": "user not found", "i18n_code": "304"}, status_code = 404)
-        project = create_gitlab_project(project_name, target_user.id, target_user.email, host, git_username, token, namespace, db)
+        if is_empty(project_type):
+            project_type = "vm"
+        project = create_gitlab_project(project_name, target_user.id, target_user.email, host, git_username, token, namespace, project_type, db)
         projectJson = json.loads(json.dumps(project, cls = AlchemyEncoder))
         return JSONResponse(content = projectJson, status_code = 201)
     except HTTPError as e:
         return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
 
-def admin_get_projects(current_user, db):
+def admin_get_projects(db):
     from entities.Project import Project
     projects = Project.getAllProjects(db)
     projectsJson = json.loads(json.dumps(projects, cls = AlchemyEncoder))
@@ -74,12 +80,12 @@ def admin_get_projects(current_user, db):
     populatedInstancesProjects = [{**project, "instances": [instance for instance in user_instancesJson if instance["project_id"] == project["id"] ]} for project in projectsJson]
     return JSONResponse(content = populatedInstancesProjects, status_code = 200)
 
-def admin_get_project(current_user, projectId, db):
+def admin_get_project(project_id, db):
     try:
-        if not is_numeric(projectId):
+        if not is_numeric(project_id):
             return JSONResponse(content = {"error": "Invalid project id"}, status_code = 400)
 
-        project = Project.getProjectById(projectId, db)
+        project = Project.getProjectById(project_id, db)
         if not project:
             return JSONResponse(content = {"error": "project not found", "i18n_code": "204"}, status_code = 404)
 
@@ -93,24 +99,24 @@ def admin_get_project(current_user, projectId, db):
     except HTTPError as e:
         return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
 
-def admin_remove_project(current_user, projectId, db):
+def admin_remove_project(project_id, db):
     try:
-        if not is_numeric(projectId):
+        if not is_numeric(project_id):
             return JSONResponse(content = {"error": "Invalid project id"}, status_code = 400)
 
-        project = Project.getProjectById(projectId, db)
+        project = Project.getProjectById(project_id, db)
         if not project:
             return JSONResponse(content = {"error": "project not found", "i18n_code": "204"}, status_code = 404)
-        project_instances = Instance.getAllActiveInstancesByProject(projectId, db)
+        project_instances = Instance.getAllActiveInstancesByProject(project_id, db)
         if len(project_instances) > 0:
             return JSONResponse(content = {"error": "project still holds active instances", "i18n_code": "205"}, status_code = 400)
-        delete_gitlab_project(projectId, project.gitlab_host, project.access_token)
-        Project.deleteOne(projectId, db)
+        delete_gitlab_project(project_id, project.gitlab_host, project.access_token)
+        Project.deleteOne(project_id, db)
         return JSONResponse(content = {"message" : "project successfully deleted", "i18n_code": "202"}, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
 
-def admin_get_project_by_name(current_user, project_name, db):
+def admin_get_project_by_name(project_name, db):
     try:
         project = Project.getProjectByName(project_name, db)
         if not project:
@@ -124,7 +130,7 @@ def admin_get_project_by_name(current_user, project_name, db):
     except HTTPError as e:
         return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]} , status_code = e.code)
 
-def admin_remove_project_by_name(current_user, project_name, db):
+def admin_remove_project_by_name(project_name, db):
     try:
         project = Project.getProjectByName(project_name, db)
         if not project:
@@ -138,7 +144,7 @@ def admin_remove_project_by_name(current_user, project_name, db):
     except HTTPError as e:
         return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
 
-def admin_get_project_by_url(current_user, project_url, db):
+def admin_get_project_by_url(project_url, db):
     try:
         project = Project.getProjectByUrl(unquote(project_url), db)
         if not project:
@@ -152,7 +158,7 @@ def admin_get_project_by_url(current_user, project_url, db):
     except HTTPError as e:
         return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
 
-def admin_remove_project_by_url(current_user, project_url, db):
+def admin_remove_project_by_url(project_url, db):
     try:
         project = Project.getProjectByUrl(unquote(project_url), db)
         if not project:
@@ -166,7 +172,7 @@ def admin_remove_project_by_url(current_user, project_url, db):
     except HTTPError as e:
         return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
 
-def admin_get_user_projects(current_user, user_id, db):
+def admin_get_user_projects(user_id, db):
     userRegionProjects = Project.getUserProjects(user_id, db)
     userRegionProjectsJson = json.loads(json.dumps(userRegionProjects, cls = AlchemyEncoder))
     return JSONResponse(content = userRegionProjectsJson, status_code = 200)

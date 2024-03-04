@@ -1,0 +1,9 @@
+from urllib.error import HTTPError
+import yaml
+
+def read_uploaded_yaml_file(input:bytes):
+    try:
+        yaml_data = yaml.safe_load(input)
+        return yaml_data
+    except yaml.YAMLError as e:
+        raise HTTPError("208", 400, "Invalid yaml value", hdrs = {"i18n_code": "208"}, fp = None)

@@ -172,7 +172,7 @@ class TestAdminUser(TestCase):
         # Given
         from controllers.admin.admin_user import admin_update_user
         from entities.User import User
-        from schemas.User import UserUpdateSchema, EnabledFeatures
+        from schemas.User import UserAdminUpdateSchema, EnabledFeatures
         userId = 1
         enabled_features = EnabledFeatures(
             billable= False,
@@ -183,7 +183,7 @@ class TestAdminUser(TestCase):
             faasapi= False,
             disable_emails= False
         )
-        payload = UserUpdateSchema(
+        payload = UserAdminUpdateSchema(
             email='john.doe@example.com', 
             is_admin = True, 
             registration_number='1',

@@ -139,10 +139,10 @@ def setup_ansible(user_email, gitlab_project, user_project, instance_name, hashe
     git_username = os.getenv('GIT_USERNAME')
     git_email = os.getenv('GIT_EMAIL')
 
-    if (is_empty(root_password)):
+    if is_empty(root_password):
         root_password = generate_random_bytes(20)
 
-    if (is_empty(access_password)):
+    if is_empty(access_password):
         access_password = generate_random_bytes(20)
 
     root_dns_zone = ""

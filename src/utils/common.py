@@ -17,24 +17,24 @@ def generate_hash_password(password):
     return pwd_context.hash(password)
 
 def is_boolean (var):
-    if (isinstance(var, bool)):
+    if isinstance(var, bool):
         return True
 
     bool_chars = ["true", "false", "ok", "ko", "yes", "no"]
     return var is not None and any(c == "{}".format(var).lower() for c in bool_chars)
 
 def is_not_empty (var):
-    if (isinstance(var, bool)):
+    if isinstance(var, bool):
         return var
-    elif (isinstance(var, int)):
+    elif isinstance(var, int):
         return not var == 0
-    elif (isinstance(var, list)):
+    elif isinstance(var, list):
         return len(var) > 0
     empty_chars = ["", "null", "nil", "false", "none"]
     return var is not None and not any(c == "{}".format(var).lower() for c in empty_chars)
 
 def is_true (var):
-    if (isinstance(var, bool)):
+    if isinstance(var, bool):
         return var
     false_char = ["false", "ko", "no", "off"]
     return is_not_empty(var) and not any(c == "{}".format(var).lower() for c in false_char)
@@ -52,7 +52,7 @@ def is_not_empty_key(vdict, key):
     return not is_empty_key(vdict, key)
 
 def is_numeric (var):
-    if (isinstance(var, int)):
+    if isinstance(var, int):
         return True
     return is_not_empty(var) and str(var).isnumeric()
 
@@ -104,3 +104,27 @@ def is_uuid (var):
 
 def is_not_uuid (var):
     return not is_uuid(var)
+
+def to_snake_case(name):
+   s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+   return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+def convert_dict_keys_to_snake_case(data):
+   if isinstance(data, dict):
+       return {to_snake_case(key): convert_dict_keys_to_snake_case(value) for key, value in data.items()}
+   elif isinstance(data, list):
+       return [convert_dict_keys_to_snake_case(item) for item in data]
+   else:
+       return data
+   
+def to_camel_case(name):
+   return ''.join(word.title() if index_word > 0 else word for index_word, word in enumerate(name.split('_')))
+
+def convert_dict_keys_to_camel_case(data):
+   if isinstance(data, dict):
+       return {to_camel_case(key): convert_dict_keys_to_camel_case(value) for key, value in data.items()}
+   elif isinstance(data, list):
+       return [convert_dict_keys_to_camel_case(item) for item in data]
+   else:
+       return data
+

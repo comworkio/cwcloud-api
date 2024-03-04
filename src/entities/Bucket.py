@@ -85,12 +85,10 @@ class Bucket(Base):
 
     @staticmethod
     def updateInfo(bucket_id, provider, region, bucket_type, status, db):
-        current_date = datetime.now().isoformat()
         db.query(Bucket).filter(Bucket.id == bucket_id).update({"provider": provider, "region": region, "type": bucket_type, "status": status})
         db.commit()
 
     @staticmethod
     def updateType(bucket_id, type, db):
-        current_date = datetime.now().isoformat()
         db.query(Bucket).filter(Bucket.id == bucket_id).update({"type": type})
         db.commit()

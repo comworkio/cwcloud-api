@@ -1,12 +1,15 @@
 import json
+
 from urllib.error import HTTPError
 from datetime import datetime
-from utils.common import is_false
-from utils.parse_date import parse_date
-from utils.encoder import AlchemyEncoder
-from utils.provider import  get_provider_instance_price
+
 from entities.Consumption import Consumption
 from entities.Instance import Instance
+
+from utils.common import is_false
+from utils.date import parse_date
+from utils.encoder import AlchemyEncoder
+from utils.provider import  get_provider_instance_price
 
 def getConsumptionsByDate(from_date, to_date, id, f_get_consumptions, f_get_instance_id, f_get_user_id):
     pfrom_date = parse_date(from_date)

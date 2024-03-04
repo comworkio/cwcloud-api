@@ -44,18 +44,19 @@ class TestAdminEnvironnement(TestCase):
         environment.roles = "test"
         environment.subdomains = "test"
         environment.created_at = "test"
+        environment.type = "vm"
         environment.is_private = True
         getById.return_value = environment
 
         # When
-        result = admin_get_environment(test_current_user, 1, mock_db)
+        result = admin_get_environment(1, mock_db)
         response_status_code = result.__dict__['status_code']
 
         # Then
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"created_at":"test","description":"test","doc_template":"test","environment_template":"test","id":1,"instances":[],"is_private":true,"logo_url":"test","name":"test","path":"test","roles":"test","subdomains":"test"}')
+        self.assertEqual(result.body.decode(), '{"created_at":"test","description":"test","doc_template":"test","environment_template":"test","external_roles":null,"id":1,"instances":[],"is_private":true,"logo_url":"test","name":"test","path":"test","roles":"test","subdomains":"test","type":"vm"}')
 
     @patch('controllers.admin.admin_environment.Environment.getByPath',side_effect = lambda x, y: [] )
     def test_admin_add_environment(self, getByPath):
@@ -72,6 +73,7 @@ class TestAdminEnvironnement(TestCase):
         environment.logo_url = "test"
         environment.environment_template = "test"
         environment.doc_template = "test"
+        environment.type = "vm"
         getByPath.return_value = None
 
         payload = EnvironmentSchema(
@@ -87,17 +89,17 @@ class TestAdminEnvironnement(TestCase):
         )
 
         # When
-        result = admin_add_environment(test_current_user, payload, mock_db)
+        result = admin_add_environment(payload, mock_db)
         response_status_code = result.__dict__['status_code']
 
         # Then
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 201)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"created_at":null,"description":"test","doc_template":"test","environment_template":"test","id":null,"instances":[],"is_private":true,"logo_url":"test","name":"test","path":"test","roles":"test","subdomains":"test"}')
+        self.assertEqual(result.body.decode(), '{"created_at":null,"description":"test","doc_template":"test","environment_template":"test","external_roles":null,"id":null,"instances":[],"is_private":true,"logo_url":"test","name":"test","path":"test","roles":"test","subdomains":"test","type":"vm"}')
 
-    @patch('controllers.admin.admin_environment.Environment.getAll',side_effect = lambda x: [])
-    def test_admin_get_all_environments(self, getAll):
+    @patch('controllers.admin.admin_environment.Environment.getByType',side_effect = lambda x,y: [])
+    def test_admin_get_all_environments(self, getByType):
         # Given  
         from controllers.admin.admin_environment import admin_get_environments 
         from entities.Environment import Environment
@@ -111,10 +113,11 @@ class TestAdminEnvironnement(TestCase):
         environment.environment_template = "test"
         environment.doc_template = "test"
         environment.roles = "test"
-        getAll.return_value = environment
+        environment.type = "vm"
+        getByType.return_value = environment
 
         # When
-        result = admin_get_environments(test_current_user, mock_db)
+        result = admin_get_environments("vm", mock_db)
         response_status_code = result.__dict__['status_code']
 
         # Then
@@ -138,10 +141,11 @@ class TestAdminEnvironnement(TestCase):
         environment.environment_template = "test"
         environment.doc_template = "test"
         environment.roles = "test"
+        environment.type = "vm"
         deleteOne.return_value = environment
 
         # When
-        result = admin_remove_environment(test_current_user, 1, mock_db)
+        result = admin_remove_environment(1, mock_db)
         response_status_code = result.__dict__['status_code']
 
         # Then
@@ -165,10 +169,11 @@ class TestAdminEnvironnement(TestCase):
         environment.subdomains = "subdomains"
         environment.environment_template = "environment_template"
         environment.doc_template = "doc_template"
-        environment.is_private = True       
+        environment.is_private = True 
+        environment.type = "vm"
         updateEnvironment.return_.value = environment
 
-        environmentId = 1
+        environment_id = 1
         payload = EnvironmentSchema(
             name = "test",
             path = "test",
@@ -182,7 +187,7 @@ class TestAdminEnvironnement(TestCase):
         )
 
         # When
-        result = admin_update_environment(test_current_user, environmentId , payload, mock_db)
+        result = admin_update_environment(environment_id, payload, mock_db)
         response_status_code = result.__dict__['status_code']
 
         # Then
@@ -203,7 +208,7 @@ class TestAdminEnvironnement(TestCase):
         getByPath.return_value = None
  
         # When
-        result = admin_import_environment(test_current_user, env_file , mock_db)
+        result = admin_import_environment(env_file , mock_db)
         response_status_code = result.__dict__['status_code']
 
         # Then
@@ -232,4 +237,4 @@ class TestAdminEnvironnement(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"file_name":"environment-None.json","blob":"ewogICAgImNyZWF0ZWRfYXQiOiBudWxsLAogICAgImRlc2NyaXB0aW9uIjogbnVsbCwKICAgICJkb2NfdGVtcGxhdGUiOiBudWxsLAogICAgImVudmlyb25tZW50X3RlbXBsYXRlIjogbnVsbCwKICAgICJpZCI6IG51bGwsCiAgICAiaW5zdGFuY2VzIjogW10sCiAgICAiaXNfcHJpdmF0ZSI6IG51bGwsCiAgICAibG9nb191cmwiOiBudWxsLAogICAgIm5hbWUiOiBudWxsLAogICAgInBhdGgiOiBudWxsLAogICAgInJvbGVzIjogbnVsbCwKICAgICJzdWJkb21haW5zIjogbnVsbAp9"}')
+        self.assertEqual(result.body.decode(), '{"file_name":"environment-None.json","blob":"ewogICAgImNyZWF0ZWRfYXQiOiBudWxsLAogICAgImRlc2NyaXB0aW9uIjogbnVsbCwKICAgICJkb2NfdGVtcGxhdGUiOiBudWxsLAogICAgImVudmlyb25tZW50X3RlbXBsYXRlIjogbnVsbCwKICAgICJleHRlcm5hbF9yb2xlcyI6IG51bGwsCiAgICAiaWQiOiBudWxsLAogICAgImluc3RhbmNlcyI6IFtdLAogICAgImlzX3ByaXZhdGUiOiBudWxsLAogICAgImxvZ29fdXJsIjogbnVsbCwKICAgICJuYW1lIjogbnVsbCwKICAgICJwYXRoIjogbnVsbCwKICAgICJyb2xlcyI6IG51bGwsCiAgICAic3ViZG9tYWlucyI6IG51bGwsCiAgICAidHlwZSI6IG51bGwKfQ=="}')

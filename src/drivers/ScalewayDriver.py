@@ -85,8 +85,8 @@ class ScalewayDriver(ProviderDriver):
             region_zone = "{}-{}".format(instance_region, instance_zone)
             existing_instance = scaleway.get_instance_server(hashed_instance_name)
             existingInstanceIp = scaleway.get_instance_ip(existing_instance.public_ip)
-            imported_instanceIp = scaleway.InstanceIp("publicIp", opts = ResourceOptions(import_ = existingInstanceIp.id))
-            imported_instance = scaleway.InstanceServer(hashed_instance_name,
+            scaleway.InstanceIp("publicIp", opts = ResourceOptions(import_ = existingInstanceIp.id))
+            scaleway.InstanceServer(hashed_instance_name,
                                     image = existing_instance.image,
                                     name = hashed_instance_name,
                                     type = existing_instance.type,

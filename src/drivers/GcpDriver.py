@@ -119,7 +119,7 @@ class GcpDriver(ProviderDriver):
 
     def create_registry(self, user_email, registry_id, hashed_name, region, type):
         def create_pulumi_program():
-            registry =  gcp.artifactregistry.Repository(hashed_name,
+            gcp.artifactregistry.Repository(hashed_name,
                  description = "Docker repository",
                  format = "DOCKER",
                  location = region,

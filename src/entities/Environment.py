@@ -1,11 +1,14 @@
 from datetime import datetime
-from sqlalchemy import Column, String, Boolean, Integer
+from sqlalchemy import Column, String, Boolean, Integer, Text, CheckConstraint
 from sqlalchemy.orm import relationship
 from database.postgres_db import Base
 from utils.list import marshall_list_string
 
 class Environment(Base):
     __tablename__ = "environment"
+    __table_args__ = (
+        CheckConstraint('type IN ("vm", "k8s")', name='type_check'),
+    )
     id = Column(Integer, primary_key = True)
     name = Column(String(100))
     path = Column(String(100))
@@ -16,6 +19,8 @@ class Environment(Base):
     environment_template = Column(String(3000))
     doc_template = Column(String(3000))
     roles = Column(String(300))
+    external_roles = Column(Text)
+    type = Column(String(25),default = "vm", nullable = False)
     subdomains = Column(String(300))
     instances = relationship('Instance', backref = 'environment', lazy = "select")
 
@@ -30,7 +35,7 @@ class Environment(Base):
 
     @staticmethod
     def getAvailableEnvironmentById(envId, db):
-        env = db.query(Environment).filter(Environment.id == envId, Environment.is_private == False).first()
+        env = db.query(Environment).filter(Environment.id == envId, Environment.is_private is False).first()
         return env
 
     @staticmethod
@@ -44,10 +49,20 @@ class Environment(Base):
         return env
 
     @staticmethod
+    def getByType(type, db):
+        env = db.query(Environment).filter(Environment.type == type).all()
+        return env
+    
+    @staticmethod
     def getAllAvailableEnvironments(db):
-        env = db.query(Environment).filter(Environment.is_private == False).all()
+        env = db.query(Environment).filter(Environment.is_private is False).all()
         return env
 
+    @staticmethod
+    def getAllAvailableEnvironmentsByType(type, db):
+        env = db.query(Environment).filter(Environment.is_private is False, Environment.type == type).all()
+        return env
+    
     @staticmethod
     def deleteOne(envId, db):
         db.query(Environment).filter(Environment.id == envId).delete()

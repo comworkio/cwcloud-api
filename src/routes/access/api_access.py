@@ -43,7 +43,7 @@ def create_access(current_user: Annotated[UserSchema, Depends(get_current_active
     if access_object:
         return JSONResponse(content = {"error": "access already exists", "i18n_code": "304"}, status_code = 400)
 
-    if(object_type == "project"):
+    if object_type == "project":
         from entities.Project import Project
         project = Project.getById(object_id, db)
         attach_default_gitlab_project_to_user(project.id, user.email)

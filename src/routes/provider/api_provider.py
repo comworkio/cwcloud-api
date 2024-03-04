@@ -24,7 +24,7 @@ def get_provider_regions(provider: str):
         return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
 
 @router.get("/{provider}/instance", status_code = status.HTTP_200_OK)
-def get_provider_instances(provider: str):
+def get_instances_by_provider(provider: str):
     try:
         availability = get_provider_available_instances(provider)
         return {

@@ -34,9 +34,6 @@ class UserRegisterSchema(BaseModel):
     contact_info: Optional[str]
 
 
-class UserUpdateSchema(BaseModel):
-    email: str
-
 class UserPaymentSchema(BaseModel):
     status: str
 
@@ -71,8 +68,12 @@ class EnabledFeatures(BaseModel):
     cwaiapi: Optional[bool] = False
     faasapi: Optional[bool] = False
     disable_emails: Optional[bool] = False
+    k8sapi: Optional[bool] = False
 
-class UserUpdateSchema(BaseModel):
+class UserEmailUpdateSchema(BaseModel):
+    email: str
+
+class UserAdminUpdateSchema(BaseModel):
     email: str
     is_admin: Optional[bool] = False
     registration_number: Optional[str]

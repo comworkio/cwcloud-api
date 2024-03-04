@@ -16,7 +16,7 @@ from middleware.auth_guard import admin_required
 
 from utils.common import is_false, is_not_empty
 from utils.flag import is_flag_disabled, is_flag_enabled
-from utils.parse_date import parse_date
+from utils.date import parse_date
 from utils.invoice import get_invoice_ref
 from utils.logger import log_msg
 from utils.mail import send_invoice_email

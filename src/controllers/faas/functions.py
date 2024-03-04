@@ -35,7 +35,6 @@ def add_function(payload, current_user, db):
     db.add(new_function)
     db.commit()
     db.refresh(new_function)
-
     return {
         'status': 'ok',
         'code': 201,

@@ -1,6 +1,6 @@
 from datetime import datetime
 from unittest import TestCase
-from utils.parse_date import parse_date
+from utils.date import parse_date
 
 class TestParseDate(TestCase):
     def test_date_nominal(self):

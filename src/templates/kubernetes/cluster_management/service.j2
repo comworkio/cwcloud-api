@@ -1,0 +1,60 @@
+{% if apiVersion %}
+apiVersion: {{ apiVersion }}
+{% else %}
+apiVersion: v1
+{% endif %}
+kind: Service
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace}}
+  {% if labels %}
+  labels:
+    {% for key, value in labels.items() %}
+    {{ key }}: {{ value }}
+    {% endfor %}
+  {% endif %}
+  {% if annotations %}
+  annotations:
+    {% for key, value in annotations.items() %}
+    {{ key }}: {{ value }}
+    {% endfor %}
+  {% endif %}
+spec:
+  type: {{ type }}
+
+  {% if ports %}
+  ports:
+    {% for item in ports %}
+    - port: {{ item.port }}
+      name: {{ item.name }}
+      protocol: {{ item.protocol }}
+      targetPort: {{ item.targetPort }}
+    {% endfor %}
+  {% endif %}
+
+  {% if sessionAffinity|lower == 'None'|lower %}
+  sessionAffinity: None
+  {% else %}
+  sessionAffinity: {{ sessionAffinity }}
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: {{affinityConfig_clientIP_timeout}}
+  {% endif %}
+
+  {% if externalIPs %}
+  externalIPs:
+    {% for ip in externalIPs %}
+    - {{ip}}
+    {% endfor %}
+  {% endif %}
+
+  {% if clusterIP %}
+  clusterIP: {{clusterIP}}
+  {% endif %}
+
+  {% if selector %}
+  selector:
+  {% for key, value in selector.items() %}
+    {{ key }}: {{ value }}
+  {% endfor %}
+  {% endif %}

@@ -1,5 +1,5 @@
 from fastapi import Depends, APIRouter
-from typing import Annotated
+from typing import Annotated, Literal
 from sqlalchemy.orm import Session
 
 from schemas.User import UserSchema
@@ -11,8 +11,8 @@ from controllers.project import add_project, delete_project, delete_project_by_n
 router = APIRouter()
 
 @router.get("")
-def get_all_projects(current_user: Annotated[UserSchema, Depends(get_current_active_user)], db: Session = Depends(get_db)):
-    return get_projects(current_user, db)
+def get_all_projects(current_user: Annotated[UserSchema, Depends(get_current_active_user)],type: Literal['vm','k8s','all'] = "all" , db: Session = Depends(get_db)):
+    return get_projects(current_user, db, type)
 
 @router.post("")
 def add_new_project(current_user: Annotated[UserSchema, Depends(get_current_active_user)], payload: ProjectSchema, db: Session = Depends(get_db)):

@@ -9,5 +9,5 @@ def generate_functional_ex():
     raise CwHTTPException(message = {"error": "functional error test", "i18n_code": "functional_error"}, status_code = 400)
 
 @router.get("/500")
-def generate_functional_ex():
+def generate_technical_ex():
     raise Exception("technical error test")

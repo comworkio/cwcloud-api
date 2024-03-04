@@ -3,7 +3,7 @@ import json
 
 from datetime import datetime, timedelta
 from urllib.error import HTTPError
-from jose.exceptions import ExpiredSignatureError, JOSEError
+from jose.exceptions import ExpiredSignatureError, JOSEError, JWTError
 
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
@@ -220,10 +220,10 @@ def confirm_user_account(token, db):
         return JSONResponse(content = {"email": user.email, "message": "user successfully confirmed", "i18n_code": "303"}, status_code = 200)
     except HTTPException as e:
         return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
-    except jwt.exceptions.DecodeError as e:
+    except JWTError as e:
         log_msg("WARN", "[user][confirm_user_account] invalid jwt token :{}".format(e))
         return JSONResponse(content = {"error": "invalid jwt token", "i18n_code": "313"}, status_code = 400)
-    except jose.exceptions.ExpiredSignatureError as e:
+    except ExpiredSignatureError:
         return JSONResponse(content = {"error": "user verification failed", "i18n_code": "308"}, status_code = 400)
     except Exception as e:
         log_msg("ERROR", "[user][confirm_user_account] e.type = {}, e.msg = {}".format(type(e), e))
@@ -263,11 +263,11 @@ def get_payment_methods(current_user, db):
     user = User.getUserById(current_user.id, db)
     return JSONResponse(content = {"payment_method": listPaymentMethods(user)}, status_code = 200)
 
-def retrievePaymentMethod(payment_method):
-    return PAYMENT_ADAPTER().retrieve_payment_method(payment_method)
-
 def attachPaymentMethodWithUser(payment_method, user):
     return PAYMENT_ADAPTER().attach_payment_method(payment_method, user)
+
+def retrievePaymentMethod(payment_method_id):
+    return PAYMENT_ADAPTER().retrieve_payment_method(payment_method_id)
 
 def add_payment_method(current_user, payload, db):
     payment_method = payload.payment_method
@@ -300,9 +300,6 @@ def remove_payment_method(current_user, payment_method_id, db):
         return JSONResponse(content = {"error": "payment method not found", "i18n_code": ""}, status_code = 404)
 
     return JSONResponse(content = {"message": "payment method successfully removed"}, status_code = 204)
-
-def retrievePaymentMethod(payment_method_id):
-    return PAYMENT_ADAPTER().retrieve_payment_method(payment_method_id)
 
 def update_payment_method(current_user, payment_method_id, db):
     if is_empty(retrievePaymentMethod(payment_method_id)):

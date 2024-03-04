@@ -12,41 +12,40 @@ router = APIRouter()
 
 @router.post("")
 def add_project(current_user: Annotated[UserSchema, Depends(admin_required)], payload: ProjectAdminSchema, db: Session = Depends(get_db)):
-    return admin_add_project(current_user, payload, db)
+    return admin_add_project(payload, db)
 
 @router.get("")
 def get_all_projects(current_user: Annotated[UserSchema, Depends(admin_required)], db: Session = Depends(get_db)):
-    return admin_get_projects(current_user, db)
-
+    return admin_get_projects(db)
 
 @router.post("/{project_id}/transfer")
 def transfer_project(current_user: Annotated[UserSchema, Depends(admin_required)], project_id: str, payload: ProjectTransferSchema, db: Session = Depends(get_db)):
-    return admin_transfer_project(current_user, project_id, payload, db)
+    return admin_transfer_project(project_id, payload, db)
 
 @router.get("/{project_id}")
 def get_project_by_id(current_user: Annotated[UserSchema, Depends(admin_required)], project_id: str, db: Session = Depends(get_db)):
-    return admin_get_project(current_user, project_id, db)
+    return admin_get_project(project_id, db)
 
 @router.delete("/{project_id}")
 def delete_project_by_id(current_user: Annotated[UserSchema, Depends(admin_required)], project_id: str, db: Session = Depends(get_db)):
-    return admin_remove_project(current_user, project_id, db)
+    return admin_remove_project(project_id, db)
 
 @router.get("/name/{project_name}")
 def get_project_by_name(current_user: Annotated[UserSchema, Depends(admin_required)], project_name: str, db: Session = Depends(get_db)):
-    return admin_get_project_by_name(current_user, project_name, db)
+    return admin_get_project_by_name(project_name, db)
 
 @router.delete("/name/{project_name}")
 def delete_project_by_name(current_user: Annotated[UserSchema, Depends(admin_required)], project_name: str, db: Session = Depends(get_db)):
-    return admin_remove_project_by_name(current_user, project_name, db)
+    return admin_remove_project_by_name(project_name, db)
 
 @router.get("/url/{project_url}")
 def get_project_by_url(current_user: Annotated[UserSchema, Depends(admin_required)], project_url: str, db: Session = Depends(get_db)):
-    return admin_get_project_by_url(current_user, project_url, db)
+    return admin_get_project_by_url(project_url, db)
 
 @router.delete("/url/{project_url}")
 def delete_project_by_url(current_user: Annotated[UserSchema, Depends(admin_required)], project_url: str, db: Session = Depends(get_db)):
-    return admin_remove_project_by_url(current_user, project_url, db)
+    return admin_remove_project_by_url(project_url, db)
 
 @router.get("/user/{user_id}")
 def get_all_user_projects(current_user: Annotated[UserSchema, Depends(admin_required)], user_id: str, db: Session = Depends(get_db)):
-    return admin_get_user_projects(current_user, user_id, db)
+    return admin_get_user_projects(user_id, db)

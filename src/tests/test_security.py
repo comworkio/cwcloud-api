@@ -25,17 +25,6 @@ class TestSecurity(TestCase):
 
     def test_check_password_missing_lower(self):
         # Given
-        password = "PASSWORD123$"
-
-        # When
-        check = check_password(password)
-
-        # Then
-        self.assertEqual(check['status'], False)
-        self.assertEqual(check['i18n_code'], 'password_no_lower')
-
-    def test_check_password_missing_lower(self):
-        # Given
         password = "PASSWORD$"
 
         # When

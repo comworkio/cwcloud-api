@@ -22,7 +22,8 @@ WORKDIR /app
 
 RUN apt update && \
     apt upgrade -y && \
-    apt install -y wkhtmltopdf
+    apt install -y wkhtmltopdf && \
+    apt-get install -y git
 
 RUN curl -fsSL https://get.pulumi.com | sh
 ENV PATH="/root/.pulumi/bin:${PATH}"
@@ -83,3 +84,9 @@ FROM api AS unit_tests
 WORKDIR /app/src
 
 CMD ["python", "-m", "unittest", "discover", "-s", "./tests", "-p", "test_*.py", "-v"]
+
+FROM api AS linter
+
+WORKDIR /app/src
+
+CMD ["ruff", "check", "--fix", "."]

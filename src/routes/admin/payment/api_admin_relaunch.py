@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 router = APIRouter()
 
 @router.post("/{user_email}")
-def relaunch(current_user: Annotated[UserSchema, Depends(admin_required)], user_email: str, payload: PaymentRelaunchSchema, db: Session = Depends(get_db)):
+def relaunch_payment(current_user: Annotated[UserSchema, Depends(admin_required)], user_email: str, payload: PaymentRelaunchSchema, db: Session = Depends(get_db)):
     invoice_id = payload.invoice_id
 
     from entities.User import User

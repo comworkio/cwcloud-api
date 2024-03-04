@@ -9,3 +9,4 @@ class TriggerContent(BaseModel):
     name: str
     args: List[InvocationArgument]
     cron_expr: Optional[str]
+    execution_time: Optional[str]

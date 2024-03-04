@@ -43,13 +43,11 @@ class Registry(Base):
 
     @staticmethod
     def updateInfo(id, provider, region, registry_type, status, root_dns_zone, db):
-        current_date = datetime.now().isoformat()
         db.query(Registry).filter(Registry.id == id).update({"provider": provider, "region": region, "type": registry_type, "status": status, "root_dns_zone": root_dns_zone})
         db.commit()
 
     @staticmethod
     def updateType(id, type, db):
-        current_date = datetime.now().isoformat()
         db.query(Registry).filter(Registry.id == id).update({"type": type})
         db.commit()
 

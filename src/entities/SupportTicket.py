@@ -11,8 +11,8 @@ class SupportTicket(Base):
     selected_product = Column(String(200))
     subject = Column(String(200))
     message = Column(Text)
-    created_at = Column(String(100), default = datetime.now().isoformat())
-    last_update = Column(String(100), default = datetime.now().isoformat())
+    created_at = Column(String(100))
+    last_update = Column(String(100))
     gitlab_issue_id = Column(Integer)
 
     def save(self, db):
@@ -43,6 +43,12 @@ class SupportTicket(Base):
     def updateTicketStatus(ticket_id, status, db):
         udpated_at = datetime.now().isoformat()
         db.query(SupportTicket).filter(SupportTicket.id == ticket_id).update({"status": status, "last_update": udpated_at})
+        db.commit()
+
+    @staticmethod
+    def updateTicketTime(ticket_id, db):
+        udpated_at = datetime.now().isoformat()
+        db.query(SupportTicket).filter(SupportTicket.id == ticket_id).update({"last_update": udpated_at})
         db.commit()
 
     @staticmethod

@@ -124,7 +124,7 @@ class AwsDriver(ProviderDriver):
 
     def create_bucket(self, user_email, bucket_id, hashed_bucket_name, region, bucket_type):
         def create_pulumi_program():
-            bucket = aws.s3.Bucket(resource_name = hashed_bucket_name, acl = bucket_type if bucket_type == "private" else None, hosted_zone_id = region, tags = {"Name": hashed_bucket_name})
+            aws.s3.Bucket(resource_name = hashed_bucket_name, acl = bucket_type if bucket_type == "private" else None, hosted_zone_id = region, tags = {"Name": hashed_bucket_name})
         aws_driver_access_key_id = get_driver_access_key_id()
         aws_driver_secret_access_key = get_driver_secret_access_key()
         stack = auto.create_or_select_stack(stack_name = hashed_bucket_name,
@@ -135,7 +135,7 @@ class AwsDriver(ProviderDriver):
         stack.set_config("aws:secretKey", auto.ConfigValue(aws_driver_secret_access_key))
         stack.set_config("aws:region", auto.ConfigValue(region))
         try:
-            up_res = stack.up()
+            stack.up()
         except Exception as e:
             log_msg("ERROR", "[AwsDriver][create_bucket] unexpected exception : e = {}".format(e))
 

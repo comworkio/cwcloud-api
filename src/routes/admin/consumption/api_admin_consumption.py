@@ -1,6 +1,6 @@
 from urllib.error import HTTPError
 from utils.common import is_false
-from utils.parse_date import parse_date
+from utils.date import parse_date
 from utils.consumption import generate_instance_consumption, generate_user_consumptions
 from utils.consumption import getUserConsumptionsByDate, getInstanceConsumptionsByDate
 from fastapi import Depends, APIRouter, Query

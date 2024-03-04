@@ -1,11 +1,17 @@
-from urllib.error import HTTPError
-from utils.common import is_empty, is_numeric
-from utils.encoder import AlchemyEncoder
 import json
+
+from urllib.error import HTTPError
+
+from fastapi.responses import JSONResponse
+
 from entities.Project import Project
 from entities.Instance import Instance
+from entities.kubernetes.Deployment import Deployment
+from entities.Environment import Environment
+
+from utils.common import is_empty, is_numeric, is_true
+from utils.encoder import AlchemyEncoder
 from utils.gitlab import create_gitlab_project, delete_gitlab_project, get_gitlab_project_playbooks, attach_default_gitlab_project_to_user, detach_user_gitlab_project
-from fastapi.responses import JSONResponse
 
 def transfer_project(current_user, payload, projectId, db):
     try:
@@ -45,26 +51,46 @@ def add_project(current_user, payload, db):
             return JSONResponse(content = {"error": "project name is missing", "i18n_code": "207"}, status_code = 400)
         if not project_name or project_name == "":
             return JSONResponse(content = {"error": "project name is missing", "i18n_code": "207"}, status_code = 400)
-
-        project = create_gitlab_project(project_name, current_user.id, current_user.email, payload.host, payload.git_username, payload.token, payload.namespace, db)
+        project_type = payload.type
+        if is_empty(project_type):
+            project_type = "vm"
+        project = create_gitlab_project(project_name, current_user.id, current_user.email, payload.host, payload.git_username, payload.token, payload.namespace, project_type, db)
         projectJson = json.loads(json.dumps(project, cls = AlchemyEncoder))
         return JSONResponse(content = projectJson, status_code = 201)
     except HTTPError as e:
         return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
 
-def get_projects(current_user, db):
-    projects = Project.getUserProjects(current_user.id, db)
+def get_projects(current_user, db, type: str = "all"):
+    projects = []
+    if type == "all":
+        projects = Project.getUserProjects(current_user.id, db)
+    else:
+        projects = Project.getUserProjectsByType(current_user.id,type, db)
+
     from entities.Access import Access
     other_projects_access = Access.getUserAccessesByType(current_user.id, "project", db)
     other_project_ids = [access.object_id for access in other_projects_access]
     other_projects = Project.findProjects(other_project_ids, db)
     projects.extend(other_projects)
     projectsJson = json.loads(json.dumps(projects, cls = AlchemyEncoder))
-    from entities.Instance import Instance
-    user_instances = Instance.getActiveUserInstances(current_user.id, db)
-    user_instancesJson = json.loads(json.dumps(user_instances, cls = AlchemyEncoder))
-    populatedInstancesProjects = [{**project, "instances": [instance for instance in user_instancesJson if instance["project_id"] == project["id"] ]} for project in projectsJson]
-    return JSONResponse(content = populatedInstancesProjects, status_code = 200)
+    if type == "vm":
+        from entities.Instance import Instance
+        user_instances = Instance.getActiveUserInstances(current_user.id, db)
+        user_instancesJson = json.loads(json.dumps(user_instances, cls = AlchemyEncoder))
+        populatedProjects = [{**project, "instances": [instance for instance in user_instancesJson if instance["project_id"] == project["id"] ]} for project in projectsJson]
+    else:
+        for project in projectsJson:
+            deployment = Deployment.getFirstByProject(project["id"], db)
+            project["environment"] = None
+            if is_true(deployment):
+                environemnt = Environment.getById(deployment.env_id, db)
+                project["environment"] = {
+                    "id": environemnt.id,
+                    "name": environemnt.name,
+                }
+
+        populatedProjects = [{**project, "instances": [] } for project in projectsJson]
+    return JSONResponse(content = populatedProjects, status_code = 200)
 
 def get_project(current_user, projectId, db):
     try:
@@ -77,11 +103,17 @@ def get_project(current_user, projectId, db):
             if not access:
                 return JSONResponse(content = {"error": "project not found", "i18n_code": "204"}, status_code = 404)
             project = Project.getProjectById(access.object_id, db)
-        playbooks = get_gitlab_project_playbooks(project.id, project.gitlab_host, project.access_token)
         projectJson = json.loads(json.dumps(project, cls = AlchemyEncoder))
-        instancesJson = json.loads(json.dumps(project.instances, cls = AlchemyEncoder))
-        filteredInstances = [instance for instance in instancesJson if not instance["status"] == "deleted"]
-        project_response = {**projectJson, "playbooks": playbooks, "instances": filteredInstances}
+
+        if project.type == "vm":
+            playbooks = get_gitlab_project_playbooks(project.id, project.gitlab_host, project.access_token)
+            instancesJson = json.loads(json.dumps(project.instances, cls = AlchemyEncoder))
+            filteredInstances = [instance for instance in instancesJson if not instance["status"] == "deleted"]
+            project_response = {**projectJson, "playbooks": playbooks, "instances": filteredInstances}
+        else:
+            deployments = Deployment.getAllByProject(project.id, db)
+            deploymentsJson = json.loads(json.dumps(deployments, cls = AlchemyEncoder))
+            project_response = {**projectJson, "deployments": deploymentsJson}
         return JSONResponse(content = project_response, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)

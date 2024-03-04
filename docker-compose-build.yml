@@ -37,3 +37,12 @@ services:
       - ./cloud_environments_prod.yml:/app/cloud_environments.yml
     env_file:
       - .env
+  comwork_cloud_linter:
+    image: cwcloud-linter:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: linter
+    env_file:
+      - .env
+

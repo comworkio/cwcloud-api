@@ -66,6 +66,7 @@ class TestInstance(TestCase):
         project.gitlab_username = "amirghedira"
         project.gitlab_token = "TOKEN"
         project.gitlab_project_id = "1"
+        project.type = "vm"
         project.id = 1
 
         instance.environment = environment
@@ -84,7 +85,7 @@ class TestInstance(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":1,"hash":"aabbcc","id":1,"ip_address":"0.0.0.0","modification_date":null,"name":"test-instance","project_id":1,"provider":"scaleway","region":"fr-par","root_dns_zone":null,"status":"active","type":"DEV1-S","user":null,"user_id":1,"zone":"comwork.cloud","environment":"test_environment","path":"environemnt_path","project":{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"name":"test_project","namespace_id":null,"url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}}')
+        self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":1,"hash":"aabbcc","id":1,"ip_address":"0.0.0.0","modification_date":null,"name":"test-instance","project_id":1,"provider":"scaleway","region":"fr-par","root_dns_zone":null,"status":"active","type":"DEV1-S","user":null,"user_id":1,"zone":"comwork.cloud","environment":"test_environment","path":"environemnt_path","project":{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}}')
     
     @patch('entities.User.User.getUserById')
     @patch('entities.Environment.Environment.getByPath')

@@ -80,6 +80,14 @@ Here's how to run the unit test locally:
 docker-compose -f docker-compose-build.yml up --build --abort-on-container-exit comwork_cloud_tests
 ```
 
+## Linter
+
+For our project, we're using `ruff` the fastest python linter. Here's how to run it locally:
+
+```shell
+docker-compose -f docker-compose-build.yml up --build --abort-on-container-exit comwork_cloud_linter
+```
+
 ## Documentation
 
 The restful API documentation is available here: https://doc.cloud.comwork.io/docs/tutorials/api/

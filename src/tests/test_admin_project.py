@@ -14,7 +14,7 @@ class TestAdminProject(TestCase):
         from controllers.admin.admin_project import admin_get_projects
 
         # When
-        result = admin_get_projects(test_current_user, mock_db)
+        result = admin_get_projects(mock_db)
         response_status_code = result.__dict__['status_code']
 
         # Then
@@ -39,17 +39,18 @@ class TestAdminProject(TestCase):
         new_project.gitlab_username = "amirghedira"
         new_project.gitlab_token = "TOKEN"
         new_project.gitlab_project_id = "1"
+        new_project.type = "vm"
         getProjectById.return_value = new_project
 
         # When
-        result = admin_get_project(test_current_user, project_id, mock_db)
+        result = admin_get_project(project_id, mock_db)
         response_status_code = result.__dict__['status_code']
     
         # Then
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null,"playbooks":[]}')
+        self.assertEqual(result.body.decode(), '{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null,"playbooks":[]}')
 
     @patch('entities.User.User.getUserByEmail')
     @patch('entities.Project.Project.save')
@@ -78,22 +79,24 @@ class TestAdminProject(TestCase):
         new_project.gitlab_username = "amirghedira"
         new_project.gitlab_token = "TOKEN"
         new_project.gitlab_project_id = "1"
+        new_project.type = "vm"
         create_gitlab_project_mock.return_value = new_project
 
         payload = ProjectAdminSchema(
             name = "test_project",
-            email = "username@email.com"
+            email = "username@email.com",
+            type = "vm"
         )
 
         # When
-        result = admin_add_project(test_current_user, payload, mock_db)
+        result = admin_add_project(payload, mock_db)
         response_status_code = result.__dict__['status_code']
 
         # Then
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 201)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(),'{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}')
+        self.assertEqual(result.body.decode(),'{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}')
 
     @patch('controllers.admin.admin_project.delete_gitlab_project', side_effect = lambda x, y, z : "" )
     @patch('entities.Project.Project.deleteOne')
@@ -116,7 +119,7 @@ class TestAdminProject(TestCase):
         getProjectById.return_value = project
 
         # When
-        result = admin_remove_project(test_current_user, project_id, mock_db)
+        result = admin_remove_project(project_id, mock_db)
         response_status_code = result.__dict__['status_code']
        
         # Then

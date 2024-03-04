@@ -1,0 +1,36 @@
+{% if apiVersion %}
+apiVersion: {{ apiVersion }}
+{% else %}
+apiVersion: v1
+{% endif %}
+kind: ConfigMap
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace}}
+  {% if labels %}
+  labels:
+    {% for key, value in labels.items() %}
+    {{ key }}: {{ value }}
+    {% endfor %}
+  {% endif %}
+  {% if annotations %}
+  annotations:
+    {% for key, value in annotations.items() %}
+    {{ key }}: {{ value }}
+    {% endfor %}
+  {% endif %}
+{% if binaryData %}
+binaryData:
+  {% for key, value in binaryData.items() %}
+  {{ key }}: {{ value }}
+  {% endfor %}
+{% endif %}
+{% if data %}
+data:
+  {% for key, value in data.items() %}
+  {{ key }}: {{ value }}
+  {% endfor %}
+{% endif %}
+{% if immutable %}
+immutable: {{ immutable }}
+{% endif %}

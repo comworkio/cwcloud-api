@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List, Union
-
+from schemas.Kubernetes import ExternalChart
 class EnvironmentSchema(BaseModel):
     name: str
     path: str
@@ -11,3 +11,11 @@ class EnvironmentSchema(BaseModel):
     subdomains: Optional[Union[str, List[str]]] = []
     is_private: bool
     logo_url: Optional[str] = None
+
+class K8SEnvironmentSchema(BaseModel):
+    name: str
+    description: str
+    logo_url: str
+    is_private: bool
+    charts: str
+    external_charts: Optional[list[ExternalChart]] = None

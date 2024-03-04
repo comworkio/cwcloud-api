@@ -12,7 +12,7 @@ def parse_date(vdate):
     if isinstance(vdate, dict):
         return vdate if 'status' in vdate and 'value' in vdate else { 'status': False, 'value': vdate }
 
-    if (isinstance(vdate, datetime)):
+    if isinstance(vdate, datetime):
         return {'status': True, 'value': vdate}
 
     simple_date_regexp = r'^[0-9]{4,}\-[0-9]{1,}\-[0-9]{1,}$'
@@ -21,3 +21,7 @@ def parse_date(vdate):
         return {'status': True, 'value': datetime.strptime(fdate, "%Y-%m-%d")}
     else:
         return {'status': False, 'value': fdate}
+
+def is_iso_date_valid(date):
+    pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\+\d{2}:\d{2})?$'
+    return bool(re.match(pattern, date))

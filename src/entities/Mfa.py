@@ -29,11 +29,6 @@ class Mfa(Base):
         return method
 
     @staticmethod
-    def updateUserMfaMethod(user_id, type, otp_code, db):
-        db.query(Mfa).filter(Mfa.user_id == user_id, Mfa.type == type).update({"otp_code": otp_code})
-        db.commit()
-
-    @staticmethod
     def deleteOne(method_id, db):
         db.query(Mfa).filter(Mfa.id == method_id).delete()
         db.commit()

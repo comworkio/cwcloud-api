@@ -1,6 +1,6 @@
 from utils.common import is_not_empty
 
-_supported_triggers_kinds = ["cron"]
+_supported_triggers_kinds = ["cron", "schedule"]
 
 def is_supported_kind (kind):
     return is_not_empty(kind) and any(k == "{}".format(kind).lower() for k in _supported_triggers_kinds)

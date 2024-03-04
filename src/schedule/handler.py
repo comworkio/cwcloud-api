@@ -1,6 +1,5 @@
 from adapters.AdapterConfig import get_adapter
-from schedule.crontabs import reinit_crontabs
-from utils.common import is_not_empty
+from schedule.crontabs import init_triggered_functions
 from utils.logger import log_msg
 
 pubsub_adapter = get_adapter("pubsub")
@@ -12,4 +11,6 @@ async def handle(msg):
         return
 
     log_msg("INFO", "[scheduler][handle] there's a change on the crons: {}, reset everything from database".format(payload))
-    reinit_crontabs()
+    
+    init_triggered_functions()
+
