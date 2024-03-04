@@ -21,7 +21,7 @@ class Deployment(Base):
     def delete(self, db):
         db.delete(self)
         db.commit()
-        
+
     @staticmethod
     def findOne(id, db) -> "Deployment":
         app = db.query(Deployment).filter(Deployment.id == id).first()
@@ -31,34 +31,33 @@ class Deployment(Base):
     def getAll(db):
         apps = db.query(Deployment).all()
         return apps
-    
+
     @staticmethod
     def getAllByClusterId(cluster_id, db) -> list["Deployment"]:
         apps = db.query(Deployment).filter(Deployment.cluster_id == cluster_id).all()
         return apps
-    
+
     @staticmethod
     def getAllByUser(user_id, db) -> list["Deployment"]:
         apps = db.query(Deployment).filter(Deployment.user_id == user_id).all()
         return apps
-    
+
     @staticmethod
     def getAllByProject(project_id, db) -> list["Deployment"]:
         apps = db.query(Deployment).filter(Deployment.project_id == project_id).all()
         return apps
-    
+
     @staticmethod
     def getFirstByProject(project_id, db) -> "Deployment":
         app = db.query(Deployment).filter(Deployment.project_id == project_id).first()
         return app
-    
+
     @staticmethod
     def deleteOne(id, db):
         db.query(Deployment).filter(Deployment.id == id).delete()
         db.commit()
-        
+
     @staticmethod
     def deleteAll(db):
         db.query(Deployment).delete()
         db.commit()
-   
