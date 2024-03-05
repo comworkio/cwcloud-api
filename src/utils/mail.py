@@ -185,3 +185,16 @@ def send_create_instance_email(user_email, project_repo_url, instance_name, envi
     message = message_tpl.format(environment['name'], instance_name, instance_url, access_password, project_repo_url)
 
     return send_email(user_email, message, subject)
+
+def send_reply_to_customer_email(customer_email, subject, reply_message):
+    if EMAIL_ADAPTER().is_disabled():
+        return {}
+
+    subject = "Re: " + subject
+    message_tpl = "You have a new reply to your support ticket: <ul>" + \
+        "<li>Subject: {}</li>" + \
+        "<li>Message: {}</li>" + \
+        "</ul>"
+    message = message_tpl.format(subject, reply_message)
+
+    return send_email(customer_email, message, subject)

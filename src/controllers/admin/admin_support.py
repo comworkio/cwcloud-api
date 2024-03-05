@@ -8,6 +8,7 @@ from utils.encoder import AlchemyEncoder
 import json
 from fastapi.responses import JSONResponse
 from utils.logger import log_msg
+from utils.mail import send_reply_to_customer_email
 
 def get_support_tickets(current_user, db):
     from entities.SupportTicket import SupportTicket
@@ -117,6 +118,8 @@ def reply_support_ticket(current_user, ticket_id, payload, db):
             supportTicketReply = {**supportTicketReplyJson, 'user':userJson}
             add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, message)
             SupportTicket.updateTicketTime(ticket.id, db)
+            customer_email = User.getUserById(ticket.user_id, db).email
+            send_reply_to_customer_email(customer_email, ticket, new_reply)
             return JSONResponse(content = {"reply": supportTicketReply}, status_code = 200)
         return JSONResponse(content = {"message": "successfully updated ticket status"}, status_code = 200)
     except HTTPError as e:
