@@ -119,7 +119,7 @@ def reply_support_ticket(current_user, ticket_id, payload, db):
             add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, message)
             SupportTicket.updateTicketTime(ticket.id, db)
             customer_email = User.getUserById(ticket.user_id, db).email
-            send_reply_to_customer_email(customer_email, ticket, new_reply)
+            send_reply_to_customer_email(customer_email, ticket.subject, new_reply.message)
             return JSONResponse(content = {"reply": supportTicketReply}, status_code = 200)
         return JSONResponse(content = {"message": "successfully updated ticket status"}, status_code = 200)
     except HTTPError as e:
