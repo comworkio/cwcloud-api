@@ -58,7 +58,7 @@ def init_triggered_functions():
             if not 'args' in trigger['content']:
                     log_msg("WARN", "[scheduler][init_triggered_functions] missing args mandatory fields, ignoring trigger = {}".format(trigger))
                     continue
-            if trigger.kind == "cron":
+            if trigger['kind'] == "cron":
                 if is_empty_key(trigger['content'], 'cron_expr'):
                     log_msg("WARN", "[scheduler][reinit_crontabs] missing cron_expr field, ignoring trigger = {}".format(trigger))
                     continue
@@ -68,7 +68,7 @@ def init_triggered_functions():
 
                 start_index = start_index + 1
 
-            elif trigger.kind == "schedule":
+            elif trigger['kind'] == "schedule":
                 if is_empty_key(trigger['content'], 'execution_time'):
                     log_msg("WARN", "[scheduler][invoke_scheduled_functions] missing execution_time field, ignoring trigger = {}".format(trigger))
                     continue
