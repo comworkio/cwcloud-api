@@ -1,7 +1,9 @@
 import os
-from urllib.error import HTTPError
 import yaml
-from utils.common import is_empty, is_not_empty
+
+from urllib.error import HTTPError
+
+from utils.common import is_empty
 from utils.logger import log_msg
 
 def exist_provider(providerName):

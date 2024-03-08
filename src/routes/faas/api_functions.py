@@ -9,46 +9,56 @@ from controllers.faas.functions import get_my_functions, get_function, add_funct
 from schemas.faas.Function import BaseFunction, Function
 
 from utils.common import is_false
+from utils.observability.otel import get_otel_tracer
 
 router = APIRouter()
 
+_span_prefix = "faas-function"
+
 @router.post("/function")
 def create_function(payload: BaseFunction, response: Response, current_user: Annotated[UserSchema, Depends(faasapi_required)], db: Session = Depends(get_db)):
-    result = add_function(payload, current_user, db)
-    response.status_code = result['code']
-    return result
+    with get_otel_tracer().start_as_current_span("{}-post".format(_span_prefix)):
+        result = add_function(payload, current_user, db)
+        response.status_code = result['code']
+        return result
 
 @router.post("/function/import")
 def import_function(current_user: Annotated[UserSchema, Depends(faasapi_required)], function_file: UploadFile = File(...), db: Session = Depends(get_db)):
-    return import_new_function(current_user, function_file, db)
+    with get_otel_tracer().start_as_current_span("{}-import".format(_span_prefix)):
+        return import_new_function(current_user, function_file, db)
 
 @router.get("/functions")
 def find_my_functions(response: Response, current_user: Annotated[UserSchema, Depends(faasapi_required)], start_index: int = 0, max_results: int = 10, db: Session = Depends(get_db)):
-    results = get_my_functions(db, current_user, start_index, max_results)
-    response.status_code = results['code']
-    return results
+    with get_otel_tracer().start_as_current_span("{}-get-all".format(_span_prefix)):
+        results = get_my_functions(db, current_user, start_index, max_results)
+        response.status_code = results['code']
+        return results
 
 @router.put("/function/{id}")
 def update_function(id: str, payload: Function, response: Response, current_user: Annotated[UserSchema, Depends(faasapi_required)], db: Session = Depends(get_db)):
-    result = override_function(id, payload, current_user, db)
-    response.status_code = result['code']
-    return result
+    with get_otel_tracer().start_as_current_span("{}-put".format(_span_prefix)):
+        result = override_function(id, payload, current_user, db)
+        response.status_code = result['code']
+        return result
 
 @router.get("/function/{id}")
 def find_function_by_id(id: str, response: Response, current_user: Annotated[UserSchema, Depends(faasapi_required)], db: Session = Depends(get_db)):
-    result = get_function(id, current_user, db)
-    response.status_code = result['code']
-    if is_false(result['status']):
-        return result
+    with get_otel_tracer().start_as_current_span("{}-get".format(_span_prefix)):
+        result = get_function(id, current_user, db)
+        response.status_code = result['code']
+        if is_false(result['status']):
+            return result
 
-    return result['entity']
+        return result['entity']
 
 @router.get("/function/{id}/export")
 def export_function_by_id(current_user: Annotated[UserSchema, Depends(faasapi_required)], id: str, db: Session = Depends(get_db)):
-    return export_function(id, db)
+    with get_otel_tracer().start_as_current_span("{}-export".format(_span_prefix)):
+        return export_function(id, db)
 
 @router.delete("/function/{id}")
 def delete_function_by_id(id: str, response: Response, current_user: Annotated[UserSchema, Depends(faasapi_required)], db: Session = Depends(get_db)):
-    result = delete_function(id, current_user, db)
-    response.status_code = result['code']
-    return result
+    with get_otel_tracer().start_as_current_span("{}-delete".format(_span_prefix)):
+        result = delete_function(id, current_user, db)
+        response.status_code = result['code']
+        return result

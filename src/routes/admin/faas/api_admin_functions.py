@@ -8,25 +8,31 @@ from middleware.auth_guard import admin_required
 from schemas.User import UserSchema
 from controllers.faas.user import get_owner_email
 from controllers.faas.functions import get_all_functions, get_function
+
 from utils.common import is_false
+from utils.observability.otel import get_otel_tracer
 
 router = APIRouter()
 
+_span_prefix = "adm-faas-function"
+
 @router.get("/functions")
 def find_all_functions(response: Response, current_user: Annotated[UserSchema, Depends(admin_required)], start_index: int = 0, max_results: int = 10, db: Session = Depends(get_db)):
-    results = get_all_functions(db, current_user, start_index, max_results)
-    response.status_code = results['code']
-    return results
+    with get_otel_tracer().start_as_current_span("{}-get-all".format(_span_prefix)):
+        results = get_all_functions(db, current_user, start_index, max_results)
+        response.status_code = results['code']
+        return results
 
 @router.get("/function/{id}/owner")
 def find_owner_by_function_id(id: str, response: Response, current_user: Annotated[UserSchema, Depends(admin_required)], db: Session = Depends(get_db)):
-    result = get_function(id, current_user, db)
-    response.status_code = result['code']
+    with get_otel_tracer().start_as_current_span("{}-owner".format(_span_prefix)):
+        result = get_function(id, current_user, db)
+        response.status_code = result['code']
 
-    if is_false(result['status']):
-        return result
+        if is_false(result['status']):
+            return result
 
-    return {
-        "username": get_owner_email(result['entity'], db),
-        "id": result['entity'].owner_id
-    }
+        return {
+            "username": get_owner_email(result['entity'], db),
+            "id": result['entity'].owner_id
+        }

@@ -91,6 +91,43 @@ services:
       - comwork_cloud_api
     networks:
       - cloud_api
+  comwork_cloud_otel_collector:
+    restart: always
+    image: otel/opentelemetry-collector:latest
+    container_name: comwork_cloud_otel_collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - .docker/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "1888:1888"
+      - "8888:8888"
+      - "8889:8889"
+      - "13133:13133"
+      - "4317:4317"
+      - "4318:4318"
+      - "55679:55679"
+    depends_on:
+      - comwork_cloud_jaeger
+    networks:
+      - cloud_api
+  comwork_cloud_jaeger:
+    restart: always
+    image: jaegertracing/all-in-one:latest
+    container_name: comwork_cloud_jaeger
+    ports:
+      - "16686:16686"
+    networks:
+      - cloud_api
+  comwork_cloud_prometheus:
+    image: prom/prometheus
+    container_name: comwork_cloud_prometheus
+    ports:
+     - 9090:9090
+    volumes:
+     - .docker/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+     - cloud_api
+    restart: always
 networks:
   cloud_api:
     driver: bridge

@@ -70,12 +70,12 @@ class Bucket(Base):
 
     @staticmethod
     def findUserBucket(provider, userId, bucketId, region, db):
-        bucket = db.query(Bucket).filter(Bucket.id == bucketId, Bucket.provider == provider, Bucket.region == region, Bucket.user_id == userId, Bucket.status!= "deleted").first()
+        bucket = db.query(Bucket).filter(Bucket.id == bucketId, Bucket.provider == provider, Bucket.region == region, Bucket.user_id == userId, Bucket.status != "deleted").first()
         return bucket
 
     @staticmethod
     def findBucket(provider, region, bucketId, db):
-        bucket = db.query(Bucket).filter(Bucket.id == bucketId, Bucket.provider == provider, Bucket.region == region, Bucket.status!= "deleted").first()
+        bucket = db.query(Bucket).filter(Bucket.id == bucketId, Bucket.provider == provider, Bucket.region == region, Bucket.status != "deleted").first()
         return bucket
 
     @staticmethod

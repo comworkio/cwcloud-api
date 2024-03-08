@@ -99,3 +99,17 @@ You can also see the Swagger interface contracts here:
 ## Database schema
 
 ![database schema](./img/database_schema.png)
+
+## Observability
+
+Cwcloud-api is providing a `/metrics` http endpoint that can be scrapped by Prometheus:
+
+![prometheus](./img/prometheus.png)
+
+If you're running locally with docker-compose, you can access to Jaegger UI here: http://localhost:9090
+
+And can also send the metrics and some traces through OTLP/Grpc. Here's example of traces with Jaegger:
+
+![jaegger](./img/jaegger.png)
+
+If you're running locally with docker-compose, you can access to Jaegger UI here: http://localhost:16686

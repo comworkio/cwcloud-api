@@ -1,4 +1,5 @@
 import os
+import logging
 
 from uuid import uuid4
 from fastapi import FastAPI, Request, HTTPException
@@ -10,13 +11,14 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from asgi_correlation_id import CorrelationIdMiddleware, correlation_id
 
 from restful_resources import import_resources
-from utils.common import is_true
-from utils.logger import log_msg
-
 from exceptions.CwHTTPException import CwHTTPException
 from database.postgres_db import dbEngine
 from database.postgres_db import Base
-import logging
+
+from utils.common import is_true
+from utils.logger import log_msg
+from utils.observability.metrics import metrics
+from utils.observability.otel import init_otel_metrics, init_otel_tracer
 
 logger = logging.getLogger('git')
 logger.setLevel(logging.INFO)
@@ -49,6 +51,11 @@ if os.getenv('APP_ENV') == 'local' or is_true(os.getenv('ENABLE_CORS_ALLOW_ALL')
     )
 
 instrumentator = Instrumentator()
+
+init_otel_tracer()
+init_otel_metrics()
+metrics()
+
 instrumentator.instrument(app, metric_namespace='cwcloudapi', metric_subsystem='cwcloudapi')
 instrumentator.expose(app, endpoint='/v1/metrics')
 instrumentator.expose(app, endpoint='/metrics')
