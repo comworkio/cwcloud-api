@@ -1,14 +1,13 @@
 import os
 import requests
-import time
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
-from controllers.faas.triggers import get_all_triggers
-from entities.faas.Trigger import TriggerEntity
 
 from utils.common import is_empty_key, is_not_empty
+from utils.bytes_generator import generate_random_bytes
 from utils.cron import parse_crontab
+from utils.date import is_after_current_time
 from utils.logger import log_msg
 
 global _scheduler
@@ -22,15 +21,20 @@ _headers = { "X-Auth-Token": _api_token } if is_not_empty(_api_token) else None
 _max_results = int(os.environ['API_MAX_RESULTS'])
 
 def invoke_function(trigger):
-    invocation_endpoint = "{}/invocation"
-    log_msg("DEBUG", "[scheduler][invoke_function] invoke trigger: {}, invocation_endpoint = {}/invocation".format(trigger, invocation_endpoint))
-    requests.post(invocation_endpoint.format(_api_endpoint), json = {
+    invocation_endpoint = "{}/invocation".format(_api_endpoint)
+    log_msg("DEBUG", "[scheduler][invoke_function] invoke trigger: {}, invocation_endpoint = {}".format(trigger, invocation_endpoint))
+    requests.post(invocation_endpoint, json = {
         'content': {
             'invoker_id': trigger['owner']['id'],
             'function_id': trigger['content']['function_id'],
             'args': trigger['content']['args']
         }
     }, headers = _headers)
+
+def delete_trigger(trigger):
+    trigger_endpoint = "{}/trigger/{}".format(_api_endpoint, trigger['id'])
+    log_msg("DEBUG", "[scheduler][delete_trigger] delete trigger: {}, delete_endpoint = {}".format(trigger['id'], trigger_endpoint))
+    requests.delete(trigger_endpoint, headers = _headers)
 
 def init_triggered_functions():
     global _scheduler
@@ -46,6 +50,7 @@ def init_triggered_functions():
         if r_triggers.status_code != 200:
             log_msg("ERROR", "[scheduler][init_triggered_functions] triggers api respond an error, r.code = {}, r.body = {}".format(r_triggers.status_code, r_triggers))    
             return
+
         triggers = r_triggers.json()
         if is_empty_key(triggers, 'results'):
             log_msg("DEBUG", "[scheduler][init_triggered_functions] no more triggers found...")    
@@ -53,31 +58,29 @@ def init_triggered_functions():
 
         for trigger in triggers['results']:
             if is_empty_key(trigger, 'content') or any(is_empty_key(trigger['content'], k) for k in ['name', 'function_id']):
-                    log_msg("WARN", "[scheduler][init_triggered_functions] missing some mandatory fields, ignoring trigger = {}".format(trigger))
-                    continue
+                log_msg("WARN", "[scheduler][init_triggered_functions] missing some mandatory fields, ignoring trigger = {}".format(trigger))
+                continue
+
             if not 'args' in trigger['content']:
-                    log_msg("WARN", "[scheduler][init_triggered_functions] missing args mandatory fields, ignoring trigger = {}".format(trigger))
-                    continue
+                log_msg("WARN", "[scheduler][init_triggered_functions] missing args mandatory fields, ignoring trigger = {}".format(trigger))
+                continue
+
             if trigger['kind'] == "cron":
                 if is_empty_key(trigger['content'], 'cron_expr'):
                     log_msg("WARN", "[scheduler][reinit_crontabs] missing cron_expr field, ignoring trigger = {}".format(trigger))
                     continue
+
                 apscheduler_args = parse_crontab(trigger['content']['cron_expr'])
                 log_msg("DEBUG", "[scheduler][reinit_crontabs] add this cron: name = {}, cron_expr = {}, apscheduler_args = {}".format(trigger['content']['name'], trigger['content']['cron_expr'], apscheduler_args))
-                _scheduler.add_job(lambda: invoke_function(trigger), CronTrigger(**apscheduler_args), id = trigger['content']['name'])
-
-                start_index = start_index + 1
-
+                _scheduler.add_job(lambda: invoke_function(trigger), CronTrigger(**apscheduler_args), id = "{}-{}".format(trigger['content']['name'], generate_random_bytes(6)))
             elif trigger['kind'] == "schedule":
                 if is_empty_key(trigger['content'], 'execution_time'):
                     log_msg("WARN", "[scheduler][invoke_scheduled_functions] missing execution_time field, ignoring trigger = {}".format(trigger))
                     continue
 
-                current_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
-                execution_time = trigger['content']['execution_time']
-
-                if current_time == execution_time:
+                if is_after_current_time(trigger['content']['execution_time']):
                     log_msg("DEBUG", "[scheduler][invoke_scheduled_functions] Executing scheduled function for trigger: {}".format(trigger))
                     invoke_function(trigger)
+                    delete_trigger(trigger)
 
-                time.sleep(60)
+            start_index = start_index + 1
