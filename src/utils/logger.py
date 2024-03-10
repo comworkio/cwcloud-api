@@ -6,6 +6,7 @@ import sys
 
 from datetime import datetime
 
+from utils.cid import get_current_cid
 from utils.common import is_disabled, is_enabled, is_true
 
 SLACK_WEBHOOK_TPL = "https://hooks.slack.com/services/{}"
@@ -92,14 +93,17 @@ else:
 
 def quiet_log_msg (log_level, message):
     vdate = datetime.now().isoformat()
-    formatted_log = "[{}][{}] {}".format(log_level, vdate, message)
+    cid = get_current_cid()
+
+    formatted_log = "[{}][{}][{}] {}".format(log_level, vdate, cid, message)
     if is_enabled(LOG_FORMAT) and LOG_FORMAT == "json":
         if isinstance(message, dict):
             message['level'] = log_level
             message['time'] = vdate
+            message['cid'] = cid
             formatted_log = json.dumps(message)
         else:
-            formatted_log = json.dumps({"body": message, "level": log_level, "time": vdate })
+            formatted_log = json.dumps({"body": message, "level": log_level, "time": vdate, "cid": cid })
 
     if is_debug(log_level):
         logging.debug(formatted_log)
