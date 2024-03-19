@@ -1,6 +1,8 @@
 from entities.User import User
+
 from utils.common import is_empty, is_not_empty, is_true
 from utils.security import is_not_email_valid
+from utils.observability.cid import get_current_cid
 
 def override_owner_id(payload, old_data, current_user, db):
     if current_user.is_admin and is_not_empty(payload.owner_username):
@@ -9,7 +11,8 @@ def override_owner_id(payload, old_data, current_user, db):
                 'status': 'ko',
                 'code': 400,
                 'error': "Owner email is not valid: {}".format(payload.owner_username),
-                'i18n_code': 'not_valid_email'
+                'i18n_code': 'not_valid_email',
+                'cid': get_current_cid()
             }
 
         db_owner = User.getUserByEmail(payload.owner_username, db)
@@ -18,7 +21,8 @@ def override_owner_id(payload, old_data, current_user, db):
                 'status': 'ko',
                 'code': 404,
                 'error': "User {} not found".format(payload.owner_username),
-                'i18n_code': 'user_not_found'
+                'i18n_code': 'user_not_found',
+                'cid': get_current_cid()
             }
 
         return {

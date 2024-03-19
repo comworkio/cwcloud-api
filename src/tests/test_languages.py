@@ -1,6 +1,6 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
-from fastapi.responses import JSONResponse
+
 from schemas.User import UserSchema
 from controllers.faas.languages import _supported_languages
 

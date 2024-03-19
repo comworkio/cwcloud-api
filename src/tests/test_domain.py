@@ -1,4 +1,5 @@
 from unittest import TestCase
+
 from utils.domain import is_not_subdomain_valid
 
 class TestDomain(TestCase):

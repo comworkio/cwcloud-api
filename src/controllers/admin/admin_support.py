@@ -9,6 +9,7 @@ import json
 from fastapi.responses import JSONResponse
 from utils.logger import log_msg
 from utils.mail import send_reply_to_customer_email
+from utils.observability.cid import get_current_cid
 
 def get_support_tickets(current_user, db):
     from entities.SupportTicket import SupportTicket
@@ -20,10 +21,19 @@ def add_support_ticket(current_user, payload, db):
     try:
         user = User.getUserByEmail(payload.email, db)
         if not user:
-            return JSONResponse(content = {"error": "user not found", "i18n_code": "304"}, status_code = 404)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'user not found',
+                'i18n_code': '304',
+                'cid': get_current_cid()
+            }, status_code = 404)
 
         if payload.severity not in ["low", "medium", "high"]:
-            return JSONResponse(content = {"error": "severity needs to be low, medium or high"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'severity needs to be low, medium or high',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
         log_msg("INFO", "[Admin Support] Admin {} has opened a new support ticket for User {} with severity {}".format(current_user.email, user.email, payload.severity))
 
@@ -46,16 +56,30 @@ def add_support_ticket(current_user, payload, db):
         supportTicketJson["id"] = ticket.id
         return JSONResponse(content = supportTicketJson, status_code = 201)
     except HTTPError as e:
-        return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': e.msg, 
+            'i18n_code': e.headers['i18n_code'],
+            'cid': get_current_cid()
+        }, status_code = e.code)
 
 def get_support_ticket(current_user, ticket_id, db):
     if not is_numeric(ticket_id):
-        return JSONResponse(content = {"error": "Invalid ticket id", "i18n_code": "400"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Invalid ticket id', 
+            'i18n_code': '400',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     from entities.SupportTicket import SupportTicket
     supportTicket = SupportTicket.getSupportTicket(ticket_id, db)
     if not supportTicket:
-        return JSONResponse(content = {"error": "ticket not found"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'ticket not found',
+            'cid': get_current_cid()
+        }, status_code = 404)
 
     from entities.SupportTicketLog import SupportTicketLog
     ticket_replies = SupportTicketLog.getTicketLogs(ticket_id, db)
@@ -73,30 +97,51 @@ def get_support_ticket(current_user, ticket_id, db):
 
 def delete_support_ticket(current_user, ticket_id, db):
     if not is_numeric(ticket_id):
-        return JSONResponse(content = {"error": "Invalid ticket id", "i18n_code": "400"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Invalid ticket id', 
+            'i18n_code': '400',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     from entities.SupportTicket import SupportTicket
     supportTicket = SupportTicket.getSupportTicket(ticket_id, db)
     if not supportTicket:
-        return JSONResponse(content = {"error": "ticket not found"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'ticket not found',
+            'cid': get_current_cid()
+        }, status_code = 404)
     close_gitlab_issue(supportTicket.gitlab_issue_id)
     SupportTicket.deleteOne(ticket_id, db)
     from entities.SupportTicketLog import SupportTicketLog
     SupportTicketLog.deleteTicketReplies(ticket_id, db)
-    return JSONResponse(content = {"message": "ticket successfully deleted"}, status_code = 200)
+    return JSONResponse(content = {
+        'status': 'ok',
+        'message': 'ticket successfully deleted'
+    }, status_code = 200)
 
 def reply_support_ticket(current_user, ticket_id, payload, db):
     try:
         message = payload.message
         status = payload.status
         if not is_numeric(ticket_id):
-            return JSONResponse(content = {"error": "Invalid ticket id", "i18n_code": "400"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'Invalid ticket id', 
+                'i18n_code': '400',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
         from entities.SupportTicket import SupportTicket
         from entities.SupportTicketLog import SupportTicketLog
         ticket = SupportTicket.getSupportTicket(ticket_id, db)
         if not ticket:
-            return JSONResponse(content = {"error": "ticket not found"}, status_code = 404)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'ticket not found',
+                'cid': get_current_cid()
+            }, status_code = 404)
 
         if status == 'closed':
             close_gitlab_issue(ticket.gitlab_issue_id)
@@ -121,6 +166,14 @@ def reply_support_ticket(current_user, ticket_id, payload, db):
             customer_email = User.getUserById(ticket.user_id, db).email
             send_reply_to_customer_email(customer_email, ticket.subject, new_reply.message)
             return JSONResponse(content = {"reply": supportTicketReply}, status_code = 200)
-        return JSONResponse(content = {"message": "successfully updated ticket status"}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': 'successfully updated ticket status'
+        }, status_code = 200)
     except HTTPError as e:
-        return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers['i18n_code']}, status_code = e.code)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': e.msg, 
+            'i18n_code': e.headers['i18n_code'],
+            'cid': get_current_cid()
+        }, status_code = e.code)

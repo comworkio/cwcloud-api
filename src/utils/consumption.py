@@ -55,6 +55,7 @@ def getConsumptionsByDate(from_date, to_date, id, f_get_consumptions, f_get_inst
             }
 
             filtered_consumptions.append(created_consumption)
+
     return filtered_consumptions
 
 def getInstanceConsumptionsByDate(from_date, to_date, instance_id, db):
@@ -98,6 +99,7 @@ def generate_instance_consumption(user_id, instance, dateFrom, dateTo, save, db)
     current_date = datetime.now().isoformat()
     activated_at = instance.modification_date
     activated_at_iso = datetime.fromisoformat(str(activated_at))
+
     new_from_date = None
     if activated_at_iso <= dateFrom:
         new_from_date = dateFrom
@@ -134,6 +136,7 @@ def generate_instance_consumption(user_id, instance, dateFrom, dateTo, save, db)
         new_consumption.user_id = user_id
         new_consumption.save(db)
         Instance.updateModificationDate(instance.id, current_date, db)
+
     return created_consumption
 
 def generate_user_consumptions(user_id, from_date, to_date, db):
@@ -144,4 +147,5 @@ def generate_user_consumptions(user_id, from_date, to_date, db):
             consumption = generate_instance_consumption(user_id, instance, from_date, to_date, False, db)
             if consumption:
                 consumptions.append(consumption)
+
     return consumptions

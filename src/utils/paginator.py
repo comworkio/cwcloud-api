@@ -1,4 +1,3 @@
-
 def get_paginated_list(data, url, page, no_per_page):
     count = len(data)
 
@@ -23,6 +22,7 @@ def get_paginated_list(data, url, page, no_per_page):
         obj['next'] = ''
     else:
         obj['next'] = url + '?page=%d&no_per_page=%d' % (page + 1, no_per_page)
+
     # extract result according to bounds
     obj['data'] = data[start: limit]
     return obj

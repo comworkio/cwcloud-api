@@ -1,6 +1,5 @@
-from venv import create
-import ovh
 import os
+import ovh
 
 from utils.logger import log_msg
 

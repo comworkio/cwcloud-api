@@ -12,6 +12,7 @@ from utils.currency import get_payment_currency
 from utils.invoice import generate_receipt_pdf
 from utils.common import is_duration_valid, is_false, is_not_empty, is_numeric, is_true
 from utils.logger import log_msg
+from utils.observability.cid import get_current_cid
 
 PAYMENT_ADAPTER = get_adapter("payments")
 
@@ -23,18 +24,35 @@ def relaunch(user, invoice):
     total_to_pay = invoice.total_price
 
     if is_false(user['enabled_features']['billable']):
-        return JSONResponse(content = {"error": "user not billable", "i18n_code": "not_billable"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'user not billable', 
+            'i18n_code': 'not_billable',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     if is_true(user['enabled_features']['disable_emails']):
-        return JSONResponse(content = {"error": "the emails are disabled for this user", "i18n_code": "email_disabled"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'the emails are disabled for this user', 
+            'i18n_code': 'email_disabled',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     min_amount = get_min_amount()
     if total_to_pay > min_amount:
         final_amount = int(round(total_to_pay, 4) * 100)
         send_relaunch_email(user['email'], total_to_pay, invoice.ref)
-        return JSONResponse(content = {"message": "relaunch mail successfully sent", "amount_to_pay": final_amount}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': 'relaunch mail successfully sent', 
+            'amount_to_pay': final_amount
+        }, status_code = 200)
     else:
-        return JSONResponse(content = {"message": "nothing to pay"}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': 'nothing to pay'
+        }, status_code = 200)
 
 def pay(db, user, invoice, voucher_id = "", auto_pay = False):
     registeredVoucher = None
@@ -56,13 +74,23 @@ def pay(db, user, invoice, voucher_id = "", auto_pay = False):
         total_ht = round(total_ttc / float(os.getenv('TTVA')), 4)
 
     if is_false(user['enabled_features']['billable']):
-        return JSONResponse(content = {"error": "user not billable", "i18n_code": "not_billable"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'user not billable', 
+            'i18n_code': 'not_billable',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     from entities.RegisteredVoucher import RegisteredVoucher
     if is_not_empty(voucher_id):
         registeredVoucher = RegisteredVoucher.getUserRegisteredVoucher(user['id'], voucher_id, db)
         if not registeredVoucher:
-            return JSONResponse(content = {"error": 'voucher not found', "i18n_code": "1204"}, status_code = 404)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'voucher not found', 
+                'i18n_code': '1204',
+                'cid': get_current_cid()
+            }, status_code = 404)
         created_registered_voucher   = datetime.datetime.fromisoformat(registeredVoucher.created_at)
         from entities.Voucher import Voucher
         voucher = Voucher.getById(registeredVoucher.voucher_id, db)
@@ -70,7 +98,12 @@ def pay(db, user, invoice, voucher_id = "", auto_pay = False):
             validity_date = created_registered_voucher + datetime.timedelta(days = voucher.validity)
             now_date = datetime.datetime.now()
             if now_date >= validity_date:
-                return JSONResponse(content = {"error": 'voucher has expired', "i18n_code": "1205"}, status_code = 400)
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': 'voucher has expired', 
+                    'i18n_code': '1205',
+                    'cid': get_current_cid()
+                }, status_code = 400)
 
         if registeredVoucher.credit >= total_ttc:
             reducted_voucher_amount = registeredVoucher.credit - total_ttc
@@ -121,6 +154,16 @@ def pay(db, user, invoice, voucher_id = "", auto_pay = False):
                 'partner': intent['partner'] if 'partner' in intent else ""
             }, status_code = 200)
         else:
-            return JSONResponse(content = {'file_name': name_file, 'blob': str(encoded_string), "message": "payment successfully made"}, status_code = 200)
+            return JSONResponse(content = {
+                'status': 'ok',
+                'file_name': name_file, 
+                'blob': str(encoded_string), 
+                'message': 'payment successfully made'
+            }, status_code = 200)
     except HTTPError as e:
-        return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers['i18n_code']}, status_code = e.code)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': e.msg, 
+            'i18n_code': e.headers['i18n_code'],
+            'cid': get_current_cid()
+        }, status_code = e.code)

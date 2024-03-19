@@ -1,4 +1,5 @@
 from unittest import TestCase
+
 from utils.currency import get_payment_currency_from_unit
 
 class TestCurrency(TestCase):

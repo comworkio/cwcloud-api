@@ -1,14 +1,15 @@
-from urllib.error import HTTPError
 import os
+
+from urllib.error import HTTPError
 from datetime import datetime
-from datetime import datetime
-from adapters.AdapterConfig import get_adapter, get_default_adapter
-from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
-from utils.bucket import upload_bucket
+from jinja2 import Environment, FileSystemLoader
+
+from adapters.AdapterConfig import get_adapter, get_default_adapter
+
 from utils.common import is_empty, is_not_empty, is_true
 from utils.logger import log_msg
-import re
+from utils.bucket import upload_bucket
 
 EMAIL_EXPEDITOR = os.environ['EMAIL_EXPEDITOR']
 EMAIL_ACCOUNTING = os.getenv('EMAIL_ACCOUNTING') if is_not_empty(os.getenv('EMAIL_ACCOUNTING')) else EMAIL_EXPEDITOR

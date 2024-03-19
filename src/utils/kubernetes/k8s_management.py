@@ -15,11 +15,11 @@ def install_flux(config_file: bytes):
     
     config.load_kube_config_from_dict(config_file)
 
-    DYNAMIC_CLIENT = dynamic.DynamicClient(
+    dynamic_client = dynamic.DynamicClient(
         client.api_client.ApiClient()
     )
 
-    apply_items(DYNAMIC_CLIENT, flux_yaml_file)
+    apply_items(dynamic_client, flux_yaml_file)
                 
 def apply_item(dynamic_client: dynamic.DynamicClient, manifest: dict):
     api_version = manifest.get("apiVersion")

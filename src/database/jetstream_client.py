@@ -2,8 +2,8 @@ import os
 import nats
 import json
 import asyncio
-from utils.eventloop import get_event_loop
 
+from utils.eventloop import get_event_loop
 from utils.logger import log_msg
 from utils.nats import close_nats, get_creds_file_if_exists, get_nats_url
 

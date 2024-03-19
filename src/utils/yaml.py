@@ -1,5 +1,6 @@
-from urllib.error import HTTPError
 import yaml
+
+from urllib.error import HTTPError
 
 def read_uploaded_yaml_file(input:bytes):
     try:

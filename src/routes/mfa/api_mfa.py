@@ -21,7 +21,11 @@ from middleware.auth_guard import get_current_active_user
 from utils.encoder import AlchemyEncoder
 from utils.flag import is_flag_enabled
 from utils.jwt import jwt_encode
+from utils.observability.cid import get_current_cid
 from utils.observability.otel import get_otel_tracer
+from utils.observability.traces import span_format
+from utils.observability.counter import create_counter, increment_counter
+from utils.observability.enums import Action, Method
 
 router = APIRouter()
 CACHE_ADAPTER = get_adapter('cache')
@@ -30,38 +34,67 @@ YUBICO_CLIENT_ID = os.getenv("YUBICO_CLIENT_ID")
 YUBICO_SECRET_KEY = os.getenv("YUBICO_SECRET_KEY")
 
 _span_prefix = "mfa"
+_counter = create_counter("mfa_api", "MFA API counter")
 
 @router.get("")
 def get_MFA_methods(current_user: Annotated[UserSchema, Depends(get_current_active_user)], db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-get-all".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.ALL)):
+        increment_counter(_counter, Method.GET, Action.ALL)
         try:
             mfaMethods = Mfa.getUserMfaMethods(current_user.id, db)
             mfaMethodsJson = json.loads(json.dumps(mfaMethods, cls = AlchemyEncoder))
-            return JSONResponse(content = {"methods": mfaMethodsJson}, status_code = 200)
+            return JSONResponse(content = {
+                'status': 'ok',
+                'methods': mfaMethodsJson
+            }, status_code = 200)
         except HTTPError as e:
-            return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': e.msg,
+                'i18n_code': e.headers['i18n_code'],
+                'cid': get_current_cid()
+            }, status_code = e.code)
 
 @router.delete("")
 def delete_user_methods(current_user: Annotated[UserSchema, Depends(get_current_active_user)], db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-delete-all".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.DELETE, Action.ALL)):
+        increment_counter(_counter, Method.DELETE, Action.ALL)
         Mfa.deleteUserMethods(current_user.id, db)
-        return JSONResponse(content = {"message": "2fa successfully deleted"}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': '2fa successfully deleted'
+        }, status_code = 200)
 
 @router.delete("/{method_id}")
 def delete_MFA(current_user: Annotated[UserSchema, Depends(get_current_active_user)], method_id: str, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-delete".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.DELETE)):
+        increment_counter(_counter, Method.DELETE)
         try:
             method = Mfa.findOne(method_id, db)
             if not method:
-                return JSONResponse(content = {"message": "2fa method not found"}, status_code = 404)
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': '2fa method not found',
+                    'i18n_code': '404',
+                    'cid': get_current_cid()
+                }, status_code = 404)
             Mfa.deleteOne(method.id, db)
-            return JSONResponse(content = {"message": "successfully deleted mfa method"}, status_code = 200)
+            return JSONResponse(content = {
+                'status': 'ok',
+                'message': 'successfully deleted mfa method'
+            }, status_code = 200)
         except HTTPError as e:
-            return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': e.msg,
+                'i18n_code': e.headers['i18n_code'],
+                'cid': get_current_cid()
+            }, status_code = e.code)
 
 @router.post("/register/u2f")
 def register_u2f(current_user: Annotated[UserSchema, Depends(get_current_active_user)], payload: MFASchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-u2f-post".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST, Action.REGISTER)):
+        increment_counter(_counter, Method.POST, Action.REGISTER)
         try:
             code = payload.code
             yubico = Yubico(YUBICO_CLIENT_ID, YUBICO_SECRET_KEY)
@@ -69,7 +102,10 @@ def register_u2f(current_user: Annotated[UserSchema, Depends(get_current_active_
             key_id = code[0:12]
             user2faMethods = Mfa.getUserMfaMethodsByType(current_user.id, "security_key", db)
             if len(user2faMethods)>0:
-                return JSONResponse(content = {"message": "u2f already added"}, status_code = 400)
+                return JSONResponse(content = {
+                    'status': 'ok',
+                    'message': 'u2f already added'
+                }, status_code = 400)
             else:
                 new_method = Mfa()
                 new_method.user_id = current_user.id
@@ -77,13 +113,22 @@ def register_u2f(current_user: Annotated[UserSchema, Depends(get_current_active_
                 new_method.otp_code = key_id
                 new_method.save(db)
             mfaMethodsJson = json.loads(json.dumps(new_method, cls = AlchemyEncoder))
-            return JSONResponse(content = {"method": mfaMethodsJson}, status_code = 200)
+            return JSONResponse(content = {
+                'status': 'ok',
+                'method': mfaMethodsJson
+            }, status_code = 200)
         except Exception as e:
-            return JSONResponse(content = {"error": "Invalid code", "i18n_code": "333333"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'Invalid code',
+                'i18n_code': '333333',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
 @router.post("/u2f/verify")
 def verify_u2f(current_user: Annotated[UserSchema, Depends(pre_token_required)], payload: MFASchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-u2f-verify".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST, Action.VERIFY)):
+        increment_counter(_counter, Method.POST, Action.VERIFY)
         try:
             code = payload.code
             yubico = Yubico(YUBICO_CLIENT_ID, YUBICO_SECRET_KEY)
@@ -92,7 +137,12 @@ def verify_u2f(current_user: Annotated[UserSchema, Depends(pre_token_required)],
             user2faMethod = Mfa.getUserMfaMethod(current_user.id, "security_key", db)
 
             if not key_id == user2faMethod.otp_code:
-                return JSONResponse(content = {"error": "Invalid code", "i18n_code": "333333"}, status_code = 400)
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': 'Invalid code',
+                    'i18n_code': '333333',
+                    'cid': get_current_cid()
+                }, status_code = 400)
 
             token = jwt_encode({
                 "id": current_user.id,
@@ -106,13 +156,22 @@ def verify_u2f(current_user: Annotated[UserSchema, Depends(pre_token_required)],
             })
             CACHE_ADAPTER().delete(current_user.email)
             CACHE_ADAPTER().put(current_user.email, token, int(os.getenv("TOKEN_EXPIRATION_TIME")))
-            return JSONResponse(content = {"token": token}, status_code = 200)
+            return JSONResponse(content = {
+                'status': 'ok',
+                'token': token
+            }, status_code = 200)
         except Exception as e:
-            return JSONResponse(content = {"error": "Invalid code", "i18n_code": "333333"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'Invalid code',
+                'i18n_code': '333333',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
 @router.get("/register/2fa")
 def get_2fa(current_user: Annotated[UserSchema, Depends(get_current_active_user)], db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-2fa-get".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST, Action.REGISTER)):
+        increment_counter(_counter, Method.POST, Action.REGISTER)
         found = True
         random_code = ""
         while found:
@@ -125,18 +184,30 @@ def get_2fa(current_user: Annotated[UserSchema, Depends(get_current_active_user)
         issuer_name = "{} cloud".format(os.getenv("COMPANY_NAME"))
         auth_uri = otp.provisioning_uri(name = current_user.email, issuer_name = issuer_name)
         if len(user2faMethods)>0:
-            JSONResponse(content = {"error": "authentification method already exits"}, status_code = 400)
+            JSONResponse(content = {
+                'status': 'ko',
+                'error': 'authentification method already exits',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
-        return JSONResponse(content = {"auth_uri": auth_uri, "otp_code": random_code}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'auth_uri': auth_uri,
+            'otp_code': random_code
+        }, status_code = 200)
 
 @router.patch("/register/2fa")
 def register_2fa(current_user: Annotated[UserSchema, Depends(get_current_active_user)], payload: MFARegister2faSchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-2fa-patch".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.PATCH, Action.REGISTER)):
+        increment_counter(_counter, Method.PATCH, Action.REGISTER)
         code = payload.code
         otp_code = payload.otp_code
         user2faMethod = Mfa.getUserMfaMethod(current_user.id, "auth_app", db)
         if user2faMethod:
-            return JSONResponse(content = {"message": "2fa already added"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ok',
+                'message': '2fa already added'
+            }, status_code = 400)
 
         otp = pyotp.TOTP(otp_code)
         if str(otp.now()) == str(code):
@@ -146,19 +217,39 @@ def register_2fa(current_user: Annotated[UserSchema, Depends(get_current_active_
             new_method.otp_code = otp_code
             new_method.save(db)
             mfaMethodsJson = json.loads(json.dumps(new_method, cls = AlchemyEncoder))
-            return JSONResponse(content = {"message": "2fa activated", "method": mfaMethodsJson}, status_code = 200)
-        return JSONResponse(content = {"error": "failed"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ok',
+                'message': '2fa activated', 
+                'method': mfaMethodsJson
+            }, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'failed',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
 @router.post("/2fa/verify")
 def post(current_user: Annotated[UserSchema, Depends(pre_token_required)], payload: MFASchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-2fa-verify".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST, Action.VERIFY)):
+        increment_counter(_counter, Method.POST, Action.VERIFY)
         code = payload.code
         user2faMethod = Mfa.getUserMfaMethod(current_user.id, "auth_app", db)
         if not user2faMethod:
-            return JSONResponse(content = {"message": "2fa method not found"}, status_code = 404)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': '2fa method not found',
+                'i18n_code': '404',
+                'cid': get_current_cid()
+            }, status_code = 404)
+
         otp = pyotp.TOTP(user2faMethod.otp_code)
         if not str(otp.now()) == str(code):
-            return JSONResponse(content = {"error": "2fa authentification failed"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': '2fa authentification failed',
+                'i18n_code': '333333',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
         token = jwt_encode({
             "id": current_user.id,
@@ -172,4 +263,7 @@ def post(current_user: Annotated[UserSchema, Depends(pre_token_required)], paylo
         })
         CACHE_ADAPTER().delete(current_user.email)
         CACHE_ADAPTER().put(current_user.email, token, int(os.getenv("TOKEN_EXPIRATION_TIME")))
-        return JSONResponse(content = {"token": token}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'token': token
+        }, status_code = 200)

@@ -96,9 +96,11 @@ You can also see the Swagger interface contracts here:
 * Production environment (`main` branch): https://cloud-api.comwork.io
 * Preproduction environment (`develop` branch): https://ppd.cloud-api.comwork.io
 
-## Database schema
-
+## Architectures
+### Database
 ![database schema](./img/database_schema.png)
+### FaaS
+![faas schema](./img/faas_architecture.png)
 
 ## Observability
 

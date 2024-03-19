@@ -2,15 +2,17 @@ from datetime import datetime
 import os
 import base64
 import json
+import copy
 from fastapi.responses import JSONResponse
 
 from entities.faas.Function import FunctionEntity
 
-from utils.common import is_empty, is_false, is_not_numeric, is_true
-from utils.faas.functions import is_not_supported_language
+from utils.common import is_empty, is_false, is_not_empty, is_not_empty_key, is_not_numeric, is_true
+from utils.faas.functions import is_not_supported_language, is_not_supported_callback_type, restructure_callbacks
 from utils.faas.owner import get_email_owner, get_owner_id, override_owner_id
 from utils.faas.security import has_not_exec_right, has_not_write_right
 from utils.encoder import AlchemyEncoder
+from utils.observability.cid import get_current_cid
 
 def add_function(payload, current_user, db):
     if is_empty(payload.content.name):
@@ -18,7 +20,8 @@ def add_function(payload, current_user, db):
             'status': 'ko',
             'code': 400,
             'message': "Function name is missing",
-            'i18n_code': 'faas_function_name_missing'
+            'i18n_code': 'faas_function_name_missing',
+            'cid': get_current_cid()
         }
 
     if is_not_supported_language(payload.content.language):
@@ -26,8 +29,19 @@ def add_function(payload, current_user, db):
             'status': 'ko',
             'code': 400,
             'message': "Programing language '{}' is not supported".format(payload.content.language),
-            'i18n_code': 'faas_language_not_supported'
+            'i18n_code': 'faas_language_not_supported',
+            'cid': get_current_cid()
         }
+    
+    if is_not_empty(payload.content.callbacks):
+        for callback in payload.content.callbacks:
+            if is_not_supported_callback_type(callback.type):
+                return {
+                    'status': 'ko',
+                    'code': 400,
+                    'message': "Callback type '{}' is not supported".format(callback.type),
+                    'i18n_code': 'faas_callback_type_not_supported'
+                }
 
     payload.owner_id = get_owner_id(payload, current_user)
     payload.is_public = is_true(payload.is_public)
@@ -51,7 +65,8 @@ def override_function(id, payload, current_user, db):
             'status': 'ko',
             'code': 404,
             'message': "Resource '{}' not found".format(id),
-            'i18n_code': 'not_found'
+            'i18n_code': 'not_found',
+            'cid': get_current_cid()
         }
 
     if has_not_write_right(current_user, old_function):
@@ -59,7 +74,8 @@ def override_function(id, payload, current_user, db):
             'status': 'ko',
             'code': 403,
             'message': "You have no write right on '{}' function".format(id),
-            'i18n_code': 'faas_not_write_right'
+            'i18n_code': 'faas_not_write_right',
+            'cid': get_current_cid()
         }
 
     if is_not_supported_language(payload.content.language):
@@ -67,11 +83,21 @@ def override_function(id, payload, current_user, db):
             'status': 'ko',
             'code': 400,
             'message': "Programing language '{}' is not supported".format(payload.content.language),
-            'i18n_code': 'faas_language_not_supported'
+            'i18n_code': 'faas_language_not_supported',
+            'cid': get_current_cid()
         }
+    
+    if is_not_empty(payload.content.callbacks):
+        for callback in payload.content.callbacks:
+            if is_not_supported_callback_type(callback.type):
+                return {
+                    'status': 'ko',
+                    'code': 400,
+                    'message': "Callback type '{}' is not supported".format(callback.type),
+                    'i18n_code': 'faas_callback_type_not_supported'
+                }
 
     updated_at = datetime.now()
-
     result = override_owner_id(payload, old_function, current_user, db)
     if is_false(result['status']):
         return result
@@ -110,6 +136,9 @@ def get_function(id, current_user, db):
             'message': "You have no exec right on '{}' function".format(id),
             'i18n_code': 'faas_not_exec_right'
         }
+    
+    content = copy.deepcopy(db_function.content)
+    db_function.content = restructure_callbacks(content)
 
     return {
         'status': 'ok',
@@ -147,6 +176,10 @@ def get_my_functions(db, current_user, start_index, max_results):
 
     results = db.query(FunctionEntity).filter(FunctionEntity.owner_id == current_user.id).order_by(FunctionEntity.updated_at.desc()).order_by(FunctionEntity.created_at.desc()).offset(int(start_index)).limit(int(max_results)).all()
 
+    for function in results:
+        content = copy.deepcopy(function.content)
+        function.content = restructure_callbacks(content)
+        
     return {
         'status': 'ok',
         'code': 200,
@@ -174,6 +207,10 @@ def get_all_functions(db, current_user, start_index, max_results):
 
     results = db.query(FunctionEntity).order_by(FunctionEntity.updated_at.desc()).order_by(FunctionEntity.created_at.desc()).offset(int(start_index)).limit(int(max_results)).all()
 
+    for function in results:
+        content = copy.deepcopy(function.content)
+        function.content = restructure_callbacks(content)
+
     return {
         'status': 'ok',
         'code': 200,
@@ -195,8 +232,16 @@ def get_all_functions(db, current_user, start_index, max_results):
 def export_function(id, db):
     function = db.query(FunctionEntity).filter(FunctionEntity.id == id).first()
     if not function:
-        return JSONResponse(content = { 'status': 'ko', 'code': 404, 'message': "Resource '{}' not found".format(id), 'i18n_code': 'not_found' }, status_code = 404)
+        return JSONResponse(content = { 
+            'status': 'ko',
+            'code': 404,
+            'message': "Resource '{}' not found".format(id),
+            'i18n_code': 'not_found',
+            'cid': get_current_cid()
+        }, status_code = 404)
 
+    content = copy.deepcopy(function.content)
+    function.content = restructure_callbacks(content)
     function_dict = json.loads(json.dumps(function, cls = AlchemyEncoder))
     function_json = json.dumps(function_dict, indent=4)
 

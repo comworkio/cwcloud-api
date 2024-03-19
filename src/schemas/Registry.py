@@ -3,8 +3,6 @@ import os
 from typing import List, Optional
 from pydantic import BaseModel
 
-from utils.provider import get_provider_infos
-
 class RegistrySchema(BaseModel):
     name: str
     email: str

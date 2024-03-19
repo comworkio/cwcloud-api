@@ -1,7 +1,9 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
-from entities.User  import User
+
 from fastapi.responses import JSONResponse
+
+from entities.User  import User
 
 test_current_user = Mock()
 mock_db = Mock()
@@ -48,7 +50,7 @@ class TestAdminUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(),'{"result":[]}')
+        self.assertEqual(result.body.decode(),'{"status":"ok","result":[]}')
     
     @patch('utils.common.is_numeric')
     @patch('entities.User.User.getUserById', side_effect = lambda x,y : User(id= 1 ))    
@@ -72,7 +74,7 @@ class TestAdminUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200) 
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"user successfully deleted","i18n_code":"302"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully deleted","i18n_code":"302"}')
     
     @patch('utils.common.is_numeric')
     @patch('entities.User.User.getUserById', side_effect = lambda x,y : User(id= 1 ))    
@@ -91,7 +93,7 @@ class TestAdminUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"user successfully confirmed","i18n_code":"303"}')    
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully confirmed","i18n_code":"303"}')    
     
     @patch('utils.common.is_numeric')
     @patch('entities.User.User.getUserById', side_effect = lambda x,y : User(id= 1 ))    
@@ -113,7 +115,7 @@ class TestAdminUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200) 
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"user successfully updated","i18n_code":"301"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully updated","i18n_code":"301"}')
     
     @patch('utils.common.is_numeric')
     @patch('entities.User.User.getUserById', side_effect = lambda x,y : User(id= 1 ))    
@@ -128,12 +130,12 @@ class TestAdminUser(TestCase):
         result = admin_delete_user_2fa(test_current_user, userId, mock_db)
         response_status_code = result.__dict__['status_code']
         
-        # Then
+       # Then
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"2fa successfully deleted"}')
-    
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"2fa successfully deleted"}')
+  
     @patch('entities.User.User.getActiveAutoPaymentUsers', side_effect = lambda x: [])
     def test_admin_get_autopayment_users(self, getActiveAutoPaymentUsers):
         # Given
@@ -204,5 +206,5 @@ class TestAdminUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"user successfully updated","i18n_code":"301"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully updated","i18n_code":"301"}')
     

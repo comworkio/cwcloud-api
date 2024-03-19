@@ -1,8 +1,11 @@
+import json
+
 from unittest import TestCase
 from unittest.mock import Mock, patch
-from entities.User import User
+
 from fastapi.responses import JSONResponse
-import json
+
+from entities.User import User
 
 test_current_user = Mock()
 test_current_user.id = 1
@@ -180,7 +183,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200) 
         self.assertIsInstance(result, JSONResponse)  
-        self.assertEqual(result.body.decode(), '{"email":"test@example.com","message":"user verified","i18n_code":"307"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","email":"test@example.com","message":"user verified","i18n_code":"307"}')
 
     @patch('entities.User.User.getUserById',side_effect = lambda x,y: User(st_payment_method_id='some_id')  )  
     def test_update_user_autopayment(self , getUserById):
@@ -209,7 +212,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"successfully updated auto payment status"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"successfully updated auto payment status"}')
 
     @patch('jose.jwt.decode')
     @patch('controllers.user.send_confirmation_email', side_effect = None)
@@ -231,7 +234,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"email":null,"message":"user successfully confirmed","i18n_code":"303"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","email":null,"message":"user successfully confirmed","i18n_code":"303"}')
 
     @patch('jose.jwt.encode')
     @patch('controllers.user.send_confirmation_email', side_effect = None)
@@ -319,7 +322,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"user successfully updated","i18n_code":"301"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully updated","i18n_code":"301"}')
 
     @patch('controllers.user.retrievePaymentMethod')
     @patch('entities.User.User.getUserById',side_effect = None)
@@ -344,7 +347,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 204)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"payment method successfully added"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"payment method successfully added"}')
 
     @patch('controllers.user.retrievePaymentMethod')
     @patch('entities.User.User.getUserById',side_effect = None) 
@@ -367,7 +370,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 204)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"payment method successfully updated"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"payment method successfully updated"}')
 
     @patch('controllers.user.PAYMENT_ADAPTER.retrieve_payment_method', side_effect = None)
     @patch('entities.User.User.getUserById',side_effect = lambda x,y: User(st_payment_method_id='some_id')  )  
@@ -393,4 +396,4 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 204)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"payment method successfully removed"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"payment method successfully removed"}')

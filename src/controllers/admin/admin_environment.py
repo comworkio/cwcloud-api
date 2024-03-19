@@ -10,6 +10,7 @@ from utils.kubernetes.deployment_env import generate_chart_yaml
 from utils.list import unmarshall_list_array, marshall_list_string
 from utils.common import is_empty, is_not_numeric, safe_get_entry
 from utils.encoder import AlchemyEncoder
+from utils.observability.cid import get_current_cid
 
 def admin_get_roles(current_user):
     rolesJson = get_infra_playbook_roles()
@@ -20,21 +21,39 @@ def admin_get_roles(current_user):
 
 def admin_get_environment(environment_id, db):
     if is_not_numeric(environment_id):
-        return JSONResponse(content = {"error": "Invalid environment id"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Invalid environment id',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     env = Environment.getById(environment_id, db)
     if not env:
-        return JSONResponse(content = {"message": "environment not found", "i18n_code": "804"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': 'environment not found', 
+            'i18n_code': '804',
+            'cid': get_current_cid()
+        }, status_code = 404)
     env_json = json.loads(json.dumps(env, cls = AlchemyEncoder))
     return JSONResponse(content = env_json, status_code = 200)
 
 def admin_get_k8s_environment(environment_id, db):
     if is_not_numeric(environment_id):
-        return JSONResponse(content = {"error": "Invalid environment id"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Invalid environment id',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     env = Environment.getById(environment_id, db)
     if not env or env.type != "k8s":
-        return JSONResponse(content = {"message": "environment not found", "i18n_code": "1504"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': 'environment not found', 
+            'i18n_code': '1504',
+            'cid': get_current_cid()
+        }, status_code = 404)
 
     env_json = json.loads(json.dumps(env, cls = AlchemyEncoder))
     return JSONResponse(content = env_json, status_code = 200)
@@ -44,7 +63,12 @@ def admin_import_environment(env, db):
     env_dict = json.loads(env_json)
     exist_env = Environment.getByPath(env_dict["path"], db)
     if exist_env:
-        return JSONResponse(content = {"error": "path already exists", "i18n_code": "808"}, status_code = 409)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'path already exists', 
+            'i18n_code': '808',
+            'cid': get_current_cid()
+        }, status_code = 409)
 
     new_env = Environment()
     new_env.name = env_dict["name"]
@@ -63,11 +87,20 @@ def admin_import_environment(env, db):
 
 def admin_export_environment(current_user, environment_id, db):
     if is_not_numeric(environment_id):
-        return JSONResponse(content = {"error": "Invalid environment id"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Invalid environment id',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     env = Environment.getById(environment_id, db)
     if not env:
-        return JSONResponse(content = {"message" : "environment not found", "i18n_code": "804"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message' : 'environment not found', 
+            'i18n_code': '804',
+            'cid': get_current_cid()
+        }, status_code = 404)
 
     env_dict = json.loads(json.dumps(env, cls = AlchemyEncoder))
     env_json = json.dumps(env_dict, indent = 4)
@@ -82,7 +115,11 @@ def admin_export_environment(current_user, environment_id, db):
         json_file.close()
 
     os.remove(file_name)
-    return JSONResponse(content = {"file_name": file_name, "blob": str(encoded_string)}, status_code = 200)
+    return JSONResponse(content = {
+        'status': 'ok',
+        'file_name': file_name, 
+        'blob': str(encoded_string)
+    }, status_code = 200)
 
 def admin_update_environment(environment_id, payload, db):
     name = payload.name
@@ -96,31 +133,67 @@ def admin_update_environment(environment_id, payload, db):
     logo_url = payload.logo_url
 
     if is_empty(name):
-        return JSONResponse(content = {"error": "environment name is missing", "i18n_code": "805"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'environment name is missing', 
+            'i18n_code': '805',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     if is_empty(path):
-        return JSONResponse(content = {"error": "environment path is missing", "i18n_code": "806"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'environment path is missing', 
+            'i18n_code': '806',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     if is_not_numeric(environment_id):
-        return JSONResponse(content = {"error": "Invalid environment id"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Invalid environment id',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     exist_env = Environment.getByPath(path, db)
     if exist_env and exist_env.id == environment_id:
-        return JSONResponse(content = {"error": "path already exists", "i18n_code": "808"}, status_code = 409)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'path already exists', 
+            'i18n_code': '808',
+            'cid': get_current_cid()
+        }, status_code = 409)
 
     Environment.updateEnvironment(environment_id, name, path, description, roles, subdomains, environment_template, doc_template, is_private, logo_url, db)
-    return JSONResponse(content = {"message": "environment successfully updated", "i18n_code": "801"}, status_code = 200)
+    return JSONResponse(content = {
+        'status': 'ok',
+        'message': 'environment successfully updated', 
+        'i18n_code': '801'
+    }, status_code = 200)
 
 def admin_remove_environment(environment_id, db):
     if is_not_numeric(environment_id):
-        return JSONResponse(content = {"error": "Invalid environment id"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Invalid environment id',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     env = Environment.getById(environment_id, db)
     if not env:
-        return JSONResponse(content = {"message" : "environment not found", "i18n_code": "804"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message' : 'environment not found', 
+            'i18n_code': '804',
+            'cid': get_current_cid()
+        }, status_code = 404)
 
     Environment.deleteOne(environment_id, db)
-    return JSONResponse(content = {"message" : "Environment successfully deleted", "i18n_code": "802"}, status_code = 200)
+    return JSONResponse(content = {
+        'status': 'ok',
+        'message' : 'Environment successfully deleted', 
+        'i18n_code': '802'
+    }, status_code = 200)
 
 def admin_add_environment(payload, db):
     name = payload.name
@@ -129,17 +202,37 @@ def admin_add_environment(payload, db):
     subdomains = unmarshall_list_array(payload.subdomains)
 
     if is_empty(name):
-        return JSONResponse(content = {"error": "environment name is missing", "i18n_code": "805"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'environment name is missing', 
+            'i18n_code': '805',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     if is_empty(path):
-        return JSONResponse(content = {"error": "environment path is missing", "i18n_code": "806"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'environment path is missing', 
+            'i18n_code': '806',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     if is_empty(roles):
-        return JSONResponse(content = {"error": "environment roles are missing", "i18n_code": "807"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'environment roles are missing', 
+            'i18n_code': '807',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     exist_env = Environment.getByPath(path, db)
     if exist_env:
-        return JSONResponse(content = {"error": "path already exists", "i18n_code": "808"}, status_code = 409)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'path already exists', 
+            'i18n_code': '808',
+            'cid': get_current_cid()
+        }, status_code = 409)
 
     payload.roles = None
     payload.subdomains = None
@@ -171,23 +264,44 @@ def admin_add_k8s_environment(env_data, db):
     env.environment_template = generate_chart_yaml(charts, env_data.external_charts)
 
     env.save(db)
-    return JSONResponse(content = {"message": "Environment created successfully", "id": env.id}, status_code = 201)
+    return JSONResponse(content = {
+        'status': 'ok',
+        'message': 'Environment created successfully', 
+        'id': env.id
+    }, status_code = 201)
 
 def admin_delete_k8s_environment(environment_id, db):
     if is_not_numeric(environment_id):
-        return JSONResponse(content = {"error": "Invalid environment id"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Invalid environment id',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     env: Environment  = Environment.getById(environment_id, db)
     if not env or env.type != "k8s":
-        return JSONResponse(content = {"message": "environment not found", "i18n_code":"1504"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': 'environment not found', 
+            'i18n_code':'1504',
+            'cid': get_current_cid()
+        }, status_code = 404)
 
     env.deleteOne(environment_id, db)
-    return JSONResponse(content = {"message": "environment deleted"}, status_code = 200)
+    return JSONResponse(content = {
+        'status': 'ok',
+        'message': 'environment deleted'
+    }, status_code = 200)
 
 def admin_update_k8s_environment(environment_id, env_data, db):
     env: Environment  = Environment.getById(environment_id, db)
     if not env or env.type != "k8s":
-        return JSONResponse(content = {"message": "environment not found", "i18n_code":"1504"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': 'environment not found', 
+            'i18n_code':'1504',
+            'cid': get_current_cid()
+        }, status_code = 404)
     env.name = env_data.name
     env.description = env_data.description
     env.logo_url = env_data.logo_url
@@ -199,7 +313,10 @@ def admin_update_k8s_environment(environment_id, env_data, db):
     env.environment_template = generate_chart_yaml(charts, env_data.external_charts)
 
     env.save(db)
-    return JSONResponse(content = {"message": "environment updated"}, status_code = 200)
+    return JSONResponse(content = {
+        'status': 'ok',
+        'message': 'environment updated'
+    }, status_code = 200)
 
 def get_charts():
     return JSONResponse(content = get_helm_charts(), status_code = 200)

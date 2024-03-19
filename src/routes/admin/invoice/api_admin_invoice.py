@@ -10,6 +10,7 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 
 from database.postgres_db import get_db
+from entities.Invoice import Invoice
 from schemas.User import UserSchema
 from schemas.Invoice import InvoiceSchema, InvoiceUpdateSchema, InvoiceDownloadSchema, InvoiceEditionSchema
 from middleware.auth_guard import admin_required
@@ -28,15 +29,21 @@ from utils.consumption import getUserConsumptionsByDate
 from utils.date import parse_date
 from utils.payment import get_min_amount
 from utils.billing import download_billing_file
+from utils.observability.cid import get_current_cid
 from utils.observability.otel import get_otel_tracer
+from utils.observability.traces import span_format
+from utils.observability.counter import create_counter, increment_counter
+from utils.observability.enums import Action, Method
 
 router = APIRouter()
 
 _span_prefix = "adm-invoice"
+_counter = create_counter("adm_invoice_api", "Admin invoice API counter")
 
 @router.post("/generate")
 def generate_invoice(current_user: Annotated[UserSchema, Depends(admin_required)], payload: InvoiceSchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-post".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST)):
+        increment_counter(_counter, Method.POST)
         from_date = parse_date(payload.from_)
         to_date = parse_date(payload.to)
         email = payload.email
@@ -45,19 +52,39 @@ def generate_invoice(current_user: Annotated[UserSchema, Depends(admin_required)
 
         from_date_iso = from_date["value"]
         if is_false(from_date["status"]):
-            return JSONResponse(content = {"error": "The date is not correct :{}".format(from_date_iso), "i18n_code": "bad_date_aaaammdd"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': "The date is not correct: {}".format(from_date_iso),
+                'i18n_code': 'bad_date_aaaammdd',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
         to_date_iso = to_date["value"]
         if is_false(to_date["status"]):
-            return JSONResponse(content = {"error": "The date is not correct :{}".format(to_date_iso), "i18n_code": "bad_date_aaaammdd"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': "The date is not correct: {}".format(to_date_iso),
+                'i18n_code': 'bad_date_aaaammdd',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
         from entities.User import User
         target_user = User.getUserByEmail(email, db)
         if not target_user:
-            return JSONResponse(content = {"error": "user not found", "i18n_code": "304"}, status_code = 404)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'user not found',
+                'i18n_code': '304',
+                'cid': get_current_cid()
+            }, status_code = 404)
 
         if is_flag_disabled(target_user.enabled_features, 'billable'):
-            return JSONResponse(content = {"error": "user not billable", "i18n_code": "not_billable"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'user not billable',
+                'i18n_code': 'not_billable',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
         consumptions = getUserConsumptionsByDate(from_date, to_date, target_user.id, db)
         all_consumptions = generate_user_consumptions(target_user.id, from_date_iso, to_date_iso, db)
@@ -89,8 +116,8 @@ def generate_invoice(current_user: Annotated[UserSchema, Depends(admin_required)
             total_ttc = round((total_ht * float(os.getenv("TTVA"))) + float(timbre_fiscal), 4)
         else:
             total_ttc = round(total_ht * float(os.getenv("TTVA")), 4)
+
         total_ht = round(total_ht, 4)
-        from entities.Invoice import Invoice
 
         invoice_ref = get_invoice_ref(db)
         new_invoice = Invoice()
@@ -128,29 +155,60 @@ def generate_invoice(current_user: Annotated[UserSchema, Depends(admin_required)
 
             os.remove(name_file)
         except HTTPError as e:
-            return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
-        return JSONResponse(content = {"file_name": name_file, "blob": str(encoded_string)}, status_code = 200)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': e.msg,
+                'i18n_code': e.headers['i18n_code'],
+                'cid': get_current_cid()
+            }, status_code = e.code)
+
+        return JSONResponse(content = {
+            'status': 'ok',
+            'file_name': name_file,
+            'blob': str(encoded_string)
+        }, status_code = 200)
 
 @router.post("/edition")
 def invoice_edition(current_user: Annotated[UserSchema, Depends(admin_required)], payload: InvoiceEditionSchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-edit".format(_span_prefix)):
-        from entities.Invoice import Invoice
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST, Action.EDIT)):
+        increment_counter(_counter, Method.POST, Action.EDIT)
+        from entities.Invoice import Inoice
         user = user_from_body(payload)
         search_user_id = pick_user_id_if_exists(user)
-        if is_false(search_user_id["status"]):
-            return JSONResponse(content = {"error": search_user_id["message"], "i18n_code": search_user_id["i18n_code"]}, status_code = search_user_id["http_code"])
+        if is_false(search_user_id['status']):
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': search_user_id['message'],
+                'i18n_code': search_user_id['i18n_code'],
+                'cid': get_current_cid()
+            }, status_code = search_user_id['http_code'])
 
         invoice_ref = payload.ref
         if is_not_ref_invoice_valid(invoice_ref):
-            return JSONResponse(content = {"error": "The reference is not correct: ref = {}".format(invoice_ref), "i18n_code": "bad_invoice_ref"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': "The reference is not correct: ref = {}".format(invoice_ref),
+                'i18n_code': 'bad_invoice_ref',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
         invoice = Invoice.getInvoiceByRefAndUser(invoice_ref, search_user_id["id"], db)
         if is_false(invoice):
-            return JSONResponse(content = {"error": "invoice not found", "i18n_code": "604"}, status_code = 404)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'invoice not found',
+                'i18n_code': '604',
+                'cid': get_current_cid()
+            }, status_code = 404)
 
         new_ref = payload.new_ref
         if is_not_ref_invoice_valid(new_ref):
-            return JSONResponse(content = {"error": "The reference is not correct: new_ref = {}".format(new_ref), "i18n_code": "bad_invoice_ref"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': "The reference is not correct: new_ref = {}".format(new_ref),
+                'i18n_code': 'bad_invoice_ref',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
         details = invoice.details
         consumptions = []
@@ -197,40 +255,76 @@ def invoice_edition(current_user: Annotated[UserSchema, Depends(admin_required)]
             send_invoice_email(user.email, name_file, encoded_string, True, True, date_path)
         os.remove(name_file)
     except HTTPError as e:
-        return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
-    return JSONResponse(content = {"message": f"Invoice successfully updated", "i18n_code": "301"}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': e.msg,
+            'i18n_code': e.headers['i18n_code'],
+            'cid': get_current_cid()
+        }, status_code = e.code)
+
+    return JSONResponse(content = {
+        'status': 'ok',
+        'message': 'Invoice successfully updated',
+        'i18n_code': '301'
+    }, status_code = 200)
 
 @router.post("/{invoice_ref}/download")
 def download_invoice(current_user: Annotated[UserSchema, Depends(admin_required)], invoice_ref: str, payload: InvoiceDownloadSchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-download".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST, Action.DOWNLOAD)):
+        increment_counter(_counter, Method.POST, Action.DOWNLOAD)
         search_user_id = user_id_from_body(payload, db)
-        if is_false(search_user_id["status"]):
-            return JSONResponse(content = {"error": search_user_id["message"], "i18n_code": search_user_id["i18n_code"]}, status_code = search_user_id["http_code"])
+        if is_false(search_user_id['status']):
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': search_user_id['message'],
+                'i18n_code': search_user_id['i18n_code'],
+                'cid': get_current_cid()
+            }, status_code = search_user_id['http_code'])
 
-        from entities.Invoice import Invoice
         user_invoice = Invoice.getInvoiceByRefAndUser(invoice_ref, search_user_id["id"], db)
         if is_false(user_invoice):
-                return JSONResponse(content = {"error": "invoice not found", "i18n_code": "604"}, status_code = 404)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'invoice not found',
+                'i18n_code': '604',
+                'cid': get_current_cid()
+            }, status_code = 404)
 
         target_name, download_status = download_billing_file("invoice", search_user_id["id"], user_invoice)
         if is_false(download_status["status"]):
-            return JSONResponse(content = {"error": download_status["message"], "i18n_code": download_status["i18n_code"]}, status_code = download_status["http_code"])
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': download_status['message'],
+                'i18n_code': download_status['i18n_code'],
+                'cid': get_current_cid()
+            }, status_code = download_status['http_code'])
+
         encoded_string = ""
         with open(target_name, "rb") as pdf_file:
             encoded_string = base64.b64encode(pdf_file.read()).decode()
 
         pdf_file.close()
         os.remove(target_name)
-        return JSONResponse(content = {"file_name": target_name, "blob": str(encoded_string)}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'file_name': target_name,
+            'blob': str(encoded_string)
+        }, status_code = 200)
 
 @router.get("/{user_email}")
 def get_invoice_by_user_email(current_user: Annotated[UserSchema, Depends(admin_required)], user_email: str, from_date: str = Query(None, alias = "from"), to_date: str = Query(None, alias = "to"), db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-get-byemail".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.BYEMAIL)):
+        increment_counter(_counter, Method.GET, Action.BYEMAIL)
         from entities.User import User
         target_user = User.getUserByEmail(user_email, db)
         if not target_user:
-            return JSONResponse(content = {"error": "user not found", "i18n_code": "304"}, status_code = 404)
-        from entities.Invoice import Invoice
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'user not found',
+                'i18n_code': '304',
+                'cid': get_current_cid()
+            }, status_code = 404)
+
         invoices = []
         if to_date and from_date:
             invoices = Invoice.getUserInvoicesByDate(target_user.id, from_date, to_date, db)
@@ -245,24 +339,45 @@ def get_invoice_by_user_email(current_user: Annotated[UserSchema, Depends(admin_
 
 @router.get("/{invoice_id}")
 def get_invoice_by_id(current_user: Annotated[UserSchema, Depends(admin_required)], invoice_id: str, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-get".format(_span_prefix)):
-        from entities.Invoice import Invoice
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET)):
+        increment_counter(_counter, Method.GET)
         user_invoice = Invoice.getInvoiceById(invoice_id, db)
         if is_false(user_invoice):
-                return JSONResponse(content = {"error": "invoice not found", "i18n_code": "604"}, status_code = 404)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'invoice not found',
+                'i18n_code': '604',
+                'cid': get_current_cid()
+            }, status_code = 404)
+
         dumpedInvoice = json.loads(json.dumps(user_invoice, cls = AlchemyEncoder))
         invoiceJson = {**dumpedInvoice, "date_created": str(user_invoice.date_created), "from_date": str(user_invoice.from_date), "to_date": str(user_invoice.to_date)}
         return JSONResponse(content = invoiceJson, status_code = 200)
 
 @router.patch("/{invoice_id}")
 def update_invoice_status(current_user: Annotated[UserSchema, Depends(admin_required)], invoice_id: str, payload: InvoiceUpdateSchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-patch".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix)):
+        increment_counter(_counter, Method.PATCH)
         status = payload.status
-        from entities.Invoice import Invoice
         user_invoice = Invoice.getInvoiceById(invoice_id, db)
         if is_false(user_invoice):
-            return JSONResponse(content = {"error": "invoice not found", "i18n_code": "604"}, status_code = 404)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'invoice not found',
+                'i18n_code': '604',
+                'cid': get_current_cid()
+            }, status_code = 404)
+
         if status not in ["paid", "unpaid", "canceled"]:
-            return JSONResponse(content = {"error": "invalid invoice status"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'invalid invoice status',
+                'cid': get_current_cid()
+            }, status_code = 400)
+
         Invoice.updateInvoiceStatus(invoice_id, status, db)
-        return JSONResponse(content = {"message": "invoice successfully updated", "i18n_code": "601"}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': 'invoice successfully updated',
+            'i18n_code': '601'
+        }, status_code = 200)

@@ -21,6 +21,7 @@ from utils.gitlab import  push_files_to_repository
 from utils.kubernetes.deployment_env import push_charts
 from utils.kubernetes.k8s_management import set_git_config,delete_custom_resource
 from utils.bytes_generator import generate_random_bytes
+from utils.observability.cid import get_current_cid
 
 GROUP = "helm.toolkit.fluxcd.io"
 VERSION = "v2beta2"
@@ -46,20 +47,40 @@ def create_new_deployment(current_user:UserSchema,deployment:DeploymentSchema, d
     env: Environment = Environment.getById(deployment.env_id, db)
 
     if not env and not env.type == "vm":
-        return JSONResponse(content = {"message": "environment not found", "i18n_code": "1504"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': 'environment not found',
+            'i18n_code': '1504',
+            'cid': get_current_cid()
+        }, status_code = 404)
 
     project = Project.getById(deployment.project_id, db)
     
     if not project:
-        return JSONResponse(content = {"message": "project not found", "i18n_code": "803"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': 'project not found',
+            'i18n_code': '803',
+            'cid': get_current_cid()
+        }, status_code = 404)
     
     deployments = Deployment.getAllByProject(project.id, db)
     if is_not_empty(deployments) > 0 and deployments[0].env_id != deployment.env_id:
-        return JSONResponse(content = {"message": "can't select a different environment for this project", "i18n_code": "1606"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': "can't select a different environment for this project",
+            'i18n_code': '1606',
+            'cid': get_current_cid()
+        }, status_code = 400)
     
     cluster = Cluster.getById(deployment.cluster_id, db)
     if not cluster:
-        return JSONResponse(content = {"message": "cluster not found", "i18n_code": "1404"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': 'cluster not found',
+            'i18n_code': '1404',
+            'cid': get_current_cid()
+        }, status_code = 404)
     
     push_charts(project.id, project.gitlab_host, project.access_token, env.roles.split(";"))
 
@@ -67,7 +88,16 @@ def create_new_deployment(current_user:UserSchema,deployment:DeploymentSchema, d
     with open(path, 'r') as file:
         readme_content = file.read()
 
-    files = [{"path": "Chart.yaml","content": env.environment_template},{ "path": "README.md", "content": readme_content}]
+    files = [
+        {
+            'path': 'Chart.yaml',
+            'content': env.environment_template
+        },
+        { 
+            'path': 'README.md', 
+            'content': readme_content
+        }
+    ]
 
     gitlab_connection = gitlab.Gitlab(url = project.gitlab_host, private_token=project.access_token)
     push_files_to_repository(files, gitlab_connection, project.id, 'main', 'Added Chart file')
@@ -85,15 +115,25 @@ def create_new_deployment(current_user:UserSchema,deployment:DeploymentSchema, d
                             user_id=current_user.id)
     deployment.save(db)
     deploymentJson = json.loads(json.dumps(deployment, cls = AlchemyEncoder))
-    return JSONResponse(content = deploymentJson,status_code = 201)
+    return JSONResponse(content = deploymentJson, status_code = 201)
 
 def get_deployment(current_user:UserSchema,deployment_id:int, db):
     deployment = Deployment.findOne(deployment_id, db)
     if not deployment:
-        return JSONResponse(content = {"message": "deployment not found", "i18n_code": "1604"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': "deployment not found",
+            'i18n_code': '1604',
+            'cid': get_current_cid()
+        }, status_code = 404)
 
     if deployment.user_id != current_user.id and not current_user.is_admin:
-        return JSONResponse(content = {"message": "you dont have permission to get this deployment", "i18n_code": "1603"}, status_code = 403)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': "you don't have permission to get this deployment",
+            'i18n_code': '1603',
+            'cid': get_current_cid()
+        }, status_code = 403)
     
     kubeConfig = Cluster.getKuberConfigFileByClusterId(deployment.cluster_id, db)
     config_file = yaml.safe_load(kubeConfig.content)
@@ -103,7 +143,12 @@ def get_deployment(current_user:UserSchema,deployment_id:int, db):
     try:
         pods = v1.list_namespaced_pod(f'{deployment.name}-{deployment.hash}').items
     except MaxRetryError:
-        return JSONResponse(content = {"message": "couldn't connect to the cluster", "i18n_code": "1401"}, status_code = 500)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': "couldn't connect to the cluster",
+            'i18n_code': '1401',
+            'cid': get_current_cid()
+        }, status_code = 500)
     
     project = Project.getById(deployment.project_id, db)
     env = Environment.getById(deployment.env_id, db)
@@ -153,10 +198,20 @@ def get_deployment(current_user:UserSchema,deployment_id:int, db):
 def delete_deployment(current_user:UserSchema,deployment_id:int, db):
     deployment = Deployment.findOne(deployment_id, db)
     if not deployment:
-        return JSONResponse(content = {"message": "deployment not found", "i18n_code": "1604"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': 'deployment not found',
+            'i18n_code': '1604',
+            'cid': get_current_cid()
+        }, status_code = 404)
 
     if deployment.user_id != current_user.id and not current_user.is_admin:
-        return JSONResponse(content = {"message": "you dont have permission to delete this deployment", "i18n_code": "1603"}, status_code = 403)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': "you don't have permission to delete this deployment",
+            'i18n_code': '1603',
+            'cid': get_current_cid()
+        }, status_code = 403)
     
     cluster = Cluster.getById(deployment.cluster_id, db)
     kubeconfigFile = cluster.getKuberConfigFileByClusterId(cluster.id, db)
@@ -167,6 +222,14 @@ def delete_deployment(current_user:UserSchema,deployment_id:int, db):
 
     if is_true(deleted):
         deployment.delete(db)
-        return JSONResponse(content = {"message": "deployment deleted"}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': 'deployment deleted'
+        }, status_code = 200)
     else:
-        return JSONResponse(content = {"message": "couldn't delete deployment from the cluster", "i18n_code": "1605"}, status_code = 500)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': "couldn't delete deployment from the cluster",
+            'i18n_code': '1605',
+            'cid': get_current_cid()
+        }, status_code = 500)

@@ -14,18 +14,29 @@ from entities.Apikeys import ApiKeys
 from utils.api_keys import generate_apikey_access_key, generate_apikey_secret_key
 from utils.common import is_empty
 from utils.encoder import AlchemyEncoder
+from utils.observability.cid import get_current_cid
 from utils.observability.otel import get_otel_tracer
+from utils.observability.traces import span_format
+from utils.observability.counter import create_counter, increment_counter
+from utils.observability.enums import Action, Method
 
 router = APIRouter()
 
 _span_prefix = "api-keys"
+_counter = create_counter("keys_api", "Keys API counter")
 
 @router.post("")
 def create_api_key(current_user: Annotated[UserSchema, Depends(get_current_active_user)], payload: ApiKeysSchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-post".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST)):
+        increment_counter(_counter, Method.POST)
         name = payload.name
         if is_empty(name):
-            return JSONResponse(content = {"error": "please provide a name for the api key", "i18n_code": "invalid_api_key" }, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'please provide a name for the api key',
+                'i18n_code': 'invalid_api_key',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
         found = True
         generated_access_key = ""
@@ -54,35 +65,68 @@ def create_api_key(current_user: Annotated[UserSchema, Depends(get_current_activ
 
 @router.get("")
 def get_api_keys(current_user: Annotated[UserSchema, Depends(get_current_active_user)], db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-get".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET)):
+        increment_counter(_counter, Method.GET)
         from entities.Apikeys import ApiKeys
         api_keys = ApiKeys.getUserApiKeys(current_user.id, db)
         keys = [{"id": key.id, "name": key.name, "created_at": key.created_at} for key in api_keys]
-        return JSONResponse(content = {"api_keys": keys}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'api_keys': keys
+        }, status_code = 200)
 
 @router.delete("/{key_id}")
 def delete_api_key(current_user: Annotated[UserSchema, Depends(get_current_active_user)], key_id: str, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-delete".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.DELETE)):
+        increment_counter(_counter, Method.DELETE)
         from entities.Apikeys import ApiKeys
         apiKey = ApiKeys.getUserApiKey(current_user.id, key_id, db)
         if not apiKey:
-            return JSONResponse(content = {"error": "api key not found", "i18n_code": "0000000"}, status_code = 404)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'api key not found',
+                'i18n_code': '0000000',
+                'cid': get_current_cid()
+            }, status_code = 404)
         ApiKeys.deleteUserApiKey(current_user.id, key_id, db)
-        return JSONResponse(content = {"message": "api key successfully deleted", "i18n_code": "0000000"}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': 'api key successfully deleted',
+            'i18n_code': '0000000'
+        }, status_code = 200)
 
 @router.post("/verify")
 def verify_api_key(payload: ApiKeysVerificationSchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-verify".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.VERIFY)):
+        increment_counter(_counter, Method.GET, Action.VERIFY)
         access_key = payload.access_key
         secret_key = payload.secret_key
 
         if is_empty(access_key):
-            return JSONResponse(content = {"error": "please provide an access key", "i18n_code": "0000000"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'please provide an access key',
+                'i18n_code': '0000000',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
         if is_empty(secret_key):
-            return JSONResponse(content = {"error": "please provide a secret key", "i18n_code": "0000000"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'please provide a secret key',
+                'i18n_code': '0000000',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
         api_key = ApiKeys.getApiKey(access_key, secret_key, db)
         if is_empty(api_key):
-            return JSONResponse(content = {"error": "invalid api key credentials"}, status_code = 401)
-        return JSONResponse(content = {"message": "api key credentials are valid"}, status_code = 200)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'invalid api key credentials',
+                'cid': get_current_cid()
+            }, status_code = 401)
+
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': 'api key credentials are valid'
+        }, status_code = 200)

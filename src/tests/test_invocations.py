@@ -1,6 +1,5 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
-from fastapi.responses import JSONResponse
 
 test_current_user = Mock()
 mock_user_auth = Mock()

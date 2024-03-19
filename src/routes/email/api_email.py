@@ -10,19 +10,26 @@ from schemas.Email import EmailSchema
 from utils.common import is_empty
 from utils.logger import log_msg
 from utils.mail import EMAIL_ADAPTER
+from utils.observability.cid import get_current_cid
 from utils.observability.otel import get_otel_tracer
+from utils.observability.traces import span_format
+from utils.observability.counter import create_counter, increment_counter
+from utils.observability.enums import Method
 
 router = APIRouter()
 
 _span_prefix = "email"
+_counter = create_counter("email_api", "Email API counter")
 
 @router.post("")
 def send_email(current_user: Annotated[UserSchema, Depends(get_current_active_user)], email_api: Annotated[str, Depends(emailapi_required)], payload: EmailSchema):
-    with get_otel_tracer().start_as_current_span("{}-post".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST)):
+        increment_counter(_counter, Method.POST)
         if EMAIL_ADAPTER().is_disabled():
             return JSONResponse(content = {
-                "status": "disabled",
-                "i18n_code": "disabled_email_service"
+                'status': 'ko',
+                'i18n_code': 'disabled_email_service',
+                'cid': get_current_cid()
             }, status_code = 405)
 
         if is_empty(payload.from_):

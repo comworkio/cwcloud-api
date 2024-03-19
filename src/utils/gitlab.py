@@ -8,8 +8,8 @@ import gitlab
 
 from urllib.error import HTTPError
 from datetime import datetime, timedelta
-from utils.bytes_generator import generate_random_bytes
 
+from utils.bytes_generator import generate_random_bytes
 from utils.mail import send_email
 from utils.logger import log_msg
 from utils.common import exists_entry, is_disabled, is_empty, is_not_empty, safe_compare_entry, safe_contain_entry

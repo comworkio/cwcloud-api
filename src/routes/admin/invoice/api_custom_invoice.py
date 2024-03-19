@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from database.postgres_db import get_db
-
+from entities.User import User
 from schemas.User import UserSchema
 from schemas.Invoice import InvoiceCustomSchema
 from middleware.auth_guard import admin_required
@@ -22,15 +22,21 @@ from utils.logger import log_msg
 from utils.mail import send_invoice_email
 from utils.invoice import generate_invoice_pdf
 from utils.payment import get_min_amount
+from utils.observability.cid import get_current_cid
 from utils.observability.otel import get_otel_tracer
+from utils.observability.traces import span_format
+from utils.observability.counter import create_counter, increment_counter
+from utils.observability.enums import Action, Method
 
 router = APIRouter()
 
 _span_prefix = "adm-invoice-custom"
+_counter = create_counter("adm_custom_invoice_api", "Admin custom invoice API counter")
 
 @router.post("")
 def create_custom_invoice(current_user: Annotated[UserSchema, Depends(admin_required)], payload: InvoiceCustomSchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-post".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST)):
+        increment_counter(_counter, Method.POST)
         email = payload.email
         send = payload.send
         preview = payload.preview
@@ -38,15 +44,29 @@ def create_custom_invoice(current_user: Annotated[UserSchema, Depends(admin_requ
         fdate = parse_date(payload.date)
         invoice_date = fdate["value"]
         if is_false(fdate["status"]):
-            return JSONResponse(content = {"error": "The date is not correct :{}".format(invoice_date), "i18n_code": "bad_date_aaaammdd"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': "The date is not correct: {}".format(invoice_date),
+                'i18n_code': 'bad_date_aaaammdd',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
-        from entities.User import User
         target_user = User.getUserByEmail(email, db)
         if not target_user:
-            return JSONResponse(content = {"error": "user not found", "i18n_code": "304"}, status_code = 404)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'user not found',
+                'i18n_code': '304',
+                'cid': get_current_cid()
+            }, status_code = 404)
 
         if is_flag_disabled(target_user.enabled_features, 'billable'):
-            return JSONResponse(content = {"error": "user not billable", "i18n_code": "not_billable"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'user not billable',
+                'i18n_code': 'not_billable',
+                'cid': get_current_cid()
+            }, status_code = 400)
 
         items_dict = []
         total_ht = 0
@@ -57,7 +77,12 @@ def create_custom_invoice(current_user: Annotated[UserSchema, Depends(admin_requ
                     "price": item.price
                 }
             except AttributeError as ae:
-                return JSONResponse(content = {"error": "not correct item :{}".format(ae), "i18n_code": "not_correct_item"}, status_code = 400)
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': "not correct item: {}".format(ae),
+                    'i18n_code': 'not_correct_item',
+                    'cid': get_current_cid()
+                }, status_code = 400)
 
             total_ht = total_ht + itemd["price"]
             items_dict.append(itemd)
@@ -102,5 +127,15 @@ def create_custom_invoice(current_user: Annotated[UserSchema, Depends(admin_requ
 
             os.remove(name_file)
         except HTTPError as e:
-            return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
-        return JSONResponse(content = {"file_name": name_file, "blob": str(encoded_string)}, status_code = 200)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': e.msg,
+                'i18n_code': e.headers['i18n_code'],
+                'cid': get_current_cid()
+            }, status_code = e.code)
+
+        return JSONResponse(content = {
+            'status': 'ok',
+            'file_name': name_file,
+            'blob': str(encoded_string)
+        }, status_code = 200)

@@ -13,6 +13,7 @@ from jinja2 import Environment, FileSystemLoader
 from schemas.Kubernetes import ExternalChart
 from utils.common import is_not_empty
 from utils.gitlab import push_files_to_repository
+from utils.observability.cid import get_current_cid
 
 access_token = os.getenv('GIT_PRIVATE_TOKEN')
 git_username = os.getenv('GIT_USERNAME')
@@ -53,9 +54,16 @@ def push_charts(project_id, gitlab_host, token,charts:list[str]):
         push_files_to_repository(charts_files, gitlab_connection, project_id, 'main', 'Added Manifest')
         shutil.rmtree(root_dir)
     except Exception as e:
-        return JSONResponse(content = {"message": "error pushing charts"}, status_code = 500)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': 'error pushing charts',
+            'cid': get_current_cid()
+        }, status_code = 500)
 
-    return JSONResponse(content = {"message": "charts pushed"}, status_code = 200)
+    return JSONResponse(content = {
+        'status': 'ok',
+        'message': 'charts pushed'
+    }, status_code = 200)
 
 def generate_chart_yaml(charts:list[str], external_charts:Optional[list[ExternalChart]] = None):
     file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[2]) + '/templates/kubernetes/app')

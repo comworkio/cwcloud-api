@@ -1,4 +1,4 @@
-from utils.triggers import _supported_triggers_kinds
+from utils.faas.triggers import _supported_triggers_kinds
 
 def get_all_triggers_kinds():
     return {

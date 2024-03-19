@@ -1,6 +1,6 @@
 from unittest import TestCase
+
 from utils.list import unmarshall_list_array, marshall_list_string
-from utils.security import check_password, is_not_email_valid, random_password
 
 class TestTransformRole(TestCase):
     def test_marshall_list_string_nominal(self):

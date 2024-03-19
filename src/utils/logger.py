@@ -6,7 +6,7 @@ import sys
 
 from datetime import datetime
 
-from utils.cid import get_current_cid
+from utils.observability.cid import get_current_cid
 from utils.common import is_disabled, is_enabled, is_true
 
 SLACK_WEBHOOK_TPL = "https://hooks.slack.com/services/{}"

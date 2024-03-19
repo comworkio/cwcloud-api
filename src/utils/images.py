@@ -1,5 +1,5 @@
-import yaml
 import os
+import yaml
 
 from utils.logger import log_msg
 

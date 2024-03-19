@@ -1,11 +1,8 @@
 import importlib
 
 from time import sleep
-from fastapi import Depends
-from sqlalchemy.orm import Session
 
 from entities.Registry import Registry
-from database.postgres_db import get_db
 
 from utils.logger import log_msg
 from utils.provider import get_driver

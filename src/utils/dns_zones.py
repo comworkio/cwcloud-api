@@ -1,12 +1,13 @@
 import os
 import yaml
-from utils.common import is_not_empty
 
-from utils.logger import log_msg
 import lbrlabs_pulumi_scaleway as scaleway
 import lbrlabs_pulumi_ovh as ovh
 import pulumi_cloudflare as cloudflare
 import pulumi_aws as aws
+
+from utils.common import is_not_empty
+from utils.logger import log_msg
 
 def register_cloudflare_domain(value, environment, instance_ip, root_dns_zone):
     dns_zone = "{}.{}".format(environment, root_dns_zone)

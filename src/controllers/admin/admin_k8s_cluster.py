@@ -10,6 +10,7 @@ from entities.kubernetes.KubeconfigFile import KubeConfigFile
 from utils.yaml import read_uploaded_yaml_file
 from utils.yaml import read_uploaded_yaml_file
 from utils.kubernetes.k8s_management import get_dumped_json, install_flux
+from utils.observability.cid import get_current_cid
 
 def get_all_clusters(db):
     clusters = Cluster.getAll(db) 
@@ -19,14 +20,24 @@ def get_all_clusters(db):
 def get_cluster_by_user(current_user, cluster_id, db):
     cluster = Cluster.findOneByUser(cluster_id, current_user.id, db)
     if not cluster:
-        return JSONResponse(content = {"error": "cluster not found", "i18n_code": "404"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'cluster not found', 
+            'i18n_code': '404',
+            'cid': get_current_cid()
+        }, status_code = 404)
 
     return cluster
 
 def get_clusters_byKubeconfigFile(current_user, kubeconfig_file_id, db):
     clusters = Cluster.findByKubeConfigFileAndUserId(kubeconfig_file_id, current_user.id, db)
     if not clusters:
-        return JSONResponse(content = {"error": "clusters not found", "i18n_code": "404"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'clusters not found', 
+            'i18n_code': '404',
+            'cid': get_current_cid()
+        }, status_code = 404)
 
     dumpedClusters = get_dumped_json(clusters)
     return JSONResponse(content = dumpedClusters, status_code = 200)
@@ -111,10 +122,19 @@ def save_kubeconfig(current_user:UserSchema, kubeconfig:UploadFile, db:Session):
         read_clusters_and_save(file, kubeconfigFile.id, db)
     except Exception:
         kubeconfigFile.delete(db)
-        return JSONResponse(content = {"error": "please verify the kubeconfig file", "i18n_code": "1400"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'please verify the kubeconfig file', 
+            'i18n_code': '1400',
+            'cid': get_current_cid()
+        }, status_code = 400)
     
     kubeconfig.file.close()
-    return JSONResponse(content = {"message": "kubeconfig successfully uploaded","file_id":kubeconfigFile.id}, status_code = 200)
+    return JSONResponse(content = {
+            'status':'ok',
+            'message': 'kubeconfig successfully uploaded',
+            'file_id':kubeconfigFile.id
+        }, status_code = 200)
 
 def read_clusters_and_save(file, file_id, db):
     kc_content = read_uploaded_yaml_file(file)
@@ -135,7 +155,15 @@ def read_clusters_and_save(file, file_id, db):
 def delete_cluster_by_id(current_user, cluster_id, db):
     cluster: Cluster = get_cluster_by_user(current_user,cluster_id,db)
     if cluster is None:
-        return JSONResponse(content = {"error": "cluster not found", "i18n_code": "1404"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'cluster not found', 
+            'i18n_code': '1404',
+            'cid': get_current_cid()
+        }, status_code = 404)
 
     Cluster.deleteOne(cluster.id, db)
-    return JSONResponse(content = {"message": "Cluster successfully deleted"}, status_code = 200)
+    return JSONResponse(content = {
+        'status': 'ok',
+        'message': 'Cluster successfully deleted'
+    }, status_code = 200)

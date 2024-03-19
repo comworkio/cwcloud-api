@@ -8,6 +8,7 @@ from time import sleep
 from entities.Bucket import Bucket
 
 from utils.logger import log_msg
+from utils.observability.cid import get_current_cid
 from utils.provider import get_driver
 from utils.constants import MAX_RETRY, WAIT_TIME
 
@@ -90,11 +91,12 @@ def download_from_bucket(target_name, file_path):
                 'status': 'ok',
             }
         except S3Error as e:
-            not_found_msg = "File not found : target_name = {}, file_path = {}".format(target_name, file_path)
+            not_found_msg = "File not found: target_name = {}, file_path = {}".format(target_name, file_path)
             log_msg("WARN", "[bucket][download_from_bucket] {}, e = {}".format(not_found_msg, e))
             return {
                 'status': 'ko',
                 'message': not_found_msg,
                 'i18n_code': 'file_not_found',
-                'http_code': 404
+                'http_code': 404,
+                'cid': get_current_cid()
             }

@@ -15,22 +15,38 @@ from utils.billing import download_billing_file
 from utils.common import is_false
 from utils.encoder import AlchemyEncoder
 from utils.observability.otel import get_otel_tracer
+from utils.observability.traces import span_format
+from utils.observability.counter import create_counter, increment_counter
+from utils.observability.enums import Action, Method
+from utils.observability.cid import get_current_cid
 
 router = APIRouter()
 
 _span_prefix = "invoice"
+_counter = create_counter("invoice_api", "Invoice API counter")
 
 @router.get("/{invoice_ref}/download")
 def download_invoice_by_invoice_ref(current_user: Annotated[UserSchema, Depends(get_current_active_user)], invoice_ref: str, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-download".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.DOWNLOAD)):
+        increment_counter(_counter, Method.GET, Action.DOWNLOAD)
         from entities.Invoice import Invoice
         user_invoice = Invoice.getInvoiceByRefAndUser(invoice_ref, current_user.id, db)
         if is_false(user_invoice):
-            return JSONResponse(content = {"error": "invoice not found", "i18n_code": "604"}, status_code = 404)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'invoice not found', 
+                'i18n_code': '604',
+                'cid': get_current_cid()
+            }, status_code = 404)
 
         target_name, download_status = download_billing_file("invoice", current_user.id, user_invoice)
         if is_false(download_status["status"]):
-            return JSONResponse(content = {"error": download_status["message"], "i18n_code": download_status["i18n_code"]}, status_code = download_status["http_code"])
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': download_status['message'], 
+                'i18n_code': download_status['i18n_code'],
+                'cid': get_current_cid()
+            }, status_code = download_status["http_code"])
 
         encoded_string = ""
         with open(target_name, "rb") as pdf_file:
@@ -42,7 +58,8 @@ def download_invoice_by_invoice_ref(current_user: Annotated[UserSchema, Depends(
 
 @router.get("")
 def get_invoice(current_user: Annotated[UserSchema, Depends(get_current_active_user)], from_date: str = Query(None, alias = "from"), to_date: str = Query(None, alias = "to"), db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-get".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET)):
+        increment_counter(_counter, Method.GET)
         from entities.Invoice import Invoice
         invoices = []
         if to_date and from_date:
@@ -58,11 +75,17 @@ def get_invoice(current_user: Annotated[UserSchema, Depends(get_current_active_u
 
 @router.get("/{invoice_ref}")
 def get_invoice_by_ref(current_user: Annotated[UserSchema, Depends(get_current_active_user)], invoice_ref: str, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-get-byref".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.BYURL)):
+        increment_counter(_counter, Method.GET, Action.BYURL)
         from entities.Invoice import Invoice
         user_invoice = Invoice.getInvoiceByRefAndUser(invoice_ref, current_user.id, db)
         if is_false(user_invoice):
-            return JSONResponse(content = {"error": "invoice not found", "i18n_code": "604"}, status_code = 404)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'invoice not found', 
+                'i18n_code': '604',
+                'cid': get_current_cid()
+            }, status_code = 404)
 
         dumpedInvoice = json.loads(json.dumps(user_invoice, cls = AlchemyEncoder))
         invoiceJson = {**dumpedInvoice, "date_created": str(user_invoice.date_created), "from_date": str(user_invoice.from_date), "to_date": str(user_invoice.to_date)}

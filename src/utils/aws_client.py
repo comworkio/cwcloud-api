@@ -92,30 +92,36 @@ def get_aws_registry_name(hashed_name, region):
 def create_aws_bucket_policy(hashed_bucket_name, region):
     bucket_name = get_aws_bucket_name(hashed_bucket_name, region)
     s3_policy = {
-    "Version": "2012-10-17",
-    "Statement": [{
-            "Sid": "VisualEditor0",
-            "Effect": "Allow",
-            "Action": [
-                "s3:ListStorageLensConfigurations",
-                "s3:ListAccessPointsForObjectLambda",
-                "s3:GetAccessPoint",
-                "s3:PutAccountPublicAccessBlock",
-                "s3:GetAccountPublicAccessBlock",
-                "s3:ListAllMyBuckets",
-                "s3:ListAccessPoints",
-                "s3:PutAccessPointPublicAccessBlock",
-                "s3:ListJobs",
-                "s3:PutStorageLensConfiguration",
-                "s3:ListMultiRegionAccessPoints",
-                "s3:CreateJob" ],
-            "Resource": "*"
-        },
-        { "Sid": "VisualEditor1",
-            "Effect": "Allow",
-            "Action": "s3:*",
-            "Resource": f"arn: aws:s3:::{bucket_name}/*"
-        }]}
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "VisualEditor0",
+                "Effect": "Allow",
+                "Action": [
+                    "s3:ListStorageLensConfigurations",
+                    "s3:ListAccessPointsForObjectLambda",
+                    "s3:GetAccessPoint",
+                    "s3:PutAccountPublicAccessBlock",
+                    "s3:GetAccountPublicAccessBlock",
+                    "s3:ListAllMyBuckets",
+                    "s3:ListAccessPoints",
+                    "s3:PutAccessPointPublicAccessBlock",
+                    "s3:ListJobs",
+                    "s3:PutStorageLensConfiguration",
+                    "s3:ListMultiRegionAccessPoints",
+                    "s3:CreateJob" 
+                ],
+                "Resource": "*"
+            },
+            {
+                "Sid": "VisualEditor1",
+                "Effect": "Allow",
+                "Action": "s3:*",
+                "Resource": f"arn: aws:s3:::{bucket_name}/*"
+            }
+        ]
+    }
+
     policy_json = json.dumps(s3_policy)
     access_key_id = get_driver_access_key_id()
     secret_access_key = get_driver_secret_access_key()
@@ -132,34 +138,36 @@ def create_aws_registry_policy(hashed_name, region):
     account_id = sts_client.get_caller_identity()['Account']
 
     reg_policy = {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "VisualEditor0",
-            "Effect": "Allow",
-            "Action": [
-                "ecr: GetRegistryPolicy",
-                "ecr: CreateRepository",
-                "ecr: DescribeRegistry",
-                "ecr: DescribePullThroughCacheRules",
-                "ecr: GetAuthorizationToken",
-                "ecr: PutRegistryScanningConfiguration",
-                "ecr: CreatePullThroughCacheRule",
-                "ecr: DeletePullThroughCacheRule",
-                "ecr: PutRegistryPolicy",
-                "ecr: GetRegistryScanningConfiguration",
-                "ecr: BatchImportUpstreamImage",
-                "ecr: DeleteRegistryPolicy",
-                "ecr: PutReplicationConfiguration"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "VisualEditor1",
-            "Effect": "Allow",
-            "Action": "ecr:*",
-            "Resource": f"arn: aws:ecr:{region}:{account_id}:repository/{registry_name}"
-        }]}
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "VisualEditor0",
+                "Effect": "Allow",
+                "Action": [
+                    "ecr: GetRegistryPolicy",
+                    "ecr: CreateRepository",
+                    "ecr: DescribeRegistry",
+                    "ecr: DescribePullThroughCacheRules",
+                    "ecr: GetAuthorizationToken",
+                    "ecr: PutRegistryScanningConfiguration",
+                    "ecr: CreatePullThroughCacheRule",
+                    "ecr: DeletePullThroughCacheRule",
+                    "ecr: PutRegistryPolicy",
+                    "ecr: GetRegistryScanningConfiguration",
+                    "ecr: BatchImportUpstreamImage",
+                    "ecr: DeleteRegistryPolicy",
+                    "ecr: PutReplicationConfiguration"
+                ],
+                "Resource": "*"
+            },
+            {
+                "Sid": "VisualEditor1",
+                "Effect": "Allow",
+                "Action": "ecr:*",
+                "Resource": f"arn: aws:ecr:{region}:{account_id}:repository/{registry_name}"
+            }
+        ]
+    }
 
     policy_json = json.dumps(reg_policy)
     access_key_id = get_driver_access_key_id()
@@ -170,7 +178,7 @@ def create_aws_registry_policy(hashed_name, region):
         policy_arn = response['Policy']['Arn']
         return policy_arn
     except Exception as e:
-        log_msg("ERROR", "[AwsDriver][create registry plicy] unexpected exception : e = {}".format(e))
+        log_msg("ERROR", "[AwsDriver][create registry policy] unexpected exception: e = {}".format(e))
 
 def delete_old_reg_keys(rg_id, region, hashed_name):
     access_key_id = get_driver_access_key_id()

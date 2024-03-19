@@ -1,7 +1,5 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
-from fastapi.responses import JSONResponse
-from entities.faas.Function import FunctionEntity
 
 test_current_user = Mock()
 mock_db = Mock()

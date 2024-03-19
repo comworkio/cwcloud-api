@@ -16,9 +16,9 @@ from database.postgres_db import Base
 
 from utils.common import is_true
 from utils.logger import log_msg
-from utils.cid import get_current_cid
+from utils.observability.cid import get_current_cid
 from utils.observability.metrics import metrics
-from utils.observability.otel import init_otel_metrics, init_otel_tracer
+from utils.observability.otel import init_otel_metrics, init_otel_tracer, init_otel_logger
 
 logger = logging.getLogger('git')
 logger.setLevel(logging.INFO)
@@ -54,6 +54,7 @@ instrumentator = Instrumentator()
 
 init_otel_tracer()
 init_otel_metrics()
+init_otel_logger()
 metrics()
 
 instrumentator.instrument(app, metric_namespace='cwcloudapi', metric_subsystem='cwcloudapi')

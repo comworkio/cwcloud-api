@@ -18,20 +18,26 @@ from schemas.User import UserSchema
 
 from utils.gitlab import read_file_from_gitlab
 from utils.yaml import read_uploaded_yaml_file
-from utils.kubernetes.object import assert_presence, generate_object
+from utils.kubernetes.object import generate_object
 from utils.kubernetes.object import clear_metadata
-from utils.common import convert_dict_keys_to_camel_case
+from utils.common import convert_dict_keys_to_camel_case, is_empty
+from utils.observability.cid import get_current_cid
 
 ACCESS_TOKEN = os.getenv('GIT_PRIVATE_TOKEN')
 GIT_USERNAME = os.getenv('GIT_USERNAME')
-REPO_DIR= os.getenv('LOCAL_CLONE_CHARTS_URL')
-GIT_HELMCHARTS_REPO_URL= os.getenv('GIT_HELMCHARTS_REPO_URL')
-CHARTS_PJ_ID= os.getenv('GIT_HELMCHARTS_REPO_ID')
+REPO_DIR = os.getenv('LOCAL_CLONE_CHARTS_URL')
+GIT_HELMCHARTS_REPO_URL = os.getenv('GIT_HELMCHARTS_REPO_URL')
+CHARTS_PJ_ID = os.getenv('GIT_HELMCHARTS_REPO_ID')
 
 def get_cluster_configfile(current_user: UserSchema, cluster_id: int, db: Session):
     cluster: Cluster = Cluster.findOneByUser(cluster_id, current_user.id, db)
     if not cluster:
-        return JSONResponse(content = {"error": "Cluster not found", "i18n_code": "404"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Cluster not found', 
+            'i18n_code': '404',
+            'cid': get_current_cid()
+        }, status_code = 404)
 
     kubeconfigFile = KubeConfigFile.findOne(cluster.kubeconfig_file_id,db)
     kc_content = read_uploaded_yaml_file(kubeconfigFile.content)
@@ -167,12 +173,19 @@ def delete_object(current_user: UserSchema, object: ObjectSchema, db: Session):
     kc_content = read_uploaded_yaml_file(kubeconfigFile.content)
     resource = K8S_RESOURCES[object.kind]
     delete_resource(kc_content, object, resource['api_group'], resource['api_version'], resource['plural'])
-    return JSONResponse(content = {"message": "Successfully deleted object"}, status_code = 200)
+    return JSONResponse(content = {
+        'status': 'ok',
+        'message': 'Successfully deleted object'
+    }, status_code = 200)
 
 def update_object(current_user: UserSchema, object: ObjectSchema,yaml_file:UploadFile, db: Session):
     cluster: Cluster = Cluster.findOneByUser(object.cluster_id, current_user.id, db)
     if not cluster:
-        return JSONResponse(content = {"message": "Cluster not found"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': 'Cluster not found',
+            'cid': get_current_cid()
+        }, status_code = 404)
     
     kubeconfigFile: KubeConfigFile = KubeConfigFile.findOne(cluster.kubeconfig_file_id,db)
     kc_content = read_uploaded_yaml_file(kubeconfigFile.content)
@@ -181,28 +194,60 @@ def update_object(current_user: UserSchema, object: ObjectSchema,yaml_file:Uploa
     
     res = apply_resource(kc_content, file, object, True)
     
-    return res if res else JSONResponse(content = {"message": "Successfully updated object"}, status_code = 200)
+    return res if res else JSONResponse(content = {
+        'status': 'ok',
+        'message': 'Successfully updated object'
+    }, status_code = 200)
 
 def add_object_to_cluster(current_user:UserSchema, values_file:UploadFile, object:ObjectAddSchema, db:Session):
     # Validate parameters
     cluster: Cluster = Cluster.findOneByUser(object.cluster_id, current_user.id, db)
     
     if not cluster:
-        return JSONResponse(content = {"error": "Cluster doesn't exist", "i18n_code": "207"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': "Cluster doesn't exist", 
+            'i18n_code': '207',
+            'cid': get_current_cid()
+        }, status_code = 404)
     
     kubeconfig_file: KubeConfigFile = KubeConfigFile.findOne(cluster.kubeconfig_file_id, db)
     if not kubeconfig_file:
-        return JSONResponse(content = {"error": "You don't have any project linked with the mentioned id", "i18n_code": "207"}, status_code = 404)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': "You don't have any project linked with the mentioned id", 
+            'i18n_code': '207',
+            'cid': get_current_cid()
+        }, status_code = 404)
        
     if object.kind not in K8S_OBJECTS:
-        return JSONResponse(content = {"error": "object kind is not supported", "i18n_code": "207"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'object kind is not supported', 
+            'i18n_code': '207',
+            'cid': get_current_cid()
+        }, status_code = 400)
     
     # Extract object required values
     vf_content = read_uploaded_yaml_file(values_file.file)
     file_name = vf_content['name']
     file_namespace = vf_content['namespace']
-    assert_presence(file_namespace, "namespace is required")
-    assert_presence(file_name, "name is required")
+
+    if is_empty(file_namespace):
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'namespace is required',
+            'i18n_code': '207',
+            'cid': get_current_cid()
+        }, status_code = 400)
+
+    if is_empty(file_name):
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'name is required',
+            'i18n_code': '207',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     # Generate and apply resource
     output = generate_object(values_file, object)
@@ -211,7 +256,10 @@ def add_object_to_cluster(current_user:UserSchema, values_file:UploadFile, objec
     kc_content = read_uploaded_yaml_file(kubeconfigFile.content)
     res = apply_resource(kc_content, yaml.safe_load(output), rc_info)
 
-    return res if res else JSONResponse(content = {"message": "Manifest successfully added"}, status_code = 200)
+    return res if res else JSONResponse(content = {
+        'status': 'ok',
+        'message': 'Manifest successfully added'
+    }, status_code = 200)
 
 def get_chart_values(kind):
     host = f'https://{GIT_HELMCHARTS_REPO_URL.split("/")[0]}'
@@ -237,11 +285,21 @@ def apply_resource(kc_content, file, manifest: ObjectSchema, isUpdate: bool = Fa
             dynamic_client.create(resource,namespace=yaml_namespace,body=file)
     except ApiException as e:
         b = json.loads(e.body)
-        return JSONResponse(content = {"error": b["message"], "i18n_code": "1494"}, status_code = 400)    
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': b['message'], 
+            'i18n_code': '1494',
+            'cid': get_current_cid()
+        }, status_code = 400)    
     
 def get_object(current_user: UserSchema, object: ObjectSchema, db: Session):
     if object.kind not in K8S_OBJECTS:
-        return JSONResponse(content = {"error": "object kind is not supported", "i18n_code": "207"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'object kind is not supported', 
+            'i18n_code': '207',
+            'cid': get_current_cid()
+        }, status_code = 400)
 
     cluster: Cluster = Cluster.findOneByUser(object.cluster_id, current_user.id, db)
     kubeconfigFile: KubeConfigFile = KubeConfigFile.findOne(cluster.kubeconfig_file_id,db)
@@ -264,4 +322,9 @@ def get_object(current_user: UserSchema, object: ObjectSchema, db: Session):
         return PlainTextResponse(content = yaml.safe_dump(convert_dict_keys_to_camel_case(found_object)), status_code = 200)
     except ApiException as e:
         b = json.loads(e.body)
-        return JSONResponse(content = {"error": b["message"], "i18n_code": "1494"}, status_code = 400)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': b['message'], 
+            'i18n_code': '1494',
+            'cid': get_current_cid()
+        }, status_code = 400)

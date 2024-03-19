@@ -21,6 +21,7 @@ from utils.mail import send_create_instance_email
 from utils.logger import log_msg
 from utils.common import is_disabled, is_empty, is_false, is_not_empty
 from utils.constants import MAX_RETRY, WAIT_TIME
+from utils.observability.cid import get_current_cid
 
 def check_exist_instance(userId, instance_name, db):
     from entities.Instance import Instance
@@ -237,6 +238,7 @@ def update_instance_status(instance, server_id, action, db):
         "activate": "active",
         "delete": "deleted"
     }
+
     from entities.Instance import Instance
     Instance.updateStatus(instance.id, switcher.get(action), db)
     nowDate = datetime.now()
@@ -255,9 +257,11 @@ def update_instance_status(instance, server_id, action, db):
 def generic_remove_instance(userInstance, db, bt: BackgroundTasks):
     if is_empty(userInstance):
         return {
-            "error": "Instance not found",
-            "i18n_code": "104",
-            "http_code": 404
+            'status': 'ko',
+            'error': 'Instance not found',
+            'i18n_code': "104",
+            'http_code': 404,
+            'cid': get_current_cid()
         }
 
     server = None
@@ -273,9 +277,11 @@ def generic_remove_instance(userInstance, db, bt: BackgroundTasks):
         server_state = get_server_state(userInstance.provider, server)
         if not server_state in ['running', 'stopped']:
             return {
-                "error": "You can't delete the instance while it is not running or stopped",
-                "i18n_code": "120",
-                "http_code": 400
+                'status': 'ko',
+                'error': "You can't delete the instance while it is not running or stopped",
+                'i18n_code': '120',
+                'http_code': 400,
+                'cid': get_current_cid()
             }
     try:
         try:
@@ -291,14 +297,18 @@ def generic_remove_instance(userInstance, db, bt: BackgroundTasks):
 
         update_instance_status(userInstance, target_server_id, "delete", db)
         return {
-            "message": "instance state successfully deleted",
-            "i18n_code": "102",
-            "http_code": 200
+            'status': 'ko',
+            'message': 'instance state successfully deleted',
+            'i18n_code': '102',
+            'http_code': 200,
+            'cid': get_current_cid()
         }
 
     except HTTPError as e:
         return {
-            "error": e.msg,
-            "i18n_code": e.headers['i18n_code'],
-            "http_code": e.code
+            'status': 'ko',
+            'error': e.msg,
+            'i18n_code': e.headers['i18n_code'],
+            'http_code': e.code,
+            'cid': get_current_cid()
         }

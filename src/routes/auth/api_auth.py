@@ -16,27 +16,43 @@ from utils.logger import log_msg
 from utils.common import verify_password
 from utils.flag import is_flag_enabled
 from utils.encoder import AlchemyEncoder
+from utils.observability.cid import get_current_cid
 from utils.observability.otel import get_otel_tracer
+from utils.observability.traces import span_format
+from utils.observability.counter import create_counter, increment_counter
+from utils.observability.enums import Method
 
 router = APIRouter()
 CACHE_ADAPTER = get_adapter('cache')
 
 _span_prefix = "login"
+_counter = create_counter("auth_api", "Auth API counter")
 
 @router.post("/login")
 def login_user(payload: UserLoginSchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-post".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST)):
+        increment_counter(_counter, Method.POST)
         from entities.User import User
         email = payload.email
         password = payload.password
 
         if not payload or not email or not password:
-            return JSONResponse(content = {"error": "Missing informations for login", "i18n_code": "1004"}, status_code = 403)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'Missing informations for login',
+                'i18n_code': '1004',
+                'cid': get_current_cid()
+            }, status_code = 403)
 
         user = User.getUserByEmail(email, db)
         if not user:
             log_msg("WARN", "User {} try to authenticate but it not exists".format(email))
-            return JSONResponse(content = {"error": "Authentification failed", "i18n_code": "1002"}, status_code = 403)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'Authentification failed',
+                'i18n_code': '1002',
+                'cid': get_current_cid()
+            }, status_code = 403)
 
         from entities.Mfa import Mfa
         mfaMethods = Mfa.getUserMfaMethods(user.id, db)
@@ -57,7 +73,17 @@ def login_user(payload: UserLoginSchema, db: Session = Depends(get_db)):
             mfaMethods = Mfa.getUserMfaMethods(user.id, db)
             mfaMethodsJson = json.loads(json.dumps(mfaMethods, cls = AlchemyEncoder))
             log_msg("INFO", "User {} successfully authenticated".format(user.email))
-            return JSONResponse(content = {"token": token, "confirmed": user.confirmed, "methods": mfaMethodsJson }, status_code = 200)
+            return JSONResponse(content = {
+                'status': 'ok',
+                'token': token,
+                'confirmed': user.confirmed,
+                'methods': mfaMethodsJson
+            }, status_code = 200)
 
         log_msg("WARN", "User {} fails to authenticate".format(user.email))
-        return JSONResponse(content = {"error": "Authentification failed", "i18n_code": "1002"}, status_code = 403)
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Authentification failed',
+            'i18n_code': '1002',
+            'cid': get_current_cid()
+        }, status_code = 403)

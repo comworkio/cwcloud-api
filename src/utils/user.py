@@ -1,5 +1,7 @@
 from entities.User import User
+
 from utils.common import is_empty, is_false, is_not_numeric
+from utils.observability.cid import get_current_cid
 
 def user_from_body(body, db):
     user_id = body.user_id
@@ -10,7 +12,8 @@ def user_from_body(body, db):
                 'status': 'ko',
                 'message': 'The user_id or email is mandatory',
                 'i18n_code': 'user_id_or_email_mandatory',
-                'http_code': 400
+                'http_code': 400,
+                'cid': get_current_cid()
             }
 
         return User.getUserByEmail(email, db)
@@ -24,7 +27,8 @@ def pick_user_id_if_exists(user):
             'status': 'ko',
             'message': 'The user is not found',
             'i18n_code': 'user_not_found',
-            'http_code': 404
+            'http_code': 404,
+            'cid': get_current_cid()
         }
     elif user is dict:
         return user

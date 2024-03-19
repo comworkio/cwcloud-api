@@ -1,9 +1,9 @@
-from sqlalchemy.engine.row import Row
-from sqlalchemy.ext.declarative import DeclarativeMeta
 import json
 
-class AlchemyEncoder(json.JSONEncoder):
+from sqlalchemy.engine.row import Row
+from sqlalchemy.ext.declarative import DeclarativeMeta
 
+class AlchemyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj.__class__, DeclarativeMeta):
             fields = {}

@@ -1,5 +1,6 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
+
 from fastapi.responses import JSONResponse
 
 test_current_user = Mock()
@@ -79,4 +80,5 @@ class TestRegistry(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"registry successfully deleted","i18n_code":"902"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"registry successfully deleted","i18n_code":"902"}')
+    

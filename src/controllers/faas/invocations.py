@@ -15,6 +15,7 @@ from utils.faas.invocations import _in_progress, is_unknown_state
 from utils.faas.functions import is_not_owner
 from utils.faas.invoker import get_email_invoker, get_invoker_id, override_invoker_id
 from utils.logger import log_msg
+from utils.observability.cid import get_current_cid
 
 _pubsub_adapter = get_adapter("pubsub")
 _consumer_group = os.environ['CONSUMER_GROUP']
@@ -31,7 +32,8 @@ def invoke(payload, current_user, user_auth, db):
             'status': 'ko',
             'code': 400,
             'message': "State '{}' is not known".format(payload.content.state),
-            'i18n_code': 'faas_state_not_known'
+            'i18n_code': 'faas_state_not_known',
+            'cid': get_current_cid()
         }
     
     if is_not_uuid(payload.content.function_id):
@@ -39,7 +41,8 @@ def invoke(payload, current_user, user_auth, db):
             'status': 'ko',
             'code': 400,
             'message': "Invalid function id '{}' is not a valid UUID".format(payload.content.function_id),
-            'i18n_code': 'faas_invalid_function_id'
+            'i18n_code': 'faas_invalid_function_id',
+            'cid': get_current_cid()
         }
 
     db_function = db.query(FunctionEntity).filter(FunctionEntity.id == payload.content.function_id)
@@ -50,7 +53,8 @@ def invoke(payload, current_user, user_auth, db):
             'status': 'ko',
             'code': 400,
             'message': "Function '{}' not found".format(id),
-            'i18n_code': 'faas_not_found_function'
+            'i18n_code': 'faas_not_found_function',
+            'cid': get_current_cid()
         }
     
     if is_false(function.is_public) and is_not_owner(current_user, function):
@@ -58,7 +62,8 @@ def invoke(payload, current_user, user_auth, db):
             'status': 'ko',
             'code': 403,
             'message': "This function '{}' is not granted for you".format(function.id),
-            'i18n_code': 'faas_not_exec_right'
+            'i18n_code': 'faas_not_exec_right',
+            'cid': get_current_cid()
         }
 
     if len(function.content['args']) != len(payload.content.args):
@@ -66,7 +71,8 @@ def invoke(payload, current_user, user_auth, db):
             'status': 'ko',
             'code': 400,
             'message': "Wrong number of arguments".format(id),
-            'i18n_code': 'faas_wrong_args_number'
+            'i18n_code': 'faas_wrong_args_number',
+            'cid': get_current_cid()
         }
 
     if any(a.key not in function.content['args'] for a in payload.content.args):
@@ -74,7 +80,8 @@ def invoke(payload, current_user, user_auth, db):
             'status': 'ko',
             'code': 400,
             'message': "Not the same arguments".format(id),
-            'i18n_code': 'faas_not_same_args'
+            'i18n_code': 'faas_not_same_args',
+            'cid': get_current_cid()
         }
 
     new_invocation = InvocationEntity(**payload.dict())
@@ -133,7 +140,8 @@ def complete(id, payload, current_user, db):
             'status': 'ko',
             'code': 400,
             'message': "State is mandatory",
-            'i18n_code': 'faas_state_undefined'
+            'i18n_code': 'faas_state_undefined',
+            'cid': get_current_cid()
         }
 
     if is_unknown_state(payload.content.state):
@@ -141,7 +149,8 @@ def complete(id, payload, current_user, db):
             'status': 'ko',
             'code': 400,
             'message': "State '{}' is not known".format(payload.content.state),
-            'i18n_code': 'faas_state_not_known'
+            'i18n_code': 'faas_state_not_known',
+            'cid': get_current_cid()
         }
 
     db_invocation = db.query(InvocationEntity).filter(InvocationEntity.id == id)
@@ -152,7 +161,8 @@ def complete(id, payload, current_user, db):
             'status': 'ko',
             'code': 404,
             'message': "Resource '{}' not found".format(id),
-            'i18n_code': 'faas_not_found_invocation'
+            'i18n_code': 'faas_not_found_invocation',
+            'cid': get_current_cid()
         }
     
     if is_not_uuid(payload.content.function_id):
@@ -160,7 +170,8 @@ def complete(id, payload, current_user, db):
             'status': 'ko',
             'code': 400,
             'message': "Invalid function id '{}' is not a valid UUID".format(payload.content.function_id),
-            'i18n_code': 'faas_invalid_function_id'
+            'i18n_code': 'faas_invalid_function_id',
+            'cid': get_current_cid()
         }
 
     db_function = db.query(FunctionEntity).filter(FunctionEntity.id == payload.content.function_id)
@@ -171,7 +182,8 @@ def complete(id, payload, current_user, db):
             'status': 'ko',
             'code': 400,
             'message': "Function '{}' not found".format(id),
-            'i18n_code': 'faas_not_found_function'
+            'i18n_code': 'faas_not_found_function',
+            'cid': get_current_cid()
         }
 
     if len(function.content['args']) != len(payload.content.args):
@@ -179,7 +191,8 @@ def complete(id, payload, current_user, db):
             'status': 'ko',
             'code': 400,
             'message': "Wrong number of arguments".format(id),
-            'i18n_code': 'faas_wrong_args_number'
+            'i18n_code': 'faas_wrong_args_number',
+            'cid': get_current_cid()
         }
     
     if any(a.key not in function.content['args'] for a in payload.content.args):
@@ -187,7 +200,8 @@ def complete(id, payload, current_user, db):
             'status': 'ko',
             'code': 400,
             'message': "Not the same arguments".format(id),
-            'i18n_code': 'faas_not_same_args'
+            'i18n_code': 'faas_not_same_args',
+            'cid': get_current_cid()
         }
 
     if is_not_owner(current_user, function):
@@ -195,7 +209,8 @@ def complete(id, payload, current_user, db):
             'status': 'ko',
             'code': 403,
             'message': "This function '{}' is not granted for you".format(function.id),
-            'i18n_code': 'faas_not_exec_right'
+            'i18n_code': 'faas_not_exec_right',
+            'cid': get_current_cid()
         }
 
     result = override_invoker_id(payload, old_invocation, current_user, db)
@@ -236,7 +251,8 @@ def get_invocation(id, current_user, db):
             'status': 'ko',
             'code': 404,
             'message': "Resource '{}' not found".format(id),
-            'i18n_code': 'faas_not_found_invocation'
+            'i18n_code': 'faas_not_found_invocation',
+            'cid': get_current_cid()
         }
 
     db.refresh(db_invocation)
@@ -273,8 +289,9 @@ def get_my_invocations(db, current_user, start_index, max_results):
         return {
             'status': 'ko',
             'code': 400,
-            'message': "Not valid parameters start_index or max_results (not numeric)",
-            'i18n_code': 'faas_invalid_parameters'
+            'message': 'Not valid parameters start_index or max_results (not numeric)',
+            'i18n_code': 'faas_invalid_parameters',
+            'cid': get_current_cid()
         }
 
     results = db.query(InvocationEntity).filter(InvocationEntity.invoker_id == current_user.id).order_by(InvocationEntity.updated_at.desc()).order_by(InvocationEntity.created_at.desc()).offset(int(start_index)).limit(int(max_results)).all()
@@ -292,16 +309,18 @@ def get_all_invocations(db, current_user, start_index, max_results):
         return {
             'status': 'ko',
             'code': 403,
-            'message': "You need to be an administrator",
-            'i18n_code': 'faas_not_admin'
+            'message': 'You need to be an administrator',
+            'i18n_code': 'faas_not_admin',
+            'cid': get_current_cid()
         }
 
     if is_not_numeric(start_index) or is_not_numeric(max_results):
         return {
             'status': 'ko',
             'code': 400,
-            'message': "Not valid parameters start_index or max_results (not numeric)",
-            'i18n_code': 'faas_invalid_parameters'
+            'message': 'Not valid parameters start_index or max_results (not numeric)',
+            'i18n_code': 'faas_invalid_parameters',
+            'cid': get_current_cid()
         }
 
     results = db.query(InvocationEntity).order_by(InvocationEntity.updated_at.desc()).order_by(InvocationEntity.created_at.desc()).offset(int(start_index)).limit(int(max_results)).all()

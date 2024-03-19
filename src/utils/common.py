@@ -1,5 +1,7 @@
 import base64
 import re
+import time
+import os
 
 from passlib.context import CryptContext
 
@@ -127,4 +129,13 @@ def convert_dict_keys_to_camel_case(data):
        return [convert_dict_keys_to_camel_case(item) for item in data]
    else:
        return data
+   
+def create_file_locally(file_name, file_content):
+    with open(f"{file_name}.pem" , "w") as file:
+        file.write(file_content)
+    
+    time.sleep(1)
+
+def delete_file_locally(file_name):
+    os.remove(f"{file_name}.pem")
 

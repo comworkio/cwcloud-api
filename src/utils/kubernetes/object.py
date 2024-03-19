@@ -2,29 +2,26 @@ import yaml
 
 from pathlib import Path
 from fastapi import UploadFile
-from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
 
 from schemas.Kubernetes import ObjectAddSchema
+
 from utils.common import is_not_empty
+from utils.observability.cid import get_current_cid
 
-ALLOWED_METADATA_FIELDS = ['name', 'namespace', 'labels', 'annotations', 'creation_timestamp', 'finalizers','resource_version', 'uid']
-ALLOWED_METADATA_CREATE_FIELDS = ['name', 'namespace', 'labels', 'annotations']
-
-def assert_presence(value: str, message: str):
-    if is_not_empty(value):
-        return JSONResponse(content = {"error": message, "i18n_code": "207"}, status_code = 400)
+_allowed_metadata_fields = ['name', 'namespace', 'labels', 'annotations', 'creation_timestamp', 'finalizers','resource_version', 'uid']
+_allowed_metadata_create_fields = ['name', 'namespace', 'labels', 'annotations']
 
 def clear_metadata(dict_obj: dict):
     keys = list(dict_obj['metadata'].keys())
     for key in keys:
-        if key not in ALLOWED_METADATA_FIELDS:
+        if key not in _allowed_metadata_fields:
             del dict_obj['metadata'][key]
       
 def clear_metadata_for_create(dict_obj: dict):
     keys = list(dict_obj['metadata'].keys())
     for key in keys:
-        if key not in ALLOWED_METADATA_CREATE_FIELDS:
+        if key not in _allowed_metadata_create_fields:
             del dict_obj['metadata'][key]
 
 def generate_object(values_file: UploadFile, object: ObjectAddSchema):

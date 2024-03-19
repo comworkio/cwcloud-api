@@ -1,5 +1,6 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
+
 from fastapi.responses import JSONResponse
 
 test_current_user = Mock()
@@ -55,8 +56,8 @@ class TestAdminBucket(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"access_key":null,"bucket_user_id":1,"created_at":null,"endpoint":null,"hash":"aabbcc","id":1,"name":"test-bucket","provider":"scaleway","region":"fr-par","secret_key":null,"status":null,"type":"private","user_id":null,"user":{"address":null,"api_keys":[],"company_name":null,"confirmed":null,"contact_info":null,"created_at":null,"email":"username@email.com","enabled_features":null,"id":1,"instances":[],"is_admin":null,"password":null,"projects":[],"registration_number":null,"registries":[],"st_customer_id":null,"st_payment_method_id":null,"support_ticket":[],"support_ticket_logs":[]}}')
-
+        self.assertEqual(result.body.decode(), '{"access_key":null,"bucket_user_id":1,"created_at":null,"endpoint":null,"hash":"aabbcc","id":1,"name":"test-bucket","provider":"scaleway","region":"fr-par","secret_key":null,"status":null,"type":"private","user_id":null,"user":{"address":null,"api_keys":[],"company_name":null,"confirmed":null,"contact_info":null,"created_at":null,"email":"username@email.com","enabled_features":null,"id":1,"instances":[],"is_admin":null,"password":null,"projects":[],"registration_number":null,"registries":[],"st_customer_id":null,"st_payment_method_id":null,"support_ticket":[],"support_ticket_logs":[]}}')    
+    
     @patch('entities.Bucket.Bucket.findById')
     @patch('controllers.admin.admin_bucket.delete_bucket', side_effect = None)
     @patch('entities.Bucket.Bucket.updateStatus', side_effect = None)
@@ -89,7 +90,7 @@ class TestAdminBucket(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"bucket successfully deleted","i18n_code":"401"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"bucket successfully deleted","i18n_code":"401"}')
    
     @patch('entities.User.User.getUserByEmail')
     @patch('utils.common.generate_hash_password', side_effect = lambda p: p)
@@ -173,7 +174,7 @@ class TestAdminBucket(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"bucket successfully updated","i18n_code":"402"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"bucket successfully updated","i18n_code":"402"}')
 
     @patch('entities.Bucket.Bucket.findById')
     @patch('controllers.admin.admin_bucket.refresh_bucket', side_effect = None)
@@ -206,4 +207,4 @@ class TestAdminBucket(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"message":"bucket successfully refreshed","i18n_code":"405"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"bucket successfully refreshed","i18n_code":"405"}')

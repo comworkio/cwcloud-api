@@ -1,5 +1,6 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
+
 from fastapi.responses import JSONResponse
 
 test_current_user = Mock()
@@ -161,4 +162,4 @@ class TestAdminInstance(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":null,"hash":"aabbcc","id":1,"ip_address":null,"modification_date":null,"name":"test-instance","project_id":null,"provider":"scaleway","region":"fr-par","root_dns_zone":"comwork.cloud","status":"deleted","type":"DEV1-S","user":null,"user_id":1,"zone":"1","environment":"code","path":"code","gitlab_project":"https://gitlab.comwork.io/dynamic/test_project"}')
+        self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":null,"hash":"aabbcc","id":1,"ip_address":null,"modification_date":null,"name":"test-instance","project_id":null,"provider":"scaleway","region":"fr-par","root_dns_zone":"comwork.cloud","status":"ok","type":"DEV1-S","user":null,"user_id":1,"zone":"1","environment":"code","path":"code","gitlab_project":"https://gitlab.comwork.io/dynamic/test_project"}')

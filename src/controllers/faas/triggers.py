@@ -11,6 +11,7 @@ from utils.date import is_iso_date_valid
 from utils.faas.functions import is_not_owner
 from utils.faas.owner import get_email_owner, get_owner_id, override_owner_id
 from utils.faas.triggers import is_not_supported_kind
+from utils.observability.cid import get_current_cid
 
 _pubsub_adapter = get_adapter("pubsub")
 _triggers_channel = os.environ['TRIGGERS_CHANNEL']
@@ -22,7 +23,8 @@ def add_trigger(payload, current_user, db):
             'status': 'ko',
             'code': 400,
             'message': "Trigger kind '{}' is not supported".format(payload.kind),
-            'i18n_code': 'faas_trigger_kind_not_supported'
+            'i18n_code': 'faas_trigger_kind_not_supported',
+            'cid': get_current_cid()
         }
 
     payload.kind = payload.kind.lower()
@@ -31,22 +33,25 @@ def add_trigger(payload, current_user, db):
             'status': 'ko',
             'code': 400,
             'message': "The cron expr is invalid",
-            'i18n_code': 'cron_expr_invalid'
+            'i18n_code': 'cron_expr_invalid',
+            'cid': get_current_cid()
         }
     if payload.kind == "schedule":
         if is_empty(payload.content.execution_time):
             return {
                 'status': 'ko',
                 'code': 400,
-                'message': "The execution time is mandatory",
-                'i18n_code': 'faas_execution_time_mandatory'
+                'message': 'The execution time is mandatory',
+                'i18n_code': 'faas_execution_time_mandatory',
+                'cid': get_current_cid()
             }
         elif is_iso_date_valid(payload.content.execution_time):
             return {
                 'status': 'ko',
                 'code': 400,
-                'message': "The execution time is not a valid ISO date",
-                'i18n_code': 'faas_execution_time_invalid'
+                'message': 'The execution time is not a valid ISO date',
+                'i18n_code': 'faas_execution_time_invalid',
+                'cid': get_current_cid()
             }
 
     db_function = db.query(FunctionEntity).filter(FunctionEntity.id == payload.content.function_id)
@@ -57,7 +62,8 @@ def add_trigger(payload, current_user, db):
             'status': 'ko',
             'code': 400,
             'message': "Function '{}' not found".format(id),
-            'i18n_code': 'faas_not_found_function'
+            'i18n_code': 'faas_not_found_function',
+            'cid': get_current_cid()
         }
 
     if is_false(function.is_public) and is_not_owner(current_user, function):
@@ -65,7 +71,8 @@ def add_trigger(payload, current_user, db):
             'status': 'ko',
             'code': 403,
             'message': "You have no right to create a trigger on this function",
-            'i18n_code': 'faas_not_granted'
+            'i18n_code': 'faas_not_granted',
+            'cid': get_current_cid()
         }
 
     if len(function.content['args']) != len(payload.content.args):
@@ -73,7 +80,8 @@ def add_trigger(payload, current_user, db):
             'status': 'ko',
             'code': 400,
             'message': "Wrong number of arguments".format(id),
-            'i18n_code': 'faas_wrong_args_number'
+            'i18n_code': 'faas_wrong_args_number',
+            'cid': get_current_cid()
         }
 
     payload.owner_id = get_owner_id(payload, current_user)
@@ -111,7 +119,8 @@ def override_trigger(id, current_user, payload, db):
             'status': 'ko',
             'code': 404,
             'message': "Resource '{}' not found".format(id),
-            'i18n_code': 'faas_not_found_trigger'
+            'i18n_code': 'faas_not_found_trigger',
+            'cid': get_current_cid()
         }
 
     if is_not_supported_kind(payload.kind):
@@ -119,7 +128,8 @@ def override_trigger(id, current_user, payload, db):
             'status': 'ko',
             'code': 400,
             'message': "Trigger kind '{}' is not supported".format(payload.kind),
-            'i18n_code': 'faas_trigger_kind_not_supported'
+            'i18n_code': 'faas_trigger_kind_not_supported',
+            'cid': get_current_cid()
         }
 
     payload.kind = payload.kind.lower()
@@ -128,7 +138,8 @@ def override_trigger(id, current_user, payload, db):
             'status': 'ko',
             'code': 400,
             'message': "The cron expr is invalid",
-            'i18n_code': 'cron_expr_invalid'
+            'i18n_code': 'cron_expr_invalid',
+            'cid': get_current_cid()
         }
 
     db_function = db.query(FunctionEntity).filter(FunctionEntity.id == payload.content.function_id)
@@ -139,7 +150,8 @@ def override_trigger(id, current_user, payload, db):
             'status': 'ko',
             'code': 400,
             'message': "Function '{}' not found".format(id),
-            'i18n_code': 'faas_not_found_function'
+            'i18n_code': 'faas_not_found_function',
+            'cid': get_current_cid()
         }
 
     if len(function.content['args']) != len(payload.content.args):
@@ -147,7 +159,8 @@ def override_trigger(id, current_user, payload, db):
             'status': 'ko',
             'code': 400,
             'message': "Wrong number of arguments".format(id),
-            'i18n_code': 'faas_wrong_args_number'
+            'i18n_code': 'faas_wrong_args_number',
+            'cid': get_current_cid()
         }
 
     result = override_owner_id(payload, old_trigger, current_user, db)
@@ -189,7 +202,8 @@ def get_trigger(id, current_user, db):
             'status': 'ko',
             'code': 404,
             'message': "Resource '{}' not found".format(id),
-            'i18n_code': 'faas_not_found_trigger'
+            'i18n_code': 'faas_not_found_trigger',
+            'cid': get_current_cid()
         }
 
     return {
@@ -225,8 +239,9 @@ def get_my_triggers(db, current_user, kind, start_index, max_results):
         return {
             'status': 'ko',
             'code': 400,
-            'message': "Not valid parameters start_index or max_results (not numeric)",
-            'i18n_code': 'faas_invalid_parameters'
+            'message': 'Not valid parameters start_index or max_results (not numeric)',
+            'i18n_code': 'faas_invalid_parameters',
+            'cid': get_current_cid()
         }
     
     if is_not_empty(kind):
@@ -249,16 +264,18 @@ def get_all_triggers(db, current_user, kind, start_index, max_results):
         return {
             'status': 'ko',
             'code': 403,
-            'message': "You need to be an administrator",
-            'i18n_code': 'faas_not_admin'
+            'message': 'You need to be an administrator',
+            'i18n_code': 'faas_not_admin',
+            'cid': get_current_cid()
         }
 
     if is_not_numeric(start_index) or is_not_numeric(max_results):
         return {
             'status': 'ko',
             'code': 400,
-            'message': "Not valid parameters start_index or max_results (not numeric)",
-            'i18n_code': 'faas_invalid_parameters'
+            'message': 'Not valid parameters start_index or max_results (not numeric)',
+            'i18n_code': 'faas_invalid_parameters',
+            'cid': get_current_cid()
         }
     
     if is_not_empty(kind):

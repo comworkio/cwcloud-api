@@ -13,16 +13,22 @@ from schemas.User import UserSchema
 from schemas.Voucher import VoucherAdminSchema
 
 from utils.common import is_duration_valid, is_not_empty
-from utils.observability.otel import get_otel_tracer
 from utils.encoder import AlchemyEncoder
+from utils.observability.cid import get_current_cid
+from utils.observability.otel import get_otel_tracer
+from utils.observability.traces import span_format
+from utils.observability.counter import create_counter, increment_counter
+from utils.observability.enums import Action, Method
 
 router = APIRouter()
 
 _span_prefix = "adm-voucher"
+_counter = create_counter("adm_voucher_api", "Admin voucher API counter")
 
 @router.post("", status_code = status.HTTP_201_CREATED)
 def create_voucher(current_user: Annotated[UserSchema, Depends(admin_required)], payload: VoucherAdminSchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-post".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST)):
+        increment_counter(_counter, Method.POST)
         code = payload.code
         email = payload.email
         validity = payload.validity
@@ -32,24 +38,37 @@ def create_voucher(current_user: Annotated[UserSchema, Depends(admin_required)],
             from entities.User import User
             exist_user = User.getUserByEmail(email, db)
             if not exist_user:
-                return JSONResponse(content = {"error": "user not found", "i18n_code": "304"}, status_code = 404)
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': 'user not found',
+                    'i18n_code': '304',
+                    'cid': get_current_cid()
+                }, status_code = 404)
             user_id = exist_user.id
 
         from entities.Voucher import Voucher
         exist_voucher = Voucher.getByCode(code, db)
         if exist_voucher:
-            return JSONResponse(content = {"error": "voucher already exists"}, status_code = 400)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'voucher already exists',
+                'cid': get_current_cid()
+            }, status_code = 400)
         new_voucher = Voucher()
         new_voucher.user_id = user_id
         new_voucher.validity = validity
         new_voucher.price = price
         new_voucher.code = code
         new_voucher.save(db)
-        return JSONResponse(content = {"message": "voucher sucessfully added"}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': 'voucher sucessfully added'
+        }, status_code = 200)
 
 @router.get("", status_code = status.HTTP_200_OK)
 def get_all_vouchers(current_user: Annotated[UserSchema, Depends(admin_required)], db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-get-all".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.ALL)):
+        increment_counter(_counter, Method.GET, Action.ALL)
         from entities.Voucher import Voucher
         from entities.RegisteredVoucher import RegisteredVoucher
         vouchers = Voucher.getAll(db)
@@ -88,20 +107,34 @@ def get_all_vouchers(current_user: Annotated[UserSchema, Depends(admin_required)
 
 @router.delete("/{voucher_id}")
 def delete_voucher_by_id(current_user: Annotated[UserSchema, Depends(admin_required)], voucher_id: str, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-delete".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.DELETE)):
+        increment_counter(_counter, Method.DELETE)
         try:
             from entities.Voucher import Voucher
             voucher = Voucher.getById(voucher_id, db)
             if not voucher:
-                return JSONResponse(content = {"error": "voucher not found"}, status_code = 404)
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': 'voucher not found',
+                    'cid': get_current_cid()
+                }, status_code = 404)
             Voucher.deleteOne(voucher_id, db)
-            return JSONResponse(content = {"message" : "voucher successfully deleted"}, status_code = 200)
+            return JSONResponse(content = {
+                'status': 'ok',
+                'message': 'voucher successfully deleted'
+            }, status_code = 200)
         except HTTPError as e:
-            return JSONResponse(content = {"error": e.msg, "i18n_code": e.headers["i18n_code"]}, status_code = e.code)
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': e.msg,
+                'i18n_code': e.headers['i18n_code'],
+                'cid': get_current_cid()
+            }, status_code = e.code)
 
 @router.get("/{voucher_id}", status_code = status.HTTP_200_OK)
 def get_voucher_by_id(current_user: Annotated[UserSchema, Depends(admin_required)], voucher_id: str, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span("{}-get".format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET)):
+        increment_counter(_counter, Method.GET)
         from entities.RegisteredVoucher import RegisteredVoucher
         from entities.Voucher import Voucher
         voucher = Voucher.getById(voucher_id, db)

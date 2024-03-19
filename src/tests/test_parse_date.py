@@ -1,5 +1,7 @@
 from datetime import datetime
+
 from unittest import TestCase
+
 from utils.date import parse_date
 
 class TestParseDate(TestCase):

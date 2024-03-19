@@ -1,9 +1,13 @@
+import io
+
 from unittest import TestCase
 from unittest.mock import Mock, patch 
-import io
+
 from fastapi.responses import JSONResponse 
-from entities.Environment import Environment
 from fastapi import UploadFile
+
+from entities.Environment import Environment
+
 test_current_user = Mock()
 mock_db = Mock()
 mock_bt = Mock()
@@ -152,7 +156,7 @@ class TestAdminEnvironnement(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)     
-        self.assertEqual(result.body.decode(),'{"message":"Environment successfully deleted","i18n_code":"802"}')
+        self.assertEqual(result.body.decode(),'{"status":"ok","message":"Environment successfully deleted","i18n_code":"802"}')
     
     @patch('controllers.admin.admin_environment.Environment.updateEnvironment', side_effect = None)      
     def test_admin_update_environment(self, updateEnvironment):
@@ -194,7 +198,7 @@ class TestAdminEnvironnement(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)       
         self.assertIsInstance(result, JSONResponse)      
-        self.assertEqual(result.body.decode(), '{"message":"environment successfully updated","i18n_code":"801"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"environment successfully updated","i18n_code":"801"}')
 
     @patch('controllers.admin.admin_environment.json.loads', return_value={"name": "Test Environment", "path": "test", "description": "Test Description", "roles": [], "subdomains": [], "environment_template": "template", "doc_template": "template", "is_private": False})    
     @patch('controllers.admin.admin_environment.Environment.getByPath', side_effect = lambda x, y: [])
@@ -237,4 +241,4 @@ class TestAdminEnvironnement(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"file_name":"environment-None.json","blob":"ewogICAgImNyZWF0ZWRfYXQiOiBudWxsLAogICAgImRlc2NyaXB0aW9uIjogbnVsbCwKICAgICJkb2NfdGVtcGxhdGUiOiBudWxsLAogICAgImVudmlyb25tZW50X3RlbXBsYXRlIjogbnVsbCwKICAgICJleHRlcm5hbF9yb2xlcyI6IG51bGwsCiAgICAiaWQiOiBudWxsLAogICAgImluc3RhbmNlcyI6IFtdLAogICAgImlzX3ByaXZhdGUiOiBudWxsLAogICAgImxvZ29fdXJsIjogbnVsbCwKICAgICJuYW1lIjogbnVsbCwKICAgICJwYXRoIjogbnVsbCwKICAgICJyb2xlcyI6IG51bGwsCiAgICAic3ViZG9tYWlucyI6IG51bGwsCiAgICAidHlwZSI6IG51bGwKfQ=="}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","file_name":"environment-None.json","blob":"ewogICAgImNyZWF0ZWRfYXQiOiBudWxsLAogICAgImRlc2NyaXB0aW9uIjogbnVsbCwKICAgICJkb2NfdGVtcGxhdGUiOiBudWxsLAogICAgImVudmlyb25tZW50X3RlbXBsYXRlIjogbnVsbCwKICAgICJleHRlcm5hbF9yb2xlcyI6IG51bGwsCiAgICAiaWQiOiBudWxsLAogICAgImluc3RhbmNlcyI6IFtdLAogICAgImlzX3ByaXZhdGUiOiBudWxsLAogICAgImxvZ29fdXJsIjogbnVsbCwKICAgICJuYW1lIjogbnVsbCwKICAgICJwYXRoIjogbnVsbCwKICAgICJyb2xlcyI6IG51bGwsCiAgICAic3ViZG9tYWlucyI6IG51bGwsCiAgICAidHlwZSI6IG51bGwKfQ=="}')
