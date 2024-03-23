@@ -2,7 +2,17 @@ from sqlalchemy import text
 
 from utils.common import is_not_empty_key, is_true
 
-ALL_FLAGS = ['emailapi', 'cwaiapi', 'faasapi', 'without_vat', 'auto_pay', 'billable']
+ALL_FLAGS = [
+    'billable',
+    'without_vat',
+    'auto_pay',
+    'emailapi',
+    'disable_emails',
+    'cwaiapi',
+    'faasapi',
+    'k8sapi', 
+    'iotapi'
+]
 
 def is_flag_enabled(vdict, key):
     return is_not_empty_key(vdict, key) and is_true(vdict[key])

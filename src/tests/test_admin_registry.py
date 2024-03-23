@@ -93,9 +93,10 @@ class TestAdminRegistry(TestCase):
 
     @patch('entities.User.User.getUserByEmail')
     @patch('utils.common.generate_hash_password', side_effect = lambda p: p)
+    @patch('utils.bytes_generator.generate_hashed_name', side_effect = lambda p: ("aabbcc", p, "test-aabbcc"))
     @patch('controllers.admin.admin_registry.register_registry')
     @patch('controllers.admin.admin_registry.create_registry', side_effect = None)
-    def test_admin_add_registry(self, create_registry, register_registry, generate_hash_password, getUserByEmail):
+    def test_admin_add_registry(self, create_registry, register_registry, generate_hash_password, generate_hashed_name, getUserByEmail):
         # Given
         from controllers.admin.admin_registry import admin_add_registry
         from entities.Registry import Registry
@@ -105,6 +106,8 @@ class TestAdminRegistry(TestCase):
         target_user.email = "username@email.com"
         target_user.id = 1
         registry_id = 1
+        hash, name = ("aabbcc", "test-aabbcc")
+        generate_hashed_name.return_value = hash, name
         registry = Registry()
         registry.id = registry_id
         registry.hash = "aabbcc"
@@ -116,7 +119,7 @@ class TestAdminRegistry(TestCase):
         register_registry.return_value = registry
 
         payload = RegistrySchema(
-            name = "test-registry",
+            name = "test",
             email = "username@email",
             type = "private"
         )

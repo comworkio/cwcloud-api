@@ -1,19 +1,19 @@
 from datetime import datetime
 import json
-
+import os
+from datetime import datetime
 from urllib.error import HTTPError
 from fastapi.responses import JSONResponse
-
 from entities.SupportTicket import SupportTicket
-
+from entities.SupportTicketLog import SupportTicketLog
 from utils.logger import log_msg
 from utils.common import is_not_numeric
 from utils.encoder import AlchemyEncoder
 from utils.gitlab import add_gitlab_issue, add_gitlab_issue_comment
 from utils.observability.cid import get_current_cid
+from utils.observability.cid import get_current_cid
 
 def get_support_tickets(current_user, db):
-    from entities.SupportTicket import SupportTicket
     supportTickets = SupportTicket.getUserSupportTickets(current_user.id, db)
     supportTicketsJson = json.loads(json.dumps(supportTickets, cls = AlchemyEncoder))
     return JSONResponse(content = supportTicketsJson, status_code = 200)
@@ -27,7 +27,6 @@ def get_support_ticket(current_user, ticket_id, db):
             'cid': get_current_cid()
         }, status_code = 400)
 
-    from entities.SupportTicket import SupportTicket
     supportTicket = SupportTicket.getUserSupportTicket(current_user.id, ticket_id, db)
     if not supportTicket:
         return JSONResponse(content = {
@@ -35,7 +34,7 @@ def get_support_ticket(current_user, ticket_id, db):
             'error ': 'ticket not found ',
             'cid': get_current_cid()
         }, status_code = 404)
-    from entities.SupportTicketLog import SupportTicketLog
+
     ticket_replies = SupportTicketLog.getTicketLogs(ticket_id, db)
     supportTicketsJson = json.loads(json.dumps(supportTicket, cls = AlchemyEncoder))
     userSupportTicketJson = json.loads(json.dumps(supportTicket.user, cls = AlchemyEncoder))
@@ -95,8 +94,6 @@ def reply_support_ticket(current_user, payload, ticket_id, db):
                 'cid': get_current_cid()
             }, status_code = 400)
 
-        from entities.SupportTicket import SupportTicket
-        from entities.SupportTicketLog import SupportTicketLog
         ticket = SupportTicket.getUserSupportTicket(current_user.id, ticket_id, db)
         if not ticket:
             return JSONResponse(content = {
@@ -125,3 +122,34 @@ def reply_support_ticket(current_user, payload, ticket_id, db):
             'i18n_code ': e.headers[ 'i18n_code '],
             'cid': get_current_cid()
         }, status_code = e.code)
+
+
+def auto_close_tickets(current_user, db):
+    try:
+        threshold_days = int(os.getenv('DAYS_BEFORE_CLOSURE', 7))
+        inactive_tickets = SupportTicket.getInactiveSupportTickets(threshold_days, db)
+      
+        for ticket in inactive_tickets:
+            message = "This ticket is awaiting for a customer answer since {} days, it's closed automatically.\n Feel free to reopen-it if there's still an issue and adding more context to the ticket".format(threshold_days)
+            new_reply = SupportTicketLog(
+                is_admin=True,
+                ticket_id=ticket.id,
+                message=message,
+                change_date=datetime.now().isoformat(),
+                user_id=current_user.id
+            )
+            new_reply.save(db)
+            SupportTicket.updateTicketStatus(ticket.id, "closed", db)
+            log_msg("INFO", "[Support] Ticket {} has been automatically closed due to inactivity.".format(ticket.id))
+            
+        return JSONResponse(content={
+            'status': 'ok',
+            'message': 'Auto-closed inactive tickets successfully.'
+        }, status_code=200)
+    except Exception as e:
+        return JSONResponse(content={
+            'status': 'ko', 
+            'error': 'Failed to auto-close tickets.', 
+            'message': str(e),
+            'cid': get_current_cid()    
+        }, status_code=500)

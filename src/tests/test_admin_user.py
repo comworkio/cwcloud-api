@@ -183,7 +183,9 @@ class TestAdminUser(TestCase):
             emailapi= False,
             cwaiapi= False,
             faasapi= False,
-            disable_emails= False
+            disable_emails= False,
+            k8sapi= False,
+            iotapi= False
         )
         payload = UserAdminUpdateSchema(
             email='john.doe@example.com', 

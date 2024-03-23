@@ -11,7 +11,7 @@ from utils.domain import is_not_subdomain_valid
 from utils.images import get_os_image
 from utils.instance import check_exist_instance, check_instance_name_validity, generic_remove_instance, get_server_state, get_virtual_machine, update_instance_status, create_instance, register_instance, refresh_instance, get_virtual_machine, reregister_instance
 from utils.logger import log_msg
-from utils.bytes_generator import generate_random_bytes
+from utils.bytes_generator import generate_hashed_name, generate_random_bytes
 from utils.gitlab import get_gitlab_project, get_gitlab_project_playbooks, get_project_quietly, get_user_project_by_id, get_user_project_by_name, get_user_project_by_url, is_not_project_found_in_gitlab
 from utils.encoder import AlchemyEncoder
 from utils.provider import exist_provider, get_provider_infos, get_provider_available_instances_by_region_zone
@@ -35,7 +35,6 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
     instance_type = payload.type
     root_dns_zone = payload.root_dns_zone
     email = payload.email
-    hash = generate_random_bytes(6)
     generate_dns = "false"
     #? Cloud init will mv _gitlab-ci.yml ./.gitlab-ci.yml And create all the roles and playbook
     centralized = "none"
@@ -197,7 +196,7 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
                 }, status_code = 404)
         log_msg("DEBUG", "[admin_instance][post] exist_project = {}".format(exist_project))
 
-        hashed_instance_name = f"{instance_name}-{hash}"
+        hash, hashed_instance_name = generate_hashed_name(instance_name)
         new_instance = register_instance(hash, provider, region, zone, userid, instance_name.lower(), instance_type, environment, gitlab_project, root_dns_zone, db)
         ami_image = get_os_image(region, zone)
         user_project_json = json.loads(json.dumps(exist_project, cls = AlchemyEncoder))

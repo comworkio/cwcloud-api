@@ -11,7 +11,7 @@ from entities.User import User
 from utils.bucket import create_bucket, delete_bucket, refresh_bucket, register_bucket, update_credentials
 from utils.common import is_empty, is_not_empty, is_numeric, is_true
 from utils.instance import check_instance_name_validity
-from utils.bytes_generator import generate_random_bytes
+from utils.bytes_generator import generate_hashed_name, generate_random_bytes
 from utils.provider import exist_provider, get_provider_infos
 from utils.encoder import AlchemyEncoder
 from utils.observability.cid import get_current_cid
@@ -20,7 +20,6 @@ def admin_create_bucket(current_user, provider, region, payload, db, bt: Backgro
     bucket_name = payload.name
     email = payload.email
     bucket_type = payload.type
-    hash = generate_random_bytes(6)
 
     try:
         if not exist_provider(provider):
@@ -79,7 +78,7 @@ def admin_create_bucket(current_user, provider, region, payload, db, bt: Backgro
             }, status_code = 404)
 
         check_instance_name_validity(bucket_name)
-        hashed_bucket_name = f"{bucket_name}-{hash}"
+        hash, hashed_bucket_name = generate_hashed_name(bucket_name)
         new_bucket = register_bucket(hash, provider, region, chosen_user_id, current_user.id, bucket_name, bucket_type, db)
 
         bt.add_task(create_bucket, provider, exist_user.email, new_bucket.id, hashed_bucket_name, region, bucket_type, db)

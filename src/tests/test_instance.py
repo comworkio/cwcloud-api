@@ -88,6 +88,7 @@ class TestInstance(TestCase):
         self.assertIsInstance(result, JSONResponse)
         self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":1,"hash":"aabbcc","id":1,"ip_address":"0.0.0.0","modification_date":null,"name":"test-instance","project_id":1,"provider":"scaleway","region":"fr-par","root_dns_zone":null,"status":"active","type":"DEV1-S","user":null,"user_id":1,"zone":"comwork.cloud","environment":"test_environment","path":"environemnt_path","project":{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}}')
     
+    @patch('utils.bytes_generator.generate_hashed_name', side_effect = lambda p: ("aabbcc", p, "test-aabbcc"))
     @patch('entities.User.User.getUserById')
     @patch('entities.Environment.Environment.getByPath')
     @patch('controllers.instance.get_project_quietly', side_effect = lambda e: {'id': 1})
@@ -96,7 +97,7 @@ class TestInstance(TestCase):
     @patch('controllers.instance.create_instance', side_effect = lambda provider, ami_image, instance_id, user_email, instance_name, hashed_instance_name, environment, instance_region, instance_zone, generate_dns, gitlab_project, user_project, instance_type, debug, centralized, root_dns_zone, db : "")
     @patch('utils.gitlab.get_gitlab_project_tree', side_effect = lambda x, y, z: [])
     @patch('controllers.instance.check_exist_instance', side_effect = lambda userid, instance_name, db: False)
-    def test_create_instance(self, check_exist_instance, get_gitlab_project_tree, create_instance, register_instance, get_user_project_by_id, get_gitlab_project, getByPath, getUserById):
+    def test_create_instance(self, check_exist_instance, get_gitlab_project_tree, create_instance, register_instance, get_user_project_by_id, get_gitlab_project, getByPath, getUserById, generate_hashed_name):
         # Given
         from controllers.instance import provision_instance
         from entities.Environment import Environment
@@ -133,11 +134,12 @@ class TestInstance(TestCase):
         environment.subdomains = "comwork.cloud"
         environment.id = 1
         getByPath.return_value = environment
-
         instance_id = 1
+        hash, name = ("aabbcc", "test-aabbcc")
+        generate_hashed_name.return_value = hash, name
         new_instance = Instance()
-        new_instance.hash = "aabbcc"
-        new_instance.name = "test-instance"
+        new_instance.hash = hash
+        new_instance.name = name
         new_instance.type = "DEV1-S"
         new_instance.provider = "scaleway"
         new_instance.region = "fr-par"
@@ -151,7 +153,7 @@ class TestInstance(TestCase):
         register_instance.return_value = new_instance
 
         payload = InstanceProvisionSchema(
-            name = "test-instance",
+            name = "test",
             type = "DEV1-S",
             root_dns_zone = "comwork.cloud",
             debug = True,
@@ -167,7 +169,7 @@ class TestInstance(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":null,"hash":"aabbcc","id":1,"ip_address":null,"modification_date":null,"name":"test-instance","project_id":null,"provider":"scaleway","region":"fr-par","root_dns_zone":"comwork.cloud","status":"deleted","type":"DEV1-S","user":null,"user_id":1,"zone":"1","environment":"code","path":"code","gitlab_project":"https://gitlab.comwork.io/dynamic/test_project"}')
+        self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":null,"hash":"aabbcc","id":1,"ip_address":null,"modification_date":null,"name":"test-aabbcc","project_id":null,"provider":"scaleway","region":"fr-par","root_dns_zone":"comwork.cloud","status":"deleted","type":"DEV1-S","user":null,"user_id":1,"zone":"1","environment":"code","path":"code","gitlab_project":"https://gitlab.comwork.io/dynamic/test_project"}')
     
     @patch('entities.User.User.getUserById')
     @patch('controllers.instance.get_gitlab_project')

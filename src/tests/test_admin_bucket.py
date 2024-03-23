@@ -94,9 +94,10 @@ class TestAdminBucket(TestCase):
    
     @patch('entities.User.User.getUserByEmail')
     @patch('utils.common.generate_hash_password', side_effect = lambda p: p)
+    @patch('utils.bytes_generator.generate_hashed_name', side_effect = lambda p: ("aabbcc", p, "test-aabbcc"))
     @patch('controllers.admin.admin_bucket.register_bucket')
     @patch('controllers.admin.admin_bucket.create_bucket', side_effect = None)
-    def test_admin_add_bucket(self, create_bucket, register_bucket, generate_hash_password, getUserByEmail):
+    def test_admin_add_bucket(self, create_bucket, register_bucket, generate_hash_password, generate_hashed_name, getUserByEmail):
         # Given
         from controllers.admin.admin_bucket import admin_create_bucket
         from entities.Bucket import Bucket
@@ -106,10 +107,12 @@ class TestAdminBucket(TestCase):
         target_user.email = "username@email.com"
         target_user.id = 1
         bucket_id = 1
+        hash, name = ("aabbcc", "test-aabbcc")
+        generate_hashed_name.return_value = hash, name
         bucket = Bucket()
-        bucket.hash = "aabbcc"
+        bucket.hash = hash
+        bucket.name = name
         bucket.bucket_user_id = 1
-        bucket.name = "test-bucket"
         bucket.type = "private"
         bucket.provider = "scaleway"
         bucket.region = "fr-par"
@@ -119,7 +122,7 @@ class TestAdminBucket(TestCase):
         register_bucket.return_value = bucket
 
         payload = BucketSchema(
-            name = "test-bucket",
+            name = "test",
             type = "private",
             email = "username@email.com"
         )
@@ -132,7 +135,7 @@ class TestAdminBucket(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"access_key":null,"bucket_user_id":1,"created_at":null,"endpoint":null,"hash":"aabbcc","id":1,"name":"test-bucket","provider":"scaleway","region":"fr-par","secret_key":null,"status":null,"type":"private","user_id":null}')
+        self.assertEqual(result.body.decode(), '{"access_key":null,"bucket_user_id":1,"created_at":null,"endpoint":null,"hash":"aabbcc","id":1,"name":"test-aabbcc","provider":"scaleway","region":"fr-par","secret_key":null,"status":null,"type":"private","user_id":null}')
 
     @patch('entities.User.User.getUserByEmail')
     @patch('entities.Bucket.Bucket.findById')

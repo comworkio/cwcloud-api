@@ -1,6 +1,6 @@
 from database.postgres_db import Base
-from sqlalchemy import Column, ForeignKey, String, Integer, Text
-from datetime import datetime
+from sqlalchemy import Column, ForeignKey, String, Integer, Text, cast, DateTime
+from datetime import datetime, timedelta
 
 class SupportTicket(Base):
     __tablename__ = "support_ticket"
@@ -60,3 +60,9 @@ class SupportTicket(Base):
     def deleteOne(ticket_id, db):
         db.query(SupportTicket).filter(SupportTicket.id == ticket_id).delete()
         db.commit()
+
+    @staticmethod
+    def getInactiveSupportTickets(threshold_days, db):
+        days_ago = datetime.now() - timedelta(days=threshold_days)
+        tickets = db.query(SupportTicket).filter((SupportTicket.status == "await agent") & (cast(SupportTicket.last_update, DateTime) < days_ago)).all()
+        return tickets

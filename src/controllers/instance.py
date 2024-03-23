@@ -10,7 +10,7 @@ from utils.flag import is_flag_disabled
 from utils.dns_zones import get_dns_zones
 from utils.domain import is_not_subdomain_valid
 from utils.gitlab import get_gitlab_project, get_gitlab_project_playbooks, get_project_quietly, get_user_project_by_id, get_user_project_by_name, get_user_project_by_url, is_not_project_found_in_gitlab
-from utils.bytes_generator import generate_random_bytes
+from utils.bytes_generator import generate_hashed_name, generate_random_bytes
 from utils.encoder import AlchemyEncoder
 from utils.images import get_os_image
 from utils.logger import log_msg
@@ -445,8 +445,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
     instance_type = payload.type
     root_dns_zone = payload.root_dns_zone
     email = current_user.email
-    hash = generate_random_bytes(6)
-    hashed_instance_name = f"{instance_name}-{hash}"
+    hash, hashed_instance_name = generate_hashed_name(instance_name)
     generate_dns = "false"
     #? Cloud init will mv _gitlab-ci.yml ./.gitlab-ci.yml And create all the roles and playbook
     centralized = "none"

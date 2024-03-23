@@ -69,6 +69,7 @@ class EnabledFeatures(BaseModel):
     faasapi: Optional[bool] = False
     disable_emails: Optional[bool] = False
     k8sapi: Optional[bool] = False
+    iotapi: Optional[bool] = False
 
 class UserEmailUpdateSchema(BaseModel):
     email: str
