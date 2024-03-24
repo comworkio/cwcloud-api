@@ -118,7 +118,7 @@ def update_bucket(current_user, provider, region, bucket_id, db):
             'cid': get_current_cid()
         }, status_code = 404)
     try:
-        update_credentials(user_bucket.provider, user_bucket, user_bucket.user.email, db)
+        update_credentials(user_bucket.provider, user_bucket, db)
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'bucket successfully updated',

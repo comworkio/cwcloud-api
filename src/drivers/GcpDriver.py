@@ -12,9 +12,9 @@ from drivers.ProviderDriver import ProviderDriver
 
 from utils.common import is_not_empty, is_true
 from utils.dns_zones import get_dns_zone_driver
+from utils.driver import convert_instance_state, sanitize_project_name
 from utils.gcp_client import _gcp_project_id, _google_app_cred_str, _google_app_credentials, update_credentials_policy_registry, delete_registry_service_account, delete_bucket_service_account, get_gcp_instance_name, update_bucket_keys, update_policy_and_credentials_bucket, update_registry_token
 from utils.logger import log_msg
-from utils.state import convert_instance_state
 
 class GcpDriver(ProviderDriver):
     def create_dns_records(self, record_name, environment, ip_address, root_dns_zone):
@@ -69,7 +69,7 @@ class GcpDriver(ProviderDriver):
 
         cloudflare_api_token = os.getenv('CLOUDFLARE_API_TOKEN')
         stack = auto.create_or_select_stack(stack_name = hashed_instance_name,
-                                            project_name = environment['path'],
+                                            project_name = sanitize_project_name(environment['path']),
                                             program = create_pulumi_program)
 
         stack.set_config("gcp:project", auto.ConfigValue(_gcp_project_id))
@@ -96,7 +96,7 @@ class GcpDriver(ProviderDriver):
             pulumi.export("endpoint", bucket.self_link)
 
         stack = auto.create_or_select_stack(stack_name = hashed_bucket_name,
-                                            project_name = user_email,
+                                            project_name = sanitize_project_name(user_email),
                                             program = create_pulumi_program)
 
         stack.set_config("gcp:project", auto.ConfigValue(_gcp_project_id))
@@ -128,7 +128,7 @@ class GcpDriver(ProviderDriver):
             pulumi.export("endpoint", f"{region}-docker.pkg.dev/{_gcp_project_id}/{hashed_name}")
 
         stack = auto.create_or_select_stack(stack_name = hashed_name,
-                                            project_name = user_email,
+                                            project_name = sanitize_project_name(user_email),
                                             program = create_pulumi_program)
 
         stack.set_config("gcp:project", auto.ConfigValue(_gcp_project_id))
@@ -199,7 +199,7 @@ class GcpDriver(ProviderDriver):
         log_msg("INFO", "[gcpDriver][refresh_bucket] bucket_id = {}, user_email = {}, hashed_bucket_name = {}".format(bucket_id, user_email, hashed_bucket_name))
         return {}
 
-    def update_bucket_credentials(self, bucket, user_email):
+    def update_bucket_credentials(self, bucket):
         hashed_bucket_name = f'{bucket.name}-{bucket.hash}'
         (access_id, secret_id) = update_bucket_keys(hashed_bucket_name)
         return {
@@ -219,7 +219,7 @@ class GcpDriver(ProviderDriver):
         log_msg("INFO", "[gcpDriver][refresh_registry] registry_id = {}, user_email = {}, hashed_registry_name = {}".format(registry_id, user_email, hashed_registry_name))
         return {}
 
-    def update_registry_credentials(self, registry, user_email):
+    def update_registry_credentials(self, registry):
         hashed_name = f'{registry.name}-{registry.hash}'
         access_key = update_registry_token(hashed_name)
         return {

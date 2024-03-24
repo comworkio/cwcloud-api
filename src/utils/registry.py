@@ -20,10 +20,10 @@ def register_registry(hash, provider, region, userid, name, type, db):
     new_registry.save(db)
     return new_registry
 
-def update_credentials(provider, registry, user_email, db):
+def update_credentials(provider, registry, db):
     ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))
     ProviderDriver = getattr(ProviderDriverModule, get_driver(provider))
-    result = ProviderDriver().update_registry_credentials(registry, user_email)
+    result = ProviderDriver().update_registry_credentials(registry)
     if 'secret_key' in result:
         Registry.updateCredentials(registry.id, result['access_key'], result['secret_key'], db)
     else:

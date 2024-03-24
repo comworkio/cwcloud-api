@@ -1,11 +1,9 @@
-import random
 import os
+import random
+
 from utils.common import is_true
 
 _disable_dynamic_names = os.getenv('DISABLE_DYNAMIC_NAMES')
-
-def get_disable_dynamic_names():
-   return _disable_dynamic_names
 
 def generate_random_bytes(length):
     possible_characters = "abcdefghijklmnopqrstuvwxyz1234567890"

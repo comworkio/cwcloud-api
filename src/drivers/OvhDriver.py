@@ -11,6 +11,7 @@ from pulumi_openstack.compute import _inputs
 from drivers.ProviderDriver import ProviderDriver
 from utils.common import is_not_empty
 from utils.dns_zones import get_dns_zone_driver, register_ovh_domain
+from utils.driver import sanitize_project_name
 from utils.logger import log_msg
 from utils.ovh_client import create_ovh_bucket, delete_ovh_bucket, update_ovh_bucket_credentials, update_ovh_registry_credentials, ovh_client
 from utils.list import unmarshall_list_array
@@ -51,7 +52,7 @@ class OvhDriver(ProviderDriver):
             pulumi.export("type", new_instance.flavor_name)
 
         stack = auto.create_or_select_stack(stack_name = hashed_instance_name,
-                                            project_name = environment['path'],
+                                            project_name = sanitize_project_name(environment['path']),
                                             program = create_pulumi_program)
 
         up_res = stack.up()
@@ -66,7 +67,7 @@ class OvhDriver(ProviderDriver):
             pulumi.export("type", registry.flavor_name)
 
         stack = auto.create_or_select_stack(stack_name = hashed_registry_name,
-                                            project_name = user_email,
+                                            project_name = sanitize_project_name(user_email),
                                             program = create_pulumi_program)
 
         up_res = stack.up()
@@ -102,7 +103,7 @@ class OvhDriver(ProviderDriver):
             pulumi.export("public_ip", new_instance.access_ip_v4)
 
         stack = auto.create_or_select_stack(stack_name = hashed_instance_name,
-                                            project_name = environment['path'],
+                                            project_name = sanitize_project_name(environment['path']),
                                             program = create_pulumi_program)
         cloudflare_api_token = os.getenv('CLOUDFLARE_API_TOKEN')
         if is_not_empty(cloudflare_api_token):
@@ -146,7 +147,7 @@ class OvhDriver(ProviderDriver):
             pulumi.export("user_id", user.id)
 
         stack = auto.create_or_select_stack(stack_name = hashed_bucket_name,
-                                            project_name = user_email,
+                                            project_name = sanitize_project_name(user_email),
                                             program = create_pulumi_program)
         up_res = stack.up()
         bucket_user_id = up_res.outputs.get("user_id").value
@@ -160,7 +161,7 @@ class OvhDriver(ProviderDriver):
             "status": "active"
         }
 
-    def update_bucket_credentials(self, bucket, user_email):
+    def update_bucket_credentials(self, bucket):
         credentials = update_ovh_bucket_credentials(bucket.bucket_user_id)
         return {
             "access_key": credentials["access_key"],
@@ -169,7 +170,7 @@ class OvhDriver(ProviderDriver):
 
     def delete_bucket(self, bucket, user_email):
         hashed_bucket_name = f'{bucket.name}-{bucket.hash}'
-        stack = auto.select_stack(hashed_bucket_name, user_email, program = self.delete_bucket)
+        stack = auto.select_stack(hashed_bucket_name, sanitize_project_name(user_email), program = self.delete_bucket)
         stack.destroy()
         mainRegion = ''.join([i for i in bucket.region if not i.isdigit()])
         delete_ovh_bucket(hashed_bucket_name, mainRegion.upper(), bucket.bucket_user_id)
@@ -184,7 +185,7 @@ class OvhDriver(ProviderDriver):
                     region = mainRegion)
                 pulumi.export("endpoint", reg.url)
         stack = auto.create_or_select_stack(stack_name = hashed_name,
-                                            project_name = user_email,
+                                            project_name = sanitize_project_name(user_email),
                                             program = create_pulumi_program)
         up_res = stack.up()
         credentials = update_ovh_registry_credentials(hashed_name)
@@ -196,7 +197,7 @@ class OvhDriver(ProviderDriver):
             "status": "active"
         }
 
-    def update_registry_credentials(self, registry, user_email):
+    def update_registry_credentials(self, registry):
         hashed_name = f'{registry.name}-{registry.hash}'
         credentials = update_ovh_registry_credentials(hashed_name)
         return {
@@ -206,7 +207,7 @@ class OvhDriver(ProviderDriver):
 
     def delete_registry(self, registry, user_email):
         hashed_name = f'{registry.name}-{registry.hash}'
-        stack = auto.select_stack(hashed_name, user_email, program = self.delete_registry)
+        stack = auto.select_stack(hashed_name, sanitize_project_name(user_email), program = self.delete_registry)
         stack.destroy()
         return
 

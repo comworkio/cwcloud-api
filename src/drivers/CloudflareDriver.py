@@ -39,7 +39,7 @@ class CloudflareDriver(ProviderDriver):
     def refresh_bucket(self, user_email, bucket_id, hashed_bucket_name):
         return {}
 
-    def update_bucket_credentials(self, bucket, user_email):
+    def update_bucket_credentials(self, bucket):
         return {
             "access_key": None,
             "secret_key": None
@@ -59,7 +59,7 @@ class CloudflareDriver(ProviderDriver):
     def refresh_registry(self, user_email, registry_id, hashed_name, region, type):
         return
 
-    def update_registry_credentials(self, registry, user_email):
+    def update_registry_credentials(self, registry):
         return {
             "access_key": None,
             "secret_key": None

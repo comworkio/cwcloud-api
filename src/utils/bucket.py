@@ -43,10 +43,10 @@ def delete_bucket(provider, bucket, user_email, retry = 0):
         log_msg("WARN", "[delete_bucket] trying again because of this error: provider = {}, bucket = {}, user_email = {}, error = {}".format(provider, bucket, user_email, e))
         delete_bucket(provider, bucket, user_email, retry + 1)
 
-def update_credentials(provider, bucket, user_email, db):
+def update_credentials(provider, bucket, db):
     ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))
     ProviderDriver = getattr(ProviderDriverModule, get_driver(provider))
-    result = ProviderDriver().update_bucket_credentials(bucket, user_email)
+    result = ProviderDriver().update_bucket_credentials(bucket)
     Bucket.updateCredentials(bucket.id, result["access_key"], result["secret_key"], db)
 
 def refresh_bucket(user_email, provider, bucket_id, hashed_bucket_name, db):

@@ -12,11 +12,11 @@ from drivers.ProviderDriver import ProviderDriver
 from adapters.AdapterConfig import get_adapter
 from utils.common import is_not_empty, is_true
 from utils.dns_zones import get_dns_zone_driver, register_aws_domain
+from utils.driver import convert_instance_state, sanitize_project_name
 from utils.logger import log_msg
 from utils.provider import get_specific_config
 from utils.list import unmarshall_list_array
 from utils.aws_client import get_driver_access_key_id, get_driver_secret_access_key, create_aws_bucket, create_aws_registry, delete_aws_user_bucket, delete_aws_user_registry, get_aws_bucket_name, get_aws_registry_name, update_aws_bucket_credentials, update_aws_registry_credentials
-from utils.state import convert_instance_state
 
 CACHE_ADAPTER = get_adapter('cache')
 
@@ -59,7 +59,7 @@ class AwsDriver(ProviderDriver):
         cloudflare_api_token = os.getenv('CLOUDFLARE_API_TOKEN')
 
         stack = auto.create_or_select_stack(stack_name = hashed_instance_name,
-                                            project_name = environment['path'],
+                                            project_name = sanitize_project_name(environment['path']),
                                             program = create_pulumi_program)
         stack.set_config("aws:accessKey", auto.ConfigValue(aws_driver_access_key_id))
         stack.set_config("aws:secretKey", auto.ConfigValue(aws_driver_secret_access_key))
@@ -128,7 +128,7 @@ class AwsDriver(ProviderDriver):
         aws_driver_access_key_id = get_driver_access_key_id()
         aws_driver_secret_access_key = get_driver_secret_access_key()
         stack = auto.create_or_select_stack(stack_name = hashed_bucket_name,
-                                            project_name = user_email,
+                                            project_name = sanitize_project_name(user_email),
                                             program = create_pulumi_program)
 
         stack.set_config("aws:accessKey", auto.ConfigValue(aws_driver_access_key_id))
@@ -151,7 +151,7 @@ class AwsDriver(ProviderDriver):
             "status": "active"
         }
 
-    def update_bucket_credentials(self, bucket, user_email):
+    def update_bucket_credentials(self, bucket):
         bucket_hashed_name = f'{bucket.name}-{bucket.hash}'
         (aws_access_key_id, aws_secret_access_key) = update_aws_bucket_credentials(bucket.id, bucket.region, bucket_hashed_name)
         return {
@@ -161,7 +161,7 @@ class AwsDriver(ProviderDriver):
 
     def delete_bucket(self, bucket, user_email):
         hashed_bucket_name = f'{bucket.name}-{bucket.hash}'
-        stack = auto.select_stack(hashed_bucket_name, user_email, program = self.delete_bucket)
+        stack = auto.select_stack(hashed_bucket_name, sanitize_project_name(user_email), program = self.delete_bucket)
         stack.destroy()
         delete_aws_user_bucket(bucket.region, bucket.id, hashed_bucket_name)
 
@@ -176,7 +176,7 @@ class AwsDriver(ProviderDriver):
         aws_driver_access_key_id = get_driver_access_key_id()
         aws_driver_secret_access_key = get_driver_secret_access_key()
         stack = auto.create_or_select_stack(stack_name = hashed_name,
-                                            project_name = user_email,
+                                            project_name = sanitize_project_name(user_email),
                                             program = create_pulumi_program)
         stack.set_config("aws:accessKey", auto.ConfigValue(aws_driver_access_key_id))
         stack.set_config("aws:secretKey", auto.ConfigValue(aws_driver_secret_access_key))
@@ -193,7 +193,7 @@ class AwsDriver(ProviderDriver):
             "status": "active"
         }
 
-    def update_registry_credentials(self, registry, user_email):
+    def update_registry_credentials(self, registry):
         hashed_name = f'{registry.name}-{registry.hash}'
         (aws_access_key_id, aws_secret_access_key) = update_aws_registry_credentials( registry.id, registry.region, hashed_name)
         return {
@@ -203,7 +203,7 @@ class AwsDriver(ProviderDriver):
 
     def delete_registry(self, registry, user_email):
         hashed_name = f'{registry.name}-{registry.hash}'
-        stack = auto.select_stack(hashed_name, user_email, program = self.delete_registry)
+        stack = auto.select_stack(hashed_name, sanitize_project_name(user_email), program = self.delete_registry)
         stack.destroy()
         delete_aws_user_registry(hashed_name, registry.region, registry.id)
 

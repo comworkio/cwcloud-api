@@ -119,7 +119,7 @@ def update_registry(current_user, provider, region, registryId, db):
             'cid': get_current_cid()
         }, status_code = 404)
     try:
-        update_credentials(user_registry.provider, user_registry, user_registry.user.email, db)
+        update_credentials(user_registry.provider, user_registry, db)
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'registry successfully updated', 

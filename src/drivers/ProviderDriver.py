@@ -34,7 +34,7 @@ class ProviderDriver(ABC):
         pass
 
     @abstractmethod
-    def update_bucket_credentials(self, bucket, user_email):
+    def update_bucket_credentials(self, bucket):
         pass
 
     @abstractmethod
@@ -50,7 +50,7 @@ class ProviderDriver(ABC):
         pass
 
     @abstractmethod
-    def update_registry_credentials(self, registry, user_email):
+    def update_registry_credentials(self, registry):
         pass
 
     @abstractmethod

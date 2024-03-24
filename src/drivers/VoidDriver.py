@@ -35,8 +35,8 @@ class VoidDriver(ProviderDriver):
             "status": "active"
         }
 
-    def update_bucket_credentials(self, bucket, user_email):
-        log_msg("INFO", "[VoidDriver][update_bucket_credentials] bucket = {}, user_email = {}".format(bucket, user_email))
+    def update_bucket_credentials(self, bucket):
+        log_msg("INFO", "[VoidDriver][update_bucket_credentials] bucket = {}".format(bucket))
         return {
             "access_key": None,
             "secret_key": None
@@ -55,8 +55,8 @@ class VoidDriver(ProviderDriver):
             "status": "active"
         }
 
-    def update_registry_credentials(self, registry, user_email):
-        log_msg("INFO", "[VoidDriver][update_registry_credentials] registry = {}, user_email = {}".format(registry, user_email))
+    def update_registry_credentials(self, registry):
+        log_msg("INFO", "[VoidDriver][update_registry_credentials] registry = {}".format(registry))
         return {
             "access_key": None,
             "secret_key": None
