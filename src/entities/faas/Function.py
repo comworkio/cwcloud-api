@@ -21,3 +21,11 @@ class FunctionEntity(Base):
         for function in functions:
             function.owner_id = new_owner_id
         db.commit()
+
+    @staticmethod
+    def findById(function_id, db):
+        return db.query(FunctionEntity).filter(FunctionEntity.id == function_id).first()
+    
+    @staticmethod
+    def findUserFunctionById(user_id, function_id, db):
+        return db.query(FunctionEntity).filter(FunctionEntity.owner_id == user_id, FunctionEntity.id == function_id).first()

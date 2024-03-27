@@ -50,6 +50,8 @@ def import_resources(app):
     from routes.admin.voucher import api_admin_voucher
     from routes.admin.kubernetes import api_admin_object, api_admin_cluster
     from routes.kubernetes import api_cluster, api_deployments
+    from routes.iot import api_object_type
+    from routes.admin.iot import api_admin_object_type
     
     version = os.environ['API_VERSION']
 
@@ -83,6 +85,8 @@ def import_resources(app):
     app.include_router(api_trigger.router, tags = ['Faas'], prefix = f'/{version}/faas')
     app.include_router(api_model.router, tags = ['AI'], prefix = f'/{version}/ai')
     app.include_router(api_prompt.router, tags = ['AI'], prefix = f'/{version}/ai')
+    app.include_router(api_deployments.router, tags = ['Kubernetes Apps deployments'], prefix = f'/{version}/kubernetes/deployment')
+    app.include_router(api_object_type.router, tags = ['IoT'], prefix = f'/{version}/iot')
     app.include_router(api_contact.router, tags = ['Contact and Support'], prefix = f'/{version}/contact')
     app.include_router(api_support.router, tags = ['Contact and Support'], prefix = f'/{version}/support')
     app.include_router(api_pricing.router, tags = ['Pricing'])
@@ -102,6 +106,10 @@ def import_resources(app):
     app.include_router(api_admin_functions.router, tags = ['Admin FaaS'], prefix = f'/{version}/admin/faas')
     app.include_router(api_admin_invocation.router, tags = ['Admin FaaS'], prefix = f'/{version}/admin/faas')
     app.include_router(api_admin_trigger.router, tags = ['Admin FaaS'], prefix = f'/{version}/admin/faas')
+    app.include_router(api_cluster.router, tags = ['Kubernetes Clusters'], prefix = f'/{version}/kubernetes/cluster')
+    app.include_router(api_admin_cluster.router, tags = ['Admin Kubernetes Clusters'], prefix = f'/{version}/admin/kubernetes/cluster')
+    app.include_router(api_admin_object.router, tags = ['Admin Kubernetes Objects'], prefix = f'/{version}/admin/kubernetes/object')
+    app.include_router(api_admin_object_type.router, tags = ['Admin IoT'], prefix = f'/{version}/admin/iot')
     app.include_router(api_admin_email.router, tags = ['Admin Email'], prefix = f'/{version}/admin/email')
     app.include_router(api_admin_support.router, tags = ['Admin Support Tickets'], prefix = f'/{version}/admin/support')
     app.include_router(api_admin_consumption.router, tags = ['Admin Consumption'], prefix = f'/{version}/admin/consumption')
@@ -111,7 +119,3 @@ def import_resources(app):
     app.include_router(api_admin_payment.router, tags = ['Admin Payment and Voucher'], prefix = f'/{version}/admin/pay')
     app.include_router(api_admin_relaunch.router, tags = ['Admin Payment and Voucher'], prefix = f'/{version}/admin/relaunch')
     app.include_router(api_admin_voucher.router, tags = ['Admin Payment and Voucher'], prefix = f'/{version}/admin/voucher')
-    app.include_router(api_cluster.router, tags = ['Kubernetes Clusters'], prefix = f'/{version}/kubernetes/cluster')
-    app.include_router(api_admin_cluster.router, tags = ['Admin Kubernetes Clusters'], prefix = f'/{version}/admin/kubernetes/cluster')
-    app.include_router(api_admin_object.router, tags = ['Admin Kubernetes Objects'], prefix = f'/{version}/admin/kubernetes/object')
-    app.include_router(api_deployments.router, tags = ['Kubernetes Apps deployments'], prefix = f'/{version}/kubernetes/deployment')

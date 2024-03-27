@@ -1,13 +1,8 @@
 import json
-import websockets
 import paho.mqtt.client as paho
 from paho import mqtt
 from utils.logger import log_msg
 from utils.common import is_not_empty_key, create_file_locally, delete_file_locally
-
-async def send_websocket_payload(uri, payload):
-    async with websockets.connect(uri) as websocket:
-        await websocket.send(json.dumps(payload))
 
 def on_connect(client, userdata, flags, rc, properties=None):
     log_msg("DEBUG", "[on_connect] CONNACK received with code %s." % rc)
@@ -21,7 +16,7 @@ def on_subscribe(client, userdata, mid, granted_qos, properties=None):
 def on_message(client, userdata, msg):
     log_msg("DEBUG", "[on_message] topic: {} qos: {} payload: {}".format(msg.topic, str(msg.qos), str(msg.payload)))
 
-async def send_mqtt_payload(callback, mqtt_payload):
+async def send_payload_in_realtime(callback, payload):
     client_id = callback['client_id'] if is_not_empty_key(callback, 'client_id') else ""
     user_data = callback['user_data'] if is_not_empty_key(callback, 'user_data') else None
     username = callback['username'] if is_not_empty_key(callback, 'username') else ""
@@ -34,7 +29,12 @@ async def send_mqtt_payload(callback, mqtt_payload):
     certificates_are_required = callback['certificates_are_required'] if is_not_empty_key(callback, 'certificates_are_required') else False
     certificates = callback['certificates'] if is_not_empty_key(callback, 'certificates') else None
 
-    client = paho.Client(client_id=client_id, userdata=user_data, protocol=paho.MQTTv5)
+    if callback['type'] == "mqtt":
+        log_msg("DEBUG", "[consume][handle] invoke mqtt callback: {}".format(endpoint))
+        client = paho.Client(client_id=client_id, userdata=user_data, protocol=paho.MQTTv5)
+    elif callback['type'] == "websocket":
+        log_msg("DEBUG", "[consume][handle] invoke websocket callback: {}".format(endpoint))
+        client = paho.Client(client_id=client_id, userdata=user_data, transport='websockets') 
     client.on_connect = on_connect
     if certificates_are_required:
         create_file_locally("iot_hub_certificate", certificates['iot_hub_certificate'])
@@ -54,7 +54,7 @@ async def send_mqtt_payload(callback, mqtt_payload):
     client.on_message = on_message
     client.on_publish = on_publish
     client.subscribe(subscription, qos=qos)
-    client.publish(topic, payload=json.dumps(mqtt_payload), qos=qos)
+    client.publish(topic, payload=json.dumps(payload), qos=qos)
     if certificates_are_required:
         delete_file_locally("iot_hub_certificate")
         delete_file_locally("device_certificate")

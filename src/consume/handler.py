@@ -7,7 +7,7 @@ from jinja2 import Environment, FileSystemLoader, BaseLoader
 from adapters.AdapterConfig import get_adapter
 from utils.command import get_script_output
 from utils.common import get_src_path, is_not_empty, is_empty_key, is_not_empty_key
-from utils.faas.iot import send_websocket_payload, send_mqtt_payload
+from utils.faas.iot import send_payload_in_realtime
 from utils.observability.otel import get_otel_tracer
 from utils.security import is_forbidden
 from utils.file import quiet_remove
@@ -157,19 +157,13 @@ async def handle(msg):
         if is_not_empty_key(serverless_function['content'], 'callbacks'):
           callbacks = serverless_function['content']['callbacks']
           for callback in callbacks:
-            if callback['type'] == "http":
-              if is_not_empty_key(callback, 'endpoint'):
+            if is_not_empty_key(callback, 'endpoint'):
+              if callback['type'] == "http":
                 callback_headers = { "Authorization": callback['token'], "Content-Type": "application/json" } if is_not_empty_key(callback, 'token') else { "Content-Type": "application/json" }
                 log_msg("DEBUG", "[consume][handle] invoke callback: {}".format(callback['endpoint']))
                 requests.post(callback['endpoint'], json = payload, headers = callback_headers)
-            elif callback['type'] == "websocket":
-              if is_not_empty_key(callback, 'endpoint'):
-                log_msg("DEBUG", "[consume][handle] invoke websocket callback: {}".format(callback['endpoint']))
-                await send_websocket_payload(callback['endpoint'], payload)
-            elif callback['type'] == "mqtt":
-              if is_not_empty_key(callback, 'endpoint'):
-                log_msg("DEBUG", "[consume][handle] invoke mqtt callback: {}".format(callback['endpoint']))
-                await send_mqtt_payload(callback, payload)
+              elif callback['type'] == "websocket" or callback['type'] == "mqtt":
+                await send_payload_in_realtime(callback, payload)
 
       quiet_remove(function_file_path)
       update_invocation(invocation_id, payload)

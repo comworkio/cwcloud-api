@@ -21,3 +21,11 @@ class TriggerEntity(Base):
         for trigger in triggers:
             trigger.owner_id = new_owner_id
         db.commit()
+
+    @staticmethod
+    def findById(trigger_id, db):
+        return db.query(TriggerEntity).filter(TriggerEntity.id == trigger_id).first()
+    
+    @staticmethod
+    def findUserTriggerById(user_id, trigger_id, db):
+        return db.query(TriggerEntity).filter(TriggerEntity.owner_id == user_id, TriggerEntity.id == trigger_id).first()
