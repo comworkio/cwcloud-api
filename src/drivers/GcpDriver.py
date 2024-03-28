@@ -1,6 +1,8 @@
 import os
+import re
 import importlib
 import pulumi
+
 from pulumi_gcp import compute
 import pulumi_gcp as gcp
 
@@ -36,6 +38,11 @@ class GcpDriver(ProviderDriver):
                 source_tags = network_tags,
                 allows = [compute.FirewallAllowArgs(protocol = "tcp", ports = ["22", "80", "443"])])
 
+            if re.match("^projects\/", ami_image):
+                link_ami_image = ami_image
+            else:
+                link_ami_image = f'projects/{_gcp_project_id}/global/images/{ami_image}'
+
             compute_instance = compute.Instance(
                 resource_name = hashed_instance_name,
                 tags = network_tags,
@@ -46,7 +53,7 @@ class GcpDriver(ProviderDriver):
                     initialize_params = compute.InstanceBootDiskInitializeParamsArgs(
                         type = 'pd-standard',
                         size = 50,
-                        image = f'projects/{_gcp_project_id}/global/images/{ami_image}',
+                        image = link_ami_image,
                     ),
                 ),
                 network_interfaces = [{
