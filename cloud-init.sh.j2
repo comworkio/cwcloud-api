@@ -38,8 +38,15 @@ handle_instance_success"        > /root/cloud-init_handler.sh
 
 # Run commands
 cd /root
-yum install -y epel-release
-yum install -y git ansible
+
+if lsb_release -d >/dev/null 2>&1; then
+  apt update -y
+  apt install -y git ansible
+else
+  yum install -y epel-release
+  yum install -y git ansible
+fi
+
 sudo chmod +x /root/cloud-init_handler.sh
 git clone "{{ dynamic_repo }}"
 cd {{ gitlab_project_name }}
