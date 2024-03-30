@@ -9,9 +9,9 @@ from utils.common import is_empty, is_not_empty, is_numeric
 from utils.dns_zones import get_dns_zones
 from utils.domain import is_not_subdomain_valid
 from utils.images import get_os_image
-from utils.instance import check_exist_instance, check_instance_name_validity, generic_remove_instance, get_server_state, get_virtual_machine, update_instance_status, create_instance, register_instance, refresh_instance, get_virtual_machine, reregister_instance
+from utils.instance import check_exist_instance, check_instance_name_validity, generic_remove_instance, get_server_state, get_virtual_machine, rehash_instance_name, update_instance_status, create_instance, register_instance, refresh_instance, get_virtual_machine, reregister_instance
 from utils.logger import log_msg
-from utils.bytes_generator import generate_hashed_name, generate_random_bytes
+from utils.bytes_generator import generate_hashed_name
 from utils.gitlab import get_gitlab_project, get_gitlab_project_playbooks, get_project_quietly, get_user_project_by_id, get_user_project_by_name, get_user_project_by_url, is_not_project_found_in_gitlab
 from utils.encoder import AlchemyEncoder
 from utils.provider import exist_provider, get_provider_infos, get_provider_available_instances_by_region_zone
@@ -194,9 +194,11 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
                     'i18n_code': '1111',
                     'cid': get_current_cid()
                 }, status_code = 404)
-        log_msg("DEBUG", "[admin_instance][post] exist_project = {}".format(exist_project))
+        log_msg("DEBUG", "[admin_instance][admin_add_instance] exist_project = {}".format(exist_project))
 
         hash, hashed_instance_name = generate_hashed_name(instance_name)
+        log_msg("DEBUG", "[admin_instance][admin_add_instance] hash = {}, hashed_instance_name = {}".format(hash, hashed_instance_name))
+
         new_instance = register_instance(hash, provider, region, zone, userid, instance_name.lower(), instance_type, environment, gitlab_project, root_dns_zone, db)
         ami_image = get_os_image(region, zone)
         user_project_json = json.loads(json.dumps(exist_project, cls = AlchemyEncoder))
@@ -226,7 +228,7 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
         new_instance_json = {**dumpedInstance, "environment": new_instance.environment.name, "path": new_instance.environment.path, 'status': 'ok',"gitlab_project": new_instance.project.url}
         return JSONResponse(content = new_instance_json, status_code = 200)
     except auto.StackAlreadyExistsError as sae:
-        log_msg("ERROR", "[admin_instance][provision_instance] unexpected StackAlreadyExistsError:{}".format(sae))
+        log_msg("ERROR", "[admin_instance][admin_add_instance] unexpected StackAlreadyExistsError:{}".format(sae))
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'stack already exists', 
@@ -234,7 +236,7 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
             'cid': get_current_cid()
         }, status_code = 409)
     except HTTPError as e:
-        log_msg("ERROR", "[admin_instance][provision_instance] unexpected HTTPError:{}".format(e))
+        log_msg("ERROR", "[admin_instance][admin_add_instance] unexpected HTTPError:{}".format(e))
         return JSONResponse(content = {
             'status': 'ko',
             'error': e.msg, 
@@ -243,9 +245,8 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
         }, status_code = e.code)
     except Exception as exn:
         error = {"error": f"{exn}", 'status': 'ko', 'cid': get_current_cid()}
-        log_msg("ERROR", "[admin_instance][provision_instance] unexpected error: type = {}, msg = {}, line = {}".format(type(exn).__name__, exn, exn.__traceback__.tb_lineno))
+        log_msg("ERROR", "[admin_instance][admin_add_instance] unexpected error: type = {}, msg = {}, line = {}".format(type(exn).__name__, exn, exn.__traceback__.tb_lineno))
         return JSONResponse(content = error, status_code = 500)
-
 
 def admin_attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, project_id, payload, db):
     instance_name = payload.name
@@ -293,7 +294,8 @@ def admin_attach_instance(bt: BackgroundTasks, current_user, provider, region, z
         }, status_code = 404)
 
     hash = userInstance.hash
-    hashed_instance_name = f'{instance_name}-{hash}'
+    hashed_instance_name = rehash_instance_name(instance_name, hash)
+    log_msg("DEBUG", "[admin_instance][attach_instance] hash = {}, hashed_instance_name = {}".format(hash, hashed_instance_name))
 
     if not exist_provider(provider):
         return JSONResponse(content = {

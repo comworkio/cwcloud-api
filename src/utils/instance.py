@@ -13,7 +13,7 @@ from entities.Instance import Instance
 from utils.api_url import get_api_url
 from utils.exec import exec_cmd
 from utils.gitlab import delete_runner, get_project_runners, inject_default_credentials_to_url, inject_git_credentials_to_url
-from utils.bytes_generator import generate_random_bytes
+from utils.bytes_generator import generate_random_bytes, is_disable_dynamic_names
 from utils.consumption import generate_instance_consumption
 from utils.provider import get_driver
 from utils.list import unmarshall_list_array
@@ -95,6 +95,7 @@ def create_instance(provider, ami_image, instance_id, user_email, instance_name,
     config_cloud_init(instance_id, instance_name, user_project, gitlab_project['name'], gitlab_project['http_url_to_repo'], debug, centralized, provider)
     ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))
     ProviderDriver = getattr(ProviderDriverModule, get_driver(provider))
+    log_msg("DEBUG", "[create_instance] creating instance hashed_instance_name = {}".format(hashed_instance_name))
     result = ProviderDriver().create_instance(instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone)
     log_msg("DEBUG", "[create_instance] driver result = {}".format(result))
     if "ip" in result:
@@ -216,6 +217,8 @@ def delete_instance(hash, projectName, environment, retry = 0):
             log_msg("DEBUG", "[delete_instance] waiting: projectName = {}, environment = {}, wait = {}".format(projectName, environment, waiting_time))
             sleep(waiting_time)
 
+        # FIXME the stack name is probably something else, that's why the instance are not always deleted on the cloud side
+        # In the drivers we have sanitize_project_name(environment['path'])
         stack = auto.select_stack(f'{projectName}-{hash}', environment, program = delete_instance)
         stack.destroy()
     except Exception as e:
@@ -312,3 +315,6 @@ def generic_remove_instance(userInstance, db, bt: BackgroundTasks):
             'http_code': e.code,
             'cid': get_current_cid()
         }
+
+def rehash_instance_name(instance_name, hash):
+    return instance_name if is_disable_dynamic_names() or is_empty(hash) else "{}-{}".format(is_disable_dynamic_names, hash)

@@ -10,11 +10,11 @@ from utils.flag import is_flag_disabled
 from utils.dns_zones import get_dns_zones
 from utils.domain import is_not_subdomain_valid
 from utils.gitlab import get_gitlab_project, get_gitlab_project_playbooks, get_project_quietly, get_user_project_by_id, get_user_project_by_name, get_user_project_by_url, is_not_project_found_in_gitlab
-from utils.bytes_generator import generate_hashed_name, generate_random_bytes
+from utils.bytes_generator import generate_hashed_name
 from utils.encoder import AlchemyEncoder
 from utils.images import get_os_image
 from utils.logger import log_msg
-from utils.instance import check_exist_instance, generic_remove_instance, get_server_state, get_virtual_machine, reregister_instance, register_instance, create_instance, update_instance_status, check_instance_name_validity
+from utils.instance import check_exist_instance, generic_remove_instance, get_server_state, get_virtual_machine, rehash_instance_name, reregister_instance, register_instance, create_instance, update_instance_status, check_instance_name_validity
 from utils.provider import exist_provider, get_provider_infos, get_provider_available_instances_by_region_zone
 from utils.zone_utils import exists_zone
 from utils.observability.cid import get_current_cid
@@ -283,8 +283,10 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
             'i18n_code': '127',
             'cid': get_current_cid()
         }, status_code = 404)
+
     hash = userInstance.hash
-    hashed_instance_name = f"{instance_name}-{hash}"
+    hashed_instance_name = rehash_instance_name(instance_name, hash)
+    log_msg("DEBUG", "[instance][attach_instance] hash = {}, hashed_instance_name = {}".format(hash, hashed_instance_name))
 
     from entities.User import User
     user = User.getUserById(current_user.id, db)
@@ -446,6 +448,8 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
     root_dns_zone = payload.root_dns_zone
     email = current_user.email
     hash, hashed_instance_name = generate_hashed_name(instance_name)
+    log_msg("DEBUG", "[instance][provision_instance] hash = {}, hashed_instance_name = {}".format(hash, hashed_instance_name))
+
     generate_dns = "false"
     #? Cloud init will mv _gitlab-ci.yml ./.gitlab-ci.yml And create all the roles and playbook
     centralized = "none"
