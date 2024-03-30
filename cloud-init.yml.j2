@@ -39,7 +39,7 @@ write_files:
 
 runcmd:
   - cd /root
-  - yum install -y git
+  - yum install -y git ansible
   - sudo chmod +x /root/cloud-init_handler.sh
   - |
     sudo /root/cloud-init_handler.sh -i {{ instance_id }}  > /root/cloud-init_handler.log 2>&1 &

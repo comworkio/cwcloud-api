@@ -38,7 +38,7 @@ handle_instance_success"        > /root/cloud-init_handler.sh
 
 # Run commands
 cd /root
-yum install -y git
+yum install -y git ansible
 sudo chmod +x /root/cloud-init_handler.sh
 git clone "{{ dynamic_repo }}"
 cd {{ gitlab_project_name }}
