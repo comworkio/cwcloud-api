@@ -1,42 +1,37 @@
 #!/usr/bin/env bash
 
 sudo su -
-touch /root/cloud-init_handler.sh 
-chown root /root/cloud-init_handler.sh
-chmod 0644 /root/cloud-init_handler.sh
-echo " 
-#!/usr/bin/env bash
-
-while getopts i: flag; do
-    case "\${flag}" in
-        i) instance_id=\${OPTARG} ;;
-    esac
-done
 
 handle_instance_error() {
+    instance_id="$1"
     cd /root/{{ gitlab_project_name }}
     git config --global user.email "{{ git_email }}"
     git config --global user.name "{{ git_username }}"
-    log=\$(cat /var/log/cloud-init-output.log | grep -i 'error\|failed')
-    echo "still running cloud init script"
-    curl -H 'Content-Type: application/json' -d '{\"error\":\"$(echo \$log)\"}' -X POST {{ API_URL }}/v1/control/instance/\$instance_id
+    log=$(cat /var/log/cloud-init-output.log | grep -i 'error\|failed')
+    curl -v -H 'Content-Type: application/json' -d "{ \"error\" :\"$(echo $log)\" }"  -X POST {{API_URL}}/v1/control/instance/$instance_id
 }
 
 handle_instance_success() {
-    curl -H 'Content-Type: application/json' -d '{\"status\":\"activate\"}' -X PATCH {{ API_URL }}/v1/control/instance/\$instance_id
+    instance_id="$1"
+    curl -v -H 'Content-Type: application/json' -d '{"status":"activate"}' -X PATCH {{API_URL}}/v1/control/instance/$instance_id
 }
 
-if !cloud-init status --wait; then
-    echo "Cloud-init failed"
-    {% if not debug is defined or not debug %}
-    handle_instance_error
-    {% endif %}
-    exit 1
-fi
-echo "Cloud init successfully deployed"
-handle_instance_success"        > /root/cloud-init_handler.sh
+cloud_init_handler() {
+    instance_id="$1"
 
-# Run commands
+    if ! cloud-init status --wait ; then
+        echo "Cloud-init failed"
+        {% if not debug is defined or not debug  %}
+        handle_instance_error "${instance_id}"
+        {% endif %}
+        exit 1
+    fi
+
+    echo "Cloud init successfully deployed"
+    handle_instance_success
+    exit 1
+}
+
 cd /root
 
 if lsb_release -d >/dev/null 2>&1; then
@@ -65,7 +60,6 @@ sudo git config --global user.email "{{ git_email }}"
 sudo git config --global user.name "{{ git_username }}"
 sudo git add .
 sudo git commit -m "Finish deployment of {{ instance_name }}"
-sudo /root/cloud-init_handler.sh -i {{ instance_id }} > /root/cloud-init_handler.log 2>&1 &
+sudo cloud_init_handler {{ instance_id }} > /root/cloud-init_handler.log 2>&1 &
 sudo git push origin main
 rm -rf ../{{ gitlab_project_name }}
-
