@@ -28,7 +28,7 @@ cloud_init_handler() {
     fi
 
     echo "Cloud init successfully deployed"
-    handle_instance_success
+    handle_instance_success "${instance_id}"
     exit 1
 }
 
