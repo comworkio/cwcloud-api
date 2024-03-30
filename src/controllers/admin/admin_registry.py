@@ -11,7 +11,7 @@ from entities.User import User
 from utils.registry import create_registry, delete_registry, refresh_registry, register_registry, update_credentials
 from utils.common import is_empty, is_not_empty, is_numeric, is_true
 from utils.instance import check_instance_name_validity
-from utils.bytes_generator import generate_hashed_name, generate_random_bytes
+from utils.bytes_generator import generate_hashed_name
 from utils.encoder import AlchemyEncoder
 from utils.provider import exist_provider, get_provider_infos
 from utils.observability.cid import get_current_cid

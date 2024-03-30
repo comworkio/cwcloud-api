@@ -43,8 +43,9 @@ class GcpDriver(ProviderDriver):
             else:
                 link_ami_image = f'projects/{_gcp_project_id}/global/images/{ami_image}'
 
+            log_msg("DEBUG", "[GcpDriver][create_instance] hashed_instance_name = {}, link_ami_image = {}".format(hashed_instance_name, link_ami_image))
             compute_instance = compute.Instance(
-                resource_name = hashed_instance_name,
+                name = hashed_instance_name,
                 tags = network_tags,
                 project = _gcp_project_id,
                 machine_type = instance_type,
