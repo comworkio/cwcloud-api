@@ -45,6 +45,7 @@ class GcpDriver(ProviderDriver):
 
             log_msg("DEBUG", "[GcpDriver][create_instance] hashed_instance_name = {}, link_ami_image = {}".format(hashed_instance_name, link_ami_image))
             compute_instance = compute.Instance(
+                resource_name = hashed_instance_name,
                 name = hashed_instance_name,
                 tags = network_tags,
                 project = _gcp_project_id,
