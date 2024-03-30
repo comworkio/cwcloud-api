@@ -15,6 +15,7 @@ from drivers.ProviderDriver import ProviderDriver
 from utils.common import is_not_empty, is_true
 from utils.dns_zones import get_dns_zone_driver
 from utils.driver import convert_instance_state, sanitize_project_name
+from utils.firewall import get_firewall_tags
 from utils.gcp_client import _gcp_project_id, _google_app_cred_str, _google_app_credentials, update_credentials_policy_registry, delete_registry_service_account, delete_bucket_service_account, get_gcp_instance_name, update_bucket_keys, update_policy_and_credentials_bucket, update_registry_token
 from utils.logger import log_msg
 
@@ -28,14 +29,14 @@ class GcpDriver(ProviderDriver):
                 "external-ip",
                 address_type = "EXTERNAL",
                 region = instance_region)
-            network_tags = ['http-server', 'https-server']
+            firewall_tags = get_firewall_tags()
             gcp_network = os.getenv('GCP_NETWORK')
 
             compute_firewall = compute.Firewall(
                 "cwc-firewall",
                 project = _gcp_project_id,
                 network = gcp_network,
-                source_tags = network_tags,
+                source_tags = firewall_tags,
                 allows = [compute.FirewallAllowArgs(protocol = "tcp", ports = ["22", "80", "443"])])
 
             if re.match("^projects\/", ami_image):
@@ -47,7 +48,7 @@ class GcpDriver(ProviderDriver):
             compute_instance = compute.Instance(
                 resource_name = hashed_instance_name,
                 name = hashed_instance_name,
-                tags = network_tags,
+                tags = firewall_tags,
                 project = _gcp_project_id,
                 machine_type = instance_type,
                 zone = f'{instance_region}-{instance_zone}',
