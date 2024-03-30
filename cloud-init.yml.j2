@@ -39,6 +39,7 @@ write_files:
 
 runcmd:
   - cd /root
+  - yum install -y epel-release
   - yum install -y git ansible
   - sudo chmod +x /root/cloud-init_handler.sh
   - |
