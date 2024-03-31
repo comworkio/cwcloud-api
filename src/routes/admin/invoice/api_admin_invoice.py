@@ -17,6 +17,7 @@ from middleware.auth_guard import admin_required
 
 from utils.encoder import AlchemyEncoder
 from utils.common import is_false, is_not_empty
+from utils.file import quiet_remove
 from utils.flag import is_flag_disabled, is_flag_enabled
 from utils.security import is_not_ref_invoice_valid
 from utils.user import pick_user_id_if_exists, user_from_body, user_id_from_body
@@ -153,7 +154,7 @@ def generate_invoice(current_user: Annotated[UserSchema, Depends(admin_required)
 
                 log_msg("INFO", f"[api_invoice] Created new invoice between {from_date_iso} and {to_date_iso} for user {target_user.email}")
 
-            os.remove(name_file)
+            quiet_remove(name_file)
         except HTTPError as e:
             return JSONResponse(content = {
                 'status': 'ko',
@@ -253,7 +254,7 @@ def invoice_edition(current_user: Annotated[UserSchema, Depends(admin_required)]
             date_path = (invoice.to_date + timedelta(days = int(os.environ["INVOICE_DAYS_DELTA"]))).strftime("%Y-%m")
             log_msg("DEBUG", "[InvoiceAdminUpdate][post] edition, date_path = {}".format(date_path))
             send_invoice_email(user.email, name_file, encoded_string, True, True, date_path)
-        os.remove(name_file)
+        quiet_remove(name_file)
     except HTTPError as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -304,7 +305,7 @@ def download_invoice(current_user: Annotated[UserSchema, Depends(admin_required)
             encoded_string = base64.b64encode(pdf_file.read()).decode()
 
         pdf_file.close()
-        os.remove(target_name)
+        quiet_remove(target_name)
         return JSONResponse(content = {
             'status': 'ok',
             'file_name': target_name,

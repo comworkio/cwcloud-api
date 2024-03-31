@@ -15,6 +15,7 @@ from schemas.Invoice import InvoiceCustomSchema
 from middleware.auth_guard import admin_required
 
 from utils.common import is_false, is_not_empty
+from utils.file import quiet_remove
 from utils.flag import is_flag_disabled, is_flag_enabled
 from utils.date import parse_date
 from utils.invoice import get_invoice_ref
@@ -125,7 +126,7 @@ def create_custom_invoice(current_user: Annotated[UserSchema, Depends(admin_requ
 
                 log_msg("INFO", f"[api_invoice] Created new invoice for {invoice_date} for user {target_user.email}")
 
-            os.remove(name_file)
+            quiet_remove(name_file)
         except HTTPError as e:
             return JSONResponse(content = {
                 'status': 'ko',

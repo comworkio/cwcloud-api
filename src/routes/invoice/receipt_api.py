@@ -1,4 +1,3 @@
-import os
 import base64
 
 from typing import Annotated
@@ -12,6 +11,7 @@ from middleware.auth_guard import get_current_active_user
 
 from utils.common import is_false
 from utils.billing import download_billing_file
+from utils.file import quiet_remove
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
 from utils.observability.counter import create_counter, increment_counter
@@ -51,5 +51,5 @@ def download_receipt_by_invoice_ref(current_user: Annotated[UserSchema, Depends(
             encoded_string = base64.b64encode(pdf_file.read()).decode()
 
         pdf_file.close()
-        os.remove(target_name)
+        quiet_remove(target_name)
         return JSONResponse(content = {"file_name": target_name, "blob": str(encoded_string)}, status_code = 200)

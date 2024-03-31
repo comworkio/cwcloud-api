@@ -12,6 +12,7 @@ from entities.Instance import Instance
 
 from utils.api_url import get_api_url
 from utils.exec import exec_cmd
+from utils.file import quiet_remove
 from utils.gitlab import delete_runner, get_project_runners, inject_default_credentials_to_url, inject_git_credentials_to_url
 from utils.bytes_generator import generate_random_bytes, is_disable_dynamic_names
 from utils.consumption import generate_instance_consumption
@@ -100,7 +101,7 @@ def create_instance(provider, ami_image, instance_id, user_email, instance_name,
     log_msg("DEBUG", "[create_instance] driver result = {}".format(result))
     if "ip" in result:
         Instance.updateInstanceIp(instance_id, result['ip'], db)
-    os.remove(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', cloud_init_script)))
+    quiet_remove(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', cloud_init_script)))
 
 def refresh_instance(provider, instance_id, hashed_instance_name, environment, instance_region, instance_zone, db):
     ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))
@@ -110,8 +111,8 @@ def refresh_instance(provider, instance_id, hashed_instance_name, environment, i
         Instance.updateTypeAndIp(instance_id, result['type'], result['ip'], db)
 
 def clean_up_ansible_config_files():
-    os.remove(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'instance_name.md.j2')))
-    os.remove(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'instance_name.yml.j2')))
+    quiet_remove(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'instance_name.md.j2')))
+    quiet_remove(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'instance_name.yml.j2')))
 
 def prepare_ansible_config_files(env):
     envFile = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'instance_name.yml.j2'))

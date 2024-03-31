@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from adapters.AdapterConfig import get_adapter
 
+from utils.file import quiet_remove
 from utils.mail import send_relaunch_email
 from utils.currency import get_payment_currency
 from utils.invoice import generate_receipt_pdf
@@ -130,7 +131,7 @@ def pay(db, user, invoice, voucher_id = "", auto_pay = False):
             encoded_string = base64.b64encode(pdf_file.read()).decode()
         pdf_file.close()
         log_msg("INFO", f"[api_invoice] Created new receipt of invoice {invoice.ref} for user {user['email']}")
-        os.remove(name_file)
+        quiet_remove(name_file)
         log_msg("INFO", f"[api_invoice] User {user['email']} will pay {total_to_pay}")
         if total_to_pay > min_amount:
             final_amount = int(round(total_to_pay, 4) * 100)

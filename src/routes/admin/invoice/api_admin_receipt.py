@@ -1,5 +1,3 @@
-
-import os
 import base64
 
 from typing import Annotated
@@ -13,6 +11,7 @@ from middleware.auth_guard import admin_required
 from schemas.Receipt import ReceiptDownloadSchema
 
 from utils.common import is_false
+from utils.file import quiet_remove
 from utils.user import user_id_from_body
 from utils.billing import download_billing_file
 from utils.observability.cid import get_current_cid
@@ -63,7 +62,7 @@ def download_receipt(current_user: Annotated[UserSchema, Depends(admin_required)
             encoded_string = base64.b64encode(pdf_file.read()).decode()
 
         pdf_file.close()
-        os.remove(target_name)
+        quiet_remove(target_name)
         return JSONResponse(content = {
             'status': 'ok',
             'file_name': target_name,

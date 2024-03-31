@@ -1,9 +1,10 @@
 import base64
 import re
 import time
-import os
 
 from passlib.context import CryptContext
+
+from utils.file import quiet_remove
 
 pwd_context = CryptContext(schemes = ["bcrypt"], deprecated = "auto")
 
@@ -137,5 +138,4 @@ def create_file_locally(file_name, file_content):
     time.sleep(1)
 
 def delete_file_locally(file_name):
-    os.remove(f"{file_name}.pem")
-
+    quiet_remove(f"{file_name}.pem")

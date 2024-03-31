@@ -1,10 +1,10 @@
-import os
 import base64
 import json
 
 from fastapi.responses import JSONResponse
 
 from entities.Environment import Environment
+from utils.file import quiet_remove
 from utils.gitlab import get_infra_playbook_roles, get_helm_charts
 from utils.kubernetes.deployment_env import generate_chart_yaml
 from utils.list import unmarshall_list_array, marshall_list_string
@@ -114,7 +114,7 @@ def admin_export_environment(current_user, environment_id, db):
         encoded_string = base64.b64encode(json_file.read()).decode()
         json_file.close()
 
-    os.remove(file_name)
+    quiet_remove(file_name)
     return JSONResponse(content = {
         'status': 'ok',
         'file_name': file_name, 
