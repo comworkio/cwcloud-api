@@ -45,7 +45,7 @@ def get_gcp_instance_name(zone, name_instance):
     instance_filter = f'name = {name_instance}*'
     request = compute_v1.ListInstancesRequest(project = _gcp_project_id, zone = zone, filter = instance_filter)
     response = client.list(request = request)
-    instance_name = None
+    instance_name = name_instance
     for instance in response:
         instance_name = instance.name
     return instance_name

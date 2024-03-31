@@ -74,9 +74,9 @@ def get_server_state(provider, server):
     return ProviderDriver().get_server_state(server)
 
 def get_virtual_machine(provider, region, zone, instance_name):
-        ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))
-        ProviderDriver = getattr(ProviderDriverModule, get_driver(provider))
-        return ProviderDriver().get_virtual_machine(region, zone, instance_name)
+    ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))
+    ProviderDriver = getattr(ProviderDriverModule, get_driver(provider))
+    return ProviderDriver().get_virtual_machine(region, zone, instance_name)
 
 def create_instance(provider, ami_image, instance_id, user_email, instance_name, hashed_instance_name, environment, instance_region, instance_zone, generate_dns, gitlab_project, user_project, instance_type, debug, centralized, root_dns_zone, db):
     root_password = generate_random_bytes(20)
