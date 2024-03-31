@@ -6,14 +6,18 @@ import lbrlabs_pulumi_ovh as ovh
 import pulumi_cloudflare as cloudflare
 import pulumi_aws as aws
 
-from utils.common import is_not_empty
+from utils.common import is_empty, is_not_empty, is_not_empty_key
 from utils.logger import log_msg
 
 def register_cloudflare_domain(value, environment, instance_ip, root_dns_zone):
     dns_zone = "{}.{}".format(environment, root_dns_zone)
     record_name = "{}.{}".format(value, environment)
     log_msg("INFO", "[register_domain][cloudflare] register domain {}.{}".format(record_name, dns_zone))
-    zone_id = os.getenv('CLOUDFLARE_ZONE_ID')
+    zone_id = get_zone_id(root_dns_zone)
+    if is_empty(zone_id):
+        log_msg("ERROR", "[dns_zones][register_cloudflare_domain] No zone id found for root_dns_zone = {}".format(root_dns_zone))
+        return
+
     cloudflare.Record(record_name,
         zone_id = zone_id,
         name = record_name,
@@ -85,6 +89,17 @@ def get_dns_zones():
         else:
             result = []
     return result
+
+def get_zone_id(dns_zone):
+    config_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'cloud_environments.yml'))
+    with open(config_path, "r") as stream:
+        loaded_data = yaml.safe_load(stream)
+        if 'dns_zones' in loaded_data.keys():
+            for z in loaded_data['dns_zones']:
+                if z['name'] == dns_zone and is_not_empty_key(z, 'zone_id'):
+                    return z['zone_id']
+
+    return None
 
 def get_first_dns_zone_doc():
     zones = get_dns_zones()
