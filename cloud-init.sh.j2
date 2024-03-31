@@ -3,17 +3,19 @@
 sudo su -
 
 handle_instance_error() {
-    instance_id="$1"
-    cd /root/{{ gitlab_project_name }}
-    git config --global user.email "{{ git_email }}"
-    git config --global user.name "{{ git_username }}"
-    log=$(cat /var/log/cloud-init-output.log | grep -i 'error\|failed')
-    curl -v -H 'Content-Type: application/json' -d "{ \"error\" :\"$(echo $log)\" }"  -X POST {{API_URL}}/v1/control/instance/$instance_id
+  instance_id="$1"
+  cd /root/{{ gitlab_project_name }}
+  git config --global user.email "{{ git_email }}"
+  git config --global user.name "{{ git_username }}"
+  log=$(cat /var/log/cloud-init-output.log | grep -i 'error\|failed')
+  echo "[handle_instance_error] perform the PATCH request to instance ${instance_id}"
+  curl -v -H 'Content-Type: application/json' -d "{ \"error\" :\"$(echo $log)\" }"  -X POST {{API_URL}}/v1/control/instance/$instance_id
 }
 
 handle_instance_success() {
-    instance_id="$1"
-    curl -v -H 'Content-Type: application/json' -d '{"status":"activate"}' -X PATCH {{API_URL}}/v1/control/instance/$instance_id
+  instance_id="$1"
+  echo "[handle_instance_success] perform the PATCH request to instance ${instance_id}"
+  curl -v -H 'Content-Type: application/json' -d '{"status":"activate"}' -X PATCH {{API_URL}}/v1/control/instance/$instance_id
 }
 
 cloud_init_handler() {
@@ -60,6 +62,6 @@ sudo git config --global user.email "{{ git_email }}"
 sudo git config --global user.name "{{ git_username }}"
 sudo git add .
 sudo git commit -m "Finish deployment of {{ instance_name }}"
-sudo cloud_init_handler {{ instance_id }} > /root/cloud-init_handler.log 2>&1 &
+cloud_init_handler {{ instance_id }} &
 sudo git push origin main
 rm -rf ../{{ gitlab_project_name }}
