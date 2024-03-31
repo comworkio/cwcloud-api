@@ -207,7 +207,7 @@ def config_cloud_init(instance_id, instance_name, user_project, gitlab_project_n
     file.write(template.render(data))
     file.close()
 
-def delete_instance(hash, projectName, environment, retry = 0):
+def delete_instance(hash, instanceName, environment, retry = 0):
     try:
         if retry >= MAX_RETRY:
             log_msg("WARN", "[delete_instance] max retries has been reached : retry = {}, projectName = {}, environment = {}".format(retry, projectName, environment))
@@ -215,16 +215,14 @@ def delete_instance(hash, projectName, environment, retry = 0):
 
         if retry > 0:
             waiting_time = WAIT_TIME * retry
-            log_msg("DEBUG", "[delete_instance] waiting: projectName = {}, environment = {}, wait = {}".format(projectName, environment, waiting_time))
+            log_msg("DEBUG", "[delete_instance] waiting: instanceName = {}, environment = {}, wait = {}".format(instanceName, environment, waiting_time))
             sleep(waiting_time)
 
-        # FIXME the stack name is probably something else, that's why the instance are not always deleted on the cloud side
-        # In the drivers we have sanitize_project_name(environment['path'])
-        stack = auto.select_stack(f'{projectName}-{hash}', environment, program = delete_instance)
+        stack = auto.select_stack(rehash_instance_name(instanceName, hash), environment, program = delete_instance)
         stack.destroy()
     except Exception as e:
-        log_msg("WARN", "[delete_instance] trying again because of this error: projectName = {}, environment = {}, error = {}".format(projectName, environment, e))
-        delete_instance(hash, projectName, environment, retry + 1)
+        log_msg("WARN", "[delete_instance] trying again because of this error: instanceName = {}, environment = {}, error = {}".format(instanceName, environment, e))
+        delete_instance(hash, instanceName, environment, retry + 1)
 
 def update_virtual_machine_status(provider, region, zone, server_id, action):
     ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))
