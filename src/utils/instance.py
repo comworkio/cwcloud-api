@@ -272,7 +272,7 @@ def generic_remove_instance(userInstance, db, bt: BackgroundTasks):
     target_server_id = "none"
 
     try:
-        server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, f"{userInstance.name}-{userInstance.hash}")
+        server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, rehash_instance_name(userInstance.name, userInstance.hash))
     except Exception as e:
         log_msg("WARN", "[remove_instance] unexpected error (get_virtual_machine) : {}".format(e))
 

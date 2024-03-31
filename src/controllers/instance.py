@@ -107,7 +107,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
             'cid': get_current_cid()
         }, status_code = 404)
 
-    server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, f"{userInstance.name}-{userInstance.hash}")
+    server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, rehash_instance_name(userInstance.name, userInstance.hash))
     if not server:
         return JSONResponse(content = {
             'status': 'ko',

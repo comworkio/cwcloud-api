@@ -9,7 +9,7 @@ from schemas.Control import ControlDeleteInstanceSchema, ControlUpdateInstanceSc
 from utils.client_ips import get_client_ips
 from utils.common import is_not_empty
 from utils.gitlab import delete_runner, get_project_runners
-from utils import instance
+from utils.instance import delete_instance, update_instance_status, get_virtual_machine, rehash_instance_name
 from utils.logger import log_msg
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
@@ -47,7 +47,7 @@ def handle_instance_error_creation(request: Request, bt: BackgroundTasks, instan
                 'cid': get_current_cid()
             }, status_code = 403)
 
-        server = instance.get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, f"{userInstance.name}-{userInstance.hash}")
+        server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, rehash_instance_name(userInstance.name, userInstance.hash))
 
         if not server:
             return JSONResponse(content = {
@@ -66,7 +66,7 @@ def handle_instance_error_creation(request: Request, bt: BackgroundTasks, instan
             }, status_code = 404)
 
         try:
-            bt.add_task(instance.delete_instance, userInstance.hash, userInstance.name, userInstance.user.email)
+            bt.add_task(delete_instance, userInstance.hash, userInstance.name, userInstance.user.email)
             runners = get_project_runners(userInstance.project.id, userInstance.project.gitlab_host, userInstance.project.access_token)
             filtered_runners = [runner for runner in runners if runner["ip_address"] == userInstance.ip_address]
             if len(filtered_runners) > 0:
@@ -110,7 +110,7 @@ def update_instance(request: Request, instance_id: str, payload: ControlUpdateIn
                 'cid': get_current_cid()
             }, status_code = 403)
 
-        server = instance.get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, f"{userInstance.name}-{userInstance.hash}")
+        server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, rehash_instance_name(userInstance.name, userInstance.hash))
 
         if not server:
             return JSONResponse(content = {
@@ -135,7 +135,7 @@ def update_instance(request: Request, instance_id: str, payload: ControlUpdateIn
                     'error': 'instance already active',
                     'cid': get_current_cid()
                 }, status_code = 400)
-            instance.update_instance_status(userInstance, target_server_id, action, db)
+            update_instance_status(userInstance, target_server_id, action, db)
             return JSONResponse(content = {
                 'status': 'ok',
                 'message': 'instance successfully updated', 
