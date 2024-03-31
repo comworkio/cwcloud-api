@@ -231,7 +231,7 @@ class GcpDriver(ProviderDriver):
         hashed_bucket_name = rehash_dynamic_name(bucket.name, bucket.hash)
         bucket.force_delete_objects = True
         service_account_email = f"{hashed_bucket_name}-sa@{_gcp_project_id}.iam.gserviceaccount.com"
-        stack = auto.select_stack(hashed_bucket_name, user_email, program = self.delete_bucket)
+        stack = auto.select_stack(hashed_bucket_name, sanitize_project_name(user_email), program = self.delete_bucket)
         stack.destroy()
         delete_bucket_service_account(service_account_email)
 
@@ -249,6 +249,6 @@ class GcpDriver(ProviderDriver):
     def delete_registry(self, registry, user_email):
         hashed_name = rehash_dynamic_name(registry.name, registry.hash)
         service_account_email = f"{hashed_name}-sa@{_gcp_project_id}.iam.gserviceaccount.com"
-        stack = auto.select_stack(hashed_name, user_email, program = self.delete_registry)
+        stack = auto.select_stack(hashed_name, sanitize_project_name(user_email), program = self.delete_registry)
         stack.destroy()
         delete_registry_service_account(service_account_email)
