@@ -11,6 +11,7 @@ from drivers.ProviderDriver import ProviderDriver
 
 from utils.common import is_not_empty, is_true
 from utils.dns_zones import get_dns_zone_driver, register_scaleway_domain
+from utils.dynamic_name import rehash_dynamic_name
 from utils.list import unmarshall_list_array
 from utils.driver import sanitize_project_name, convert_instance_state
 from utils.logger import log_msg
@@ -231,7 +232,7 @@ class ScalewayDriver(ProviderDriver):
         }
 
     def delete_bucket(self, bucket, user_email):
-        hashed_bucket_name = f'{bucket.name}-{bucket.hash}'
+        hashed_bucket_name = rehash_dynamic_name(bucket.name, bucket.hash)
         stack = auto.select_stack(hashed_bucket_name, sanitize_project_name(user_email), program = self.delete_bucket)
         stack.destroy()
 
@@ -267,7 +268,7 @@ class ScalewayDriver(ProviderDriver):
         }
 
     def delete_registry(self, registry, user_email):
-        hashed_name = f'{registry.name}-{registry.hash}'
+        hashed_name = rehash_dynamic_name(registry.name, registry.hash)
         stack = auto.select_stack(hashed_name, sanitize_project_name(user_email), program = self.delete_bucket)
         stack.destroy()
 

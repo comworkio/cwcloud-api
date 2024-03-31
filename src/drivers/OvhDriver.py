@@ -12,6 +12,7 @@ from drivers.ProviderDriver import ProviderDriver
 from utils.common import is_not_empty
 from utils.dns_zones import get_dns_zone_driver, register_ovh_domain
 from utils.driver import sanitize_project_name
+from utils.dynamic_name import rehash_dynamic_name
 from utils.logger import log_msg
 from utils.ovh_client import create_ovh_bucket, delete_ovh_bucket, update_ovh_bucket_credentials, update_ovh_registry_credentials, ovh_client
 from utils.list import unmarshall_list_array
@@ -169,7 +170,7 @@ class OvhDriver(ProviderDriver):
         }
 
     def delete_bucket(self, bucket, user_email):
-        hashed_bucket_name = f'{bucket.name}-{bucket.hash}'
+        hashed_bucket_name = rehash_dynamic_name(bucket.name, bucket.hash)
         stack = auto.select_stack(hashed_bucket_name, sanitize_project_name(user_email), program = self.delete_bucket)
         stack.destroy()
         mainRegion = ''.join([i for i in bucket.region if not i.isdigit()])
@@ -198,7 +199,7 @@ class OvhDriver(ProviderDriver):
         }
 
     def update_registry_credentials(self, registry):
-        hashed_name = f'{registry.name}-{registry.hash}'
+        hashed_name = rehash_dynamic_name(registry.name, registry.hash)
         credentials = update_ovh_registry_credentials(hashed_name)
         return {
             "access_key": credentials["login"],
@@ -206,7 +207,7 @@ class OvhDriver(ProviderDriver):
         }
 
     def delete_registry(self, registry, user_email):
-        hashed_name = f'{registry.name}-{registry.hash}'
+        hashed_name = rehash_dynamic_name(registry.name, registry.hash)
         stack = auto.select_stack(hashed_name, sanitize_project_name(user_email), program = self.delete_registry)
         stack.destroy()
         return

@@ -10,11 +10,12 @@ from utils.flag import is_flag_disabled
 from utils.dns_zones import get_dns_zones
 from utils.domain import is_not_subdomain_valid
 from utils.gitlab import get_gitlab_project, get_gitlab_project_playbooks, get_project_quietly, get_user_project_by_id, get_user_project_by_name, get_user_project_by_url, is_not_project_found_in_gitlab
-from utils.bytes_generator import generate_hashed_name
+from utils.dynamic_name import generate_hashed_name
 from utils.encoder import AlchemyEncoder
 from utils.images import get_os_image
 from utils.logger import log_msg
-from utils.instance import check_exist_instance, generic_remove_instance, get_server_state, get_virtual_machine, rehash_instance_name, reregister_instance, register_instance, create_instance, update_instance_status, check_instance_name_validity
+from utils.dynamic_name import rehash_dynamic_name
+from utils.instance import check_exist_instance, generic_remove_instance, get_server_state, get_virtual_machine, reregister_instance, register_instance, create_instance, update_instance_status, check_instance_name_validity
 from utils.provider import exist_provider, get_provider_infos, get_provider_available_instances_by_region_zone
 from utils.zone_utils import exists_zone
 from utils.observability.cid import get_current_cid
@@ -107,7 +108,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
             'cid': get_current_cid()
         }, status_code = 404)
 
-    server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, rehash_instance_name(userInstance.name, userInstance.hash))
+    server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, rehash_dynamic_name(userInstance.name, userInstance.hash))
     if not server:
         return JSONResponse(content = {
             'status': 'ko',
@@ -285,7 +286,7 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
         }, status_code = 404)
 
     hash = userInstance.hash
-    hashed_instance_name = rehash_instance_name(instance_name, hash)
+    hashed_instance_name = rehash_dynamic_name(instance_name, hash)
     log_msg("DEBUG", "[instance][attach_instance] hash = {}, hashed_instance_name = {}".format(hash, hashed_instance_name))
 
     from entities.User import User

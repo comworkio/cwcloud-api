@@ -1,9 +1,9 @@
 from unittest import TestCase
 from unittest.mock import patch
 
-from utils.bytes_generator import generate_hashed_name
+from utils.dynamic_name import generate_hashed_name
 
-class TestGenerateHashedName(TestCase):
+class TestDynamicName(TestCase):
     @patch('utils.bytes_generator.is_true', return_value = True)
     def test_generate_hashed_name_enable(self, mock_is_true):
         hash, name = generate_hashed_name('test')

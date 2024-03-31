@@ -13,6 +13,7 @@ from adapters.AdapterConfig import get_adapter
 from utils.common import is_not_empty, is_true
 from utils.dns_zones import get_dns_zone_driver, register_aws_domain
 from utils.driver import convert_instance_state, sanitize_project_name
+from utils.dynamic_name import rehash_dynamic_name
 from utils.logger import log_msg
 from utils.provider import get_specific_config
 from utils.list import unmarshall_list_array
@@ -152,7 +153,7 @@ class AwsDriver(ProviderDriver):
         }
 
     def update_bucket_credentials(self, bucket):
-        bucket_hashed_name = f'{bucket.name}-{bucket.hash}'
+        bucket_hashed_name = rehash_dynamic_name(bucket.name, bucket.hash)
         (aws_access_key_id, aws_secret_access_key) = update_aws_bucket_credentials(bucket.id, bucket.region, bucket_hashed_name)
         return {
             "access_key": aws_access_key_id,
@@ -160,7 +161,7 @@ class AwsDriver(ProviderDriver):
         }
 
     def delete_bucket(self, bucket, user_email):
-        hashed_bucket_name = f'{bucket.name}-{bucket.hash}'
+        hashed_bucket_name = rehash_dynamic_name(bucket.name, bucket.hash)
         stack = auto.select_stack(hashed_bucket_name, sanitize_project_name(user_email), program = self.delete_bucket)
         stack.destroy()
         delete_aws_user_bucket(bucket.region, bucket.id, hashed_bucket_name)
@@ -194,7 +195,7 @@ class AwsDriver(ProviderDriver):
         }
 
     def update_registry_credentials(self, registry):
-        hashed_name = f'{registry.name}-{registry.hash}'
+        hashed_name = rehash_dynamic_name(registry.name, registry.hash)
         (aws_access_key_id, aws_secret_access_key) = update_aws_registry_credentials( registry.id, registry.region, hashed_name)
         return {
             "access_key": aws_access_key_id,
@@ -202,7 +203,7 @@ class AwsDriver(ProviderDriver):
         }
 
     def delete_registry(self, registry, user_email):
-        hashed_name = f'{registry.name}-{registry.hash}'
+        hashed_name = rehash_dynamic_name(registry.name, registry.hash)
         stack = auto.select_stack(hashed_name, sanitize_project_name(user_email), program = self.delete_registry)
         stack.destroy()
         delete_aws_user_registry(hashed_name, registry.region, registry.id)

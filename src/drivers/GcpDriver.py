@@ -15,6 +15,7 @@ from drivers.ProviderDriver import ProviderDriver
 from utils.common import is_not_empty, is_true
 from utils.dns_zones import get_dns_zone_driver
 from utils.driver import convert_instance_state, sanitize_project_name
+from utils.dynamic_name import rehash_dynamic_name
 from utils.firewall import get_firewall_tags
 from utils.gcp_client import _gcp_project_id, _google_app_cred_str, _google_app_credentials, update_credentials_policy_registry, delete_registry_service_account, delete_bucket_service_account, get_gcp_instance_name, update_bucket_keys, update_policy_and_credentials_bucket, update_registry_token
 from utils.logger import log_msg
@@ -213,7 +214,7 @@ class GcpDriver(ProviderDriver):
         return {}
 
     def update_bucket_credentials(self, bucket):
-        hashed_bucket_name = f'{bucket.name}-{bucket.hash}'
+        hashed_bucket_name = rehash_dynamic_name(bucket.name, bucket.hash)
         (access_id, secret_id) = update_bucket_keys(hashed_bucket_name)
         return {
             "access_key": access_id,
@@ -221,7 +222,7 @@ class GcpDriver(ProviderDriver):
         }
 
     def delete_bucket(self, bucket, user_email):
-        hashed_bucket_name = f'{bucket.name}-{bucket.hash}'
+        hashed_bucket_name = rehash_dynamic_name(bucket.name, bucket.hash)
         bucket.force_delete_objects = True
         service_account_email = f"{hashed_bucket_name}-sa@{_gcp_project_id}.iam.gserviceaccount.com"
         stack = auto.select_stack(hashed_bucket_name, user_email, program = self.delete_bucket)
@@ -233,14 +234,14 @@ class GcpDriver(ProviderDriver):
         return {}
 
     def update_registry_credentials(self, registry):
-        hashed_name = f'{registry.name}-{registry.hash}'
+        hashed_name = rehash_dynamic_name(registry.name, registry.hash)
         access_key = update_registry_token(hashed_name)
         return {
             'access_key': access_key
         }
 
     def delete_registry(self, registry, user_email):
-        hashed_name = f'{registry.name}-{registry.hash}'
+        hashed_name = rehash_dynamic_name(registry.name, registry.hash)
         service_account_email = f"{hashed_name}-sa@{_gcp_project_id}.iam.gserviceaccount.com"
         stack = auto.select_stack(hashed_name, user_email, program = self.delete_registry)
         stack.destroy()

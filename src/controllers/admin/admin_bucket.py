@@ -11,7 +11,7 @@ from entities.User import User
 from utils.bucket import create_bucket, delete_bucket, refresh_bucket, register_bucket, update_credentials
 from utils.common import is_empty, is_not_empty, is_numeric, is_true
 from utils.instance import check_instance_name_validity
-from utils.bytes_generator import generate_hashed_name
+from utils.dynamic_name import generate_hashed_name
 from utils.provider import exist_provider, get_provider_infos
 from utils.encoder import AlchemyEncoder
 from utils.observability.cid import get_current_cid

@@ -9,7 +9,8 @@ from schemas.Control import ControlDeleteInstanceSchema, ControlUpdateInstanceSc
 from utils.client_ips import get_client_ips
 from utils.common import is_not_empty
 from utils.gitlab import delete_runner, get_project_runners
-from utils.instance import delete_instance, update_instance_status, get_virtual_machine, rehash_instance_name
+from utils.dynamic_name import rehash_dynamic_name
+from utils.instance import delete_instance, update_instance_status, get_virtual_machine
 from utils.logger import log_msg
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
@@ -47,7 +48,7 @@ def handle_instance_error_creation(request: Request, bt: BackgroundTasks, instan
                 'cid': get_current_cid()
             }, status_code = 403)
 
-        server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, rehash_instance_name(userInstance.name, userInstance.hash))
+        server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, rehash_dynamic_name(userInstance.name, userInstance.hash))
 
         if not server:
             return JSONResponse(content = {
@@ -110,7 +111,7 @@ def update_instance(request: Request, instance_id: str, payload: ControlUpdateIn
                 'cid': get_current_cid()
             }, status_code = 403)
 
-        server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, rehash_instance_name(userInstance.name, userInstance.hash))
+        server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, rehash_dynamic_name(userInstance.name, userInstance.hash))
 
         if not server:
             return JSONResponse(content = {

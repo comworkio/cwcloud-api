@@ -218,7 +218,7 @@ def delete_instance(hash, instanceName, environment, retry = 0):
             log_msg("DEBUG", "[delete_instance] waiting: instanceName = {}, environment = {}, wait = {}".format(instanceName, environment, waiting_time))
             sleep(waiting_time)
 
-        stack = auto.select_stack(rehash_instance_name(instanceName, hash), environment, program = delete_instance)
+        stack = auto.select_stack(rehash_dynamic_name(instanceName, hash), environment, program = delete_instance)
         stack.destroy()
     except Exception as e:
         log_msg("WARN", "[delete_instance] trying again because of this error: instanceName = {}, environment = {}, error = {}".format(instanceName, environment, e))
@@ -270,7 +270,7 @@ def generic_remove_instance(userInstance, db, bt: BackgroundTasks):
     target_server_id = "none"
 
     try:
-        server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, rehash_instance_name(userInstance.name, userInstance.hash))
+        server = get_virtual_machine(userInstance.provider, userInstance.region, userInstance.zone, rehash_dynamic_name(userInstance.name, userInstance.hash))
     except Exception as e:
         log_msg("WARN", "[remove_instance] unexpected error (get_virtual_machine) : {}".format(e))
 
@@ -314,6 +314,3 @@ def generic_remove_instance(userInstance, db, bt: BackgroundTasks):
             'http_code': e.code,
             'cid': get_current_cid()
         }
-
-def rehash_instance_name(instance_name, hash):
-    return instance_name if is_disable_dynamic_names() or is_empty(hash) else "{}-{}".format(is_disable_dynamic_names, hash)

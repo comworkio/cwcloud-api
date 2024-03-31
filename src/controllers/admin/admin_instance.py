@@ -9,9 +9,10 @@ from utils.common import is_empty, is_not_empty, is_numeric
 from utils.dns_zones import get_dns_zones
 from utils.domain import is_not_subdomain_valid
 from utils.images import get_os_image
-from utils.instance import check_exist_instance, check_instance_name_validity, generic_remove_instance, get_server_state, get_virtual_machine, rehash_instance_name, update_instance_status, create_instance, register_instance, refresh_instance, get_virtual_machine, reregister_instance
+from utils.dynamic_name import rehash_dynamic_name
+from utils.instance import check_exist_instance, check_instance_name_validity, generic_remove_instance, get_server_state, get_virtual_machine, update_instance_status, create_instance, register_instance, refresh_instance, get_virtual_machine, reregister_instance
 from utils.logger import log_msg
-from utils.bytes_generator import generate_hashed_name
+from utils.dynamic_name import generate_hashed_name
 from utils.gitlab import get_gitlab_project, get_gitlab_project_playbooks, get_project_quietly, get_user_project_by_id, get_user_project_by_name, get_user_project_by_url, is_not_project_found_in_gitlab
 from utils.encoder import AlchemyEncoder
 from utils.provider import exist_provider, get_provider_infos, get_provider_available_instances_by_region_zone
@@ -294,7 +295,7 @@ def admin_attach_instance(bt: BackgroundTasks, current_user, provider, region, z
         }, status_code = 404)
 
     hash = userInstance.hash
-    hashed_instance_name = rehash_instance_name(instance_name, hash)
+    hashed_instance_name = rehash_dynamic_name(instance_name, hash)
     log_msg("DEBUG", "[admin_instance][attach_instance] hash = {}, hashed_instance_name = {}".format(hash, hashed_instance_name))
 
     if not exist_provider(provider):
