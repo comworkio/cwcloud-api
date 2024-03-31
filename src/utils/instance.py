@@ -210,7 +210,7 @@ def config_cloud_init(instance_id, instance_name, user_project, gitlab_project_n
 def delete_instance(hash, instanceName, environment, retry = 0):
     try:
         if retry >= MAX_RETRY:
-            log_msg("WARN", "[delete_instance] max retries has been reached : retry = {}, projectName = {}, environment = {}".format(retry, projectName, environment))
+            log_msg("WARN", "[delete_instance] max retries has been reached : retry = {}, instanceName = {}, environment = {}".format(retry, instanceName, environment))
             return
 
         if retry > 0:

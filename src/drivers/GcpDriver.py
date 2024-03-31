@@ -28,7 +28,9 @@ class GcpDriver(ProviderDriver):
             ip_address = gcp.compute.Address(
                 "external-ip",
                 address_type = "EXTERNAL",
-                region = instance_region)
+                region = instance_region
+            )
+
             firewall_tags = get_firewall_tags()
             gcp_network = os.getenv('GCP_NETWORK')
 
@@ -37,7 +39,8 @@ class GcpDriver(ProviderDriver):
                 project = _gcp_project_id,
                 network = gcp_network,
                 source_tags = firewall_tags,
-                allows = [compute.FirewallAllowArgs(protocol = "tcp", ports = ["22", "80", "443"])])
+                allows = [compute.FirewallAllowArgs(protocol = "tcp", ports = ["22", "80", "443"])]
+            )
 
             if re.match("^projects\/", ami_image):
                 link_ami_image = ami_image
