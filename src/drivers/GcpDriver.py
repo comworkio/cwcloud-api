@@ -106,7 +106,11 @@ class GcpDriver(ProviderDriver):
 
     def create_bucket(self, user_email, bucket_id, hashed_bucket_name, region, bucket_type):
         def create_pulumi_program():
-            bucket = gcp.storage.Bucket(hashed_bucket_name, location = region)
+            bucket = gcp.storage.Bucket(
+                resource_name = hashed_bucket_name,
+                name = hashed_bucket_name,
+                location = region
+            )
             pulumi.export("endpoint", bucket.self_link)
 
         stack = auto.create_or_select_stack(stack_name = hashed_bucket_name,
@@ -133,11 +137,13 @@ class GcpDriver(ProviderDriver):
 
     def create_registry(self, user_email, registry_id, hashed_name, region, type):
         def create_pulumi_program():
-            gcp.artifactregistry.Repository(hashed_name,
-                 description = "Docker repository",
-                 format = "DOCKER",
-                 location = region,
-                 repository_id = hashed_name)
+            gcp.artifactregistry.Repository(
+                resource_name = hashed_name,
+                description = "Docker repository",
+                format = "DOCKER",
+                location = region,
+                repository_id = hashed_name
+            )
 
             pulumi.export("endpoint", f"{region}-docker.pkg.dev/{_gcp_project_id}/{hashed_name}")
 
