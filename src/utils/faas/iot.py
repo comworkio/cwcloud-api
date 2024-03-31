@@ -1,8 +1,11 @@
 import json
 import paho.mqtt.client as paho
+
 from paho import mqtt
+
 from utils.logger import log_msg
-from utils.common import is_not_empty_key, create_file_locally, delete_file_locally
+from utils.common import is_not_empty_key
+from utils.file import create_cert_locally, delete_cert_locally
 
 def on_connect(client, userdata, flags, rc, properties=None):
     log_msg("DEBUG", "[on_connect] CONNACK received with code %s." % rc)
@@ -37,9 +40,9 @@ async def send_payload_in_realtime(callback, payload):
         client = paho.Client(client_id=client_id, userdata=user_data, transport='websockets') 
     client.on_connect = on_connect
     if certificates_are_required:
-        create_file_locally("iot_hub_certificate", certificates['iot_hub_certificate'])
-        create_file_locally("device_certificate", certificates['device_certificate'])
-        create_file_locally("device_key_certificate", certificates['device_key_certificate'])
+        create_cert_locally("iot_hub_certificate", certificates['iot_hub_certificate'])
+        create_cert_locally("device_certificate", certificates['device_certificate'])
+        create_cert_locally("device_key_certificate", certificates['device_key_certificate'])
         client.tls_set(
             ca_certs="./iot_hub_certificate.pem",
             certfile="./device_certificate.pem",
@@ -56,7 +59,7 @@ async def send_payload_in_realtime(callback, payload):
     client.subscribe(subscription, qos=qos)
     client.publish(topic, payload=json.dumps(payload), qos=qos)
     if certificates_are_required:
-        delete_file_locally("iot_hub_certificate")
-        delete_file_locally("device_certificate")
-        delete_file_locally("device_key_certificate")
+        delete_cert_locally("iot_hub_certificate")
+        delete_cert_locally("device_certificate")
+        delete_cert_locally("device_key_certificate")
     # client.loop_forever()

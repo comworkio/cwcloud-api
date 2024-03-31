@@ -1,10 +1,7 @@
 import base64
 import re
-import time
 
 from passlib.context import CryptContext
-
-from utils.file import quiet_remove
 
 pwd_context = CryptContext(schemes = ["bcrypt"], deprecated = "auto")
 
@@ -131,11 +128,3 @@ def convert_dict_keys_to_camel_case(data):
    else:
        return data
    
-def create_file_locally(file_name, file_content):
-    with open(f"{file_name}.pem" , "w") as file:
-        file.write(file_content)
-    
-    time.sleep(1)
-
-def delete_file_locally(file_name):
-    quiet_remove(f"{file_name}.pem")
