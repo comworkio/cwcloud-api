@@ -14,7 +14,8 @@ from utils.api_url import get_api_url
 from utils.exec import exec_cmd
 from utils.file import quiet_remove
 from utils.gitlab import delete_runner, get_project_runners, inject_default_credentials_to_url, inject_git_credentials_to_url
-from utils.bytes_generator import generate_random_bytes, is_disable_dynamic_names
+from utils.bytes_generator import generate_random_bytes
+from utils.dynamic_name import rehash_dynamic_name
 from utils.consumption import generate_instance_consumption
 from utils.provider import get_driver
 from utils.list import unmarshall_list_array

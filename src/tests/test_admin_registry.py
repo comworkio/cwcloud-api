@@ -93,7 +93,7 @@ class TestAdminRegistry(TestCase):
 
     @patch('entities.User.User.getUserByEmail')
     @patch('utils.common.generate_hash_password', side_effect = lambda p: p)
-    @patch('utils.bytes_generator.generate_hashed_name', side_effect = lambda p: ("aabbcc", p, "test-aabbcc"))
+    @patch('utils.dynamic_name.generate_hashed_name', side_effect = lambda p: ("aabbcc", p, "test-aabbcc"))
     @patch('controllers.admin.admin_registry.register_registry')
     @patch('controllers.admin.admin_registry.create_registry', side_effect = None)
     def test_admin_add_registry(self, create_registry, register_registry, generate_hash_password, generate_hashed_name, getUserByEmail):
