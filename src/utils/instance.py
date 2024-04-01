@@ -11,6 +11,7 @@ from fastapi import BackgroundTasks
 from entities.Instance import Instance
 
 from utils.api_url import get_api_url
+from utils.driver import sanitize_project_name
 from utils.exec import exec_cmd
 from utils.file import quiet_remove
 from utils.gitlab import delete_runner, get_project_runners, inject_default_credentials_to_url, inject_git_credentials_to_url
@@ -219,7 +220,7 @@ def delete_instance(hash, instanceName, environment, retry = 0):
             log_msg("DEBUG", "[delete_instance] waiting: instanceName = {}, environment = {}, wait = {}".format(instanceName, environment, waiting_time))
             sleep(waiting_time)
 
-        stack = auto.select_stack(rehash_dynamic_name(instanceName, hash), environment, program = delete_instance)
+        stack = auto.select_stack(rehash_dynamic_name(instanceName, hash), sanitize_project_name(environment), program = delete_instance)
         stack.destroy()
     except Exception as e:
         log_msg("WARN", "[delete_instance] trying again because of this error: instanceName = {}, environment = {}, error = {}".format(instanceName, environment, e))
