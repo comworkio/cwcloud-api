@@ -27,6 +27,7 @@ Action = Enum('Action', [
     'EXPORT',
     'ATTACH',
     'AUTOPAY',
+    'AUTOCLOSE',
     'BILLABLE',
     'PAYMETHOD',
     'RESOURCE',

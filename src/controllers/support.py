@@ -123,7 +123,6 @@ def reply_support_ticket(current_user, payload, ticket_id, db):
             'cid': get_current_cid()
         }, status_code = e.code)
 
-
 def auto_close_tickets(current_user, db):
     try:
         threshold_days = int(os.getenv('DAYS_BEFORE_CLOSURE', 7))

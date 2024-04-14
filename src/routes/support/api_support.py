@@ -23,18 +23,18 @@ def get_tickets(current_user: Annotated[UserSchema, Depends(get_current_active_u
     with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.ALL)):
         increment_counter(_counter, Method.GET, Action.ALL)
         return get_support_tickets(current_user, db)
-    
-@router.get("/auto-close")
-def auto_close_support_tickets(current_user: Annotated[UserSchema, Depends(get_current_active_user)], db: Session = Depends(get_db)):
-   with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.ALL)):
-        increment_counter(_counter, Method.GET, Action.ALL)
-        return auto_close_tickets(current_user, db)
 
 @router.post("")
 def add_ticket(current_user: Annotated[UserSchema, Depends(get_current_active_user)], payload: SupportTicketSchema, db: Session = Depends(get_db)):
     with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST)):
         increment_counter(_counter, Method.POST)
         return add_support_ticket(current_user, payload, db)
+
+@router.post("/auto-close")
+def auto_close_support_tickets(current_user: Annotated[UserSchema, Depends(get_current_active_user)], db: Session = Depends(get_db)):
+   with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.ALL)):
+        increment_counter(_counter, Method.POST, Action.AUTOCLOSE)
+        return auto_close_tickets(current_user, db)
 
 @router.get("/{ticket_id}")
 def get_support_ticket_by_id(current_user: Annotated[UserSchema, Depends(get_current_active_user)], ticket_id: str, db: Session = Depends(get_db)):
