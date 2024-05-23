@@ -10,6 +10,7 @@ from entities.Apikeys import ApiKeys
 from entities.faas.Function import FunctionEntity
 from entities.faas.Trigger import TriggerEntity
 from entities.faas.Invocation import InvocationEntity
+from entities.iot.Device import Device
 from entities.User import User
 
 from utils.common import is_false, is_numeric, generate_hash_password
@@ -97,6 +98,7 @@ def admin_remove_user(current_user, userId, db):
         FunctionEntity.transferAllFunctionsOwnership(userId, first_admin_user.id, db)
         TriggerEntity.transferAllTriggersOwnership(userId, first_admin_user.id, db)
         InvocationEntity.transferAllInvocationsOwnership(userId, first_admin_user.id, db)
+        Device.transferAllDevicesOwnership(user.email, first_admin_user.email, db)
     User.deleteUserById(user.id, db)
     return JSONResponse(content = {
         'status': 'ok',

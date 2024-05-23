@@ -3,6 +3,7 @@ from typing import Optional
 
 class ObjectTypeContent(BaseModel):
     public: bool
+    name: str
     decoding_function: str
     triggers: list[str]
 

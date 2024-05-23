@@ -1,6 +1,6 @@
 import os
-
-from utils.common import is_empty, is_not_empty
+from utils.common import is_empty
+import urllib.request
 
 def get_api_url():
     api_url = os.getenv('API_URL')
@@ -15,3 +15,13 @@ def get_api_url():
             return "https://{}.cloud-api.comwork.io".format(ENV)
 
     return api_url
+
+def is_url_responding(url):
+    try:
+        with urllib.request.urlopen(url):
+            return True
+    except urllib.error.URLError:
+        return False
+
+def is_url_not_responding(url):
+    return not is_url_responding(url)

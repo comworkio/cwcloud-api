@@ -3,6 +3,8 @@ import requests
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.date import DateTrigger
+from dateutil.parser import parse
 
 from utils.common import is_empty_key, is_not_empty
 from utils.bytes_generator import generate_random_bytes
@@ -31,10 +33,28 @@ def invoke_function(trigger):
         }
     }, headers = _headers)
 
-def delete_trigger(trigger):
-    trigger_endpoint = "{}/trigger/{}".format(_api_endpoint, trigger['id'])
-    log_msg("DEBUG", "[scheduler][delete_trigger] delete trigger: {}, delete_endpoint = {}".format(trigger['id'], trigger_endpoint))
-    requests.delete(trigger_endpoint, headers = _headers)
+def handle_trigger(trigger):
+    if is_empty_key(trigger, 'content') or any(is_empty_key(trigger['content'], k) for k in ['name', 'function_id']):
+        log_msg("WARN", "[scheduler][init_triggered_functions] missing some mandatory fields, ignoring trigger = {}".format(trigger))
+
+    if not 'args' in trigger['content']:
+        log_msg("WARN", "[scheduler][init_triggered_functions] missing args mandatory fields, ignoring trigger = {}".format(trigger))
+
+    if trigger['kind'] == "cron":
+        if is_empty_key(trigger['content'], 'cron_expr'):
+            log_msg("WARN", "[scheduler][reinit_crontabs] missing cron_expr field, ignoring trigger = {}".format(trigger))
+
+        apscheduler_args = parse_crontab(trigger['content']['cron_expr'])
+        log_msg("DEBUG", "[scheduler][reinit_crontabs] add this cron: name = {}, cron_expr = {}, apscheduler_args = {}".format(trigger['content']['name'], trigger['content']['cron_expr'], apscheduler_args))
+        _scheduler.add_job(lambda: invoke_function(trigger), CronTrigger(**apscheduler_args), id = "{}-{}".format(trigger['content']['name'], generate_random_bytes(6)))
+    elif trigger['kind'] == "schedule":
+        if is_empty_key(trigger['content'], 'execution_time'):
+            log_msg("WARN", "[scheduler][invoke_scheduled_functions] missing execution_time field, ignoring trigger = {}".format(trigger))
+
+        execution_time = parse(trigger['content']['execution_time'])
+        if is_after_current_time(trigger['content']['execution_time']):
+            log_msg("DEBUG", "[scheduler][invoke_scheduled_functions] Scheduling function for trigger: {}".format(trigger))
+            _scheduler.add_job(lambda: invoke_function(trigger), DateTrigger(run_date=execution_time), id = "{}-{}".format(trigger['content']['name'], generate_random_bytes(6)), replace_existing=True)
 
 def init_triggered_functions():
     global _scheduler
@@ -78,9 +98,9 @@ def init_triggered_functions():
                     log_msg("WARN", "[scheduler][invoke_scheduled_functions] missing execution_time field, ignoring trigger = {}".format(trigger))
                     continue
 
+                execution_time = parse(trigger['content']['execution_time'])
                 if is_after_current_time(trigger['content']['execution_time']):
-                    log_msg("DEBUG", "[scheduler][invoke_scheduled_functions] Executing scheduled function for trigger: {}".format(trigger))
-                    invoke_function(trigger)
-                    delete_trigger(trigger)
+                    log_msg("DEBUG", "[scheduler][invoke_scheduled_functions] Scheduling function for trigger: {}".format(trigger))
+                    _scheduler.add_job(lambda: invoke_function(trigger), DateTrigger(run_date=execution_time), id = "{}-{}".format(trigger['content']['name'], generate_random_bytes(6)), replace_existing=True)
 
             start_index = start_index + 1

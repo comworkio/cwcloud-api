@@ -5,7 +5,7 @@ from pulumi import automation as auto
 from fastapi import BackgroundTasks
 from fastapi.responses import JSONResponse
 
-from utils.common import is_empty, is_not_empty, is_numeric
+from utils.common import is_boolean, is_empty, is_false, is_not_empty, is_numeric, is_true
 from utils.flag import is_flag_disabled
 from utils.dns_zones import get_dns_zones
 from utils.domain import is_not_subdomain_valid
@@ -76,11 +76,26 @@ def remove_instance(current_user, provider, region, instance_id, db, bt: Backgro
 
     from entities.Instance import Instance
     user_instance = Instance.findUserInstance(current_user.id, provider, region, instance_id, db)
+    if not user_instance:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Instance not found',
+            'i18n_code': '104',
+            'cid': get_current_cid()
+        }, status_code = 404)
+    if is_true(user_instance.is_protected):
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': "You can't remove a protected instance",
+            'i18n_code': 'can_not_remove_protected_instance',
+            'cid': get_current_cid()
+        }, status_code = 400)
     result_remove = generic_remove_instance(user_instance, db, bt)
     return JSONResponse(content = result_remove["message"], status_code = result_remove["http_code"])
 
 def update_instance(current_user, payload, provider, region, instance_id, db):
     action = payload.status
+    is_protected = payload.is_protected
 
     if not exist_provider(provider):
         return JSONResponse(content = {
@@ -119,116 +134,124 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
 
     target_server_id = server["id"]
     possible_actions = ["poweroff", "poweron", "reboot"]
-    if not action in possible_actions:
-        return JSONResponse(content = {
-            'status': 'ko',
-            'error': 'action doesnt exist',
-            'i18n_code': '106',
-            'cid': get_current_cid()
-        }, status_code = 400)
-
-    server_state = get_server_state(userInstance.provider, server)
-
-    if action == "poweroff":
-        if server_state == "stopped":
+    if is_not_empty(action):
+        if not action in possible_actions:
             return JSONResponse(content = {
                 'status': 'ko',
-                'error': 'Instance already stopped',
-                'i18n_code': '107',
+                'error': 'action doesnt exist',
+                'i18n_code': '106',
                 'cid': get_current_cid()
             }, status_code = 400)
 
-        if server_state == "rebooting":
-            return JSONResponse(content = {
-                'status': 'ko',
-                'error': "You can't stop the Instance while rebooting",
-                'i18n_code': '108',
-                'cid': get_current_cid()
-            }, status_code = 400)
+        server_state = get_server_state(userInstance.provider, server)
 
-        if server_state == "starting":
-            return JSONResponse(content = {
-                'status': 'ko',
-                'error': "You can't stop the Instance while starting",
-                'i18n_code': '109',
-                'cid': get_current_cid()
-            }, status_code = 400)
+        if action == "poweroff":
+            if server_state == "stopped":
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': 'Instance already stopped',
+                    'i18n_code': '107',
+                    'cid': get_current_cid()
+                }, status_code = 400)
 
-        if server_state == "stopping":
-            return JSONResponse(content = {
-                'status': 'ko',
-                'error': 'Instance already stopping',
-                'i18n_code': '110',
-                'cid': get_current_cid()
-            }, status_code = 400)
+            if server_state == "rebooting":
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': "You can't stop the Instance while rebooting",
+                    'i18n_code': '108',
+                    'cid': get_current_cid()
+                }, status_code = 400)
 
-    if action == "poweron":
-        if server_state == "running":
-            return JSONResponse(content = {
-                'status': 'ko',
-                'error': 'Instance already running',
-                'i18n_code': '111',
-                'cid': get_current_cid()
-            }, status_code = 400)
+            if server_state == "starting":
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': "You can't stop the Instance while starting",
+                    'i18n_code': '109',
+                    'cid': get_current_cid()
+                }, status_code = 400)
 
-        if server_state == "rebooting":
-            return JSONResponse(content = {
-                'status': 'ko',
-                'error': "You can't start the Instance while rebooting",
-                'i18n_code': '112',
-                'cid': get_current_cid()
-            }, status_code = 400)
+            if server_state == "stopping":
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': 'Instance already stopping',
+                    'i18n_code': '110',
+                    'cid': get_current_cid()
+                }, status_code = 400)
 
-        if server_state == "starting":
-            return JSONResponse(content = {
-                'status': 'ko',
-                'error': 'Instance already starting',
-                'i18n_code': '113',
-                'cid': get_current_cid()
-            }, status_code = 400)
+        if action == "poweron":
+            if server_state == "running":
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': 'Instance already running',
+                    'i18n_code': '111',
+                    'cid': get_current_cid()
+                }, status_code = 400)
 
-        if server_state == "stopping":
-            return JSONResponse(content = {
-                'status': 'ko',
-                'error': "You can't start the Instance while stopping",
-                'i18n_code': '114',
-                'cid': get_current_cid()
-            }, status_code = 400)
+            if server_state == "rebooting":
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': "You can't start the Instance while rebooting",
+                    'i18n_code': '112',
+                    'cid': get_current_cid()
+                }, status_code = 400)
 
-    if action == "reboot":
-        if server_state == "stopped":
-            return JSONResponse(content = {
-                'status': 'ko',
-                'error': "You can't reboot the Instance when it is stopped",
-                'i18n_code': '115',
-                'cid': get_current_cid()
-            }, status_code = 400)
+            if server_state == "starting":
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': 'Instance already starting',
+                    'i18n_code': '113',
+                    'cid': get_current_cid()
+                }, status_code = 400)
 
-        if server_state == "rebooting":
-            return JSONResponse(content = {
-                'status': 'ko',
-                'error': 'Instance already rebooting',
-                'i18n_code': '116',
-                'cid': get_current_cid()
-            }, status_code = 400)
+            if server_state == "stopping":
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': "You can't start the Instance while stopping",
+                    'i18n_code': '114',
+                    'cid': get_current_cid()
+                }, status_code = 400)
 
-        if server_state == "starting":
-            return JSONResponse(content = {
-                'status': 'ko',
-                'error': "You can't reboot the Instance while starting",
-                'i18n_code': '117',
-                'cid': get_current_cid()
-            }, status_code = 400)
+        if action == "reboot":
+            if server_state == "stopped":
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': "You can't reboot the Instance when it is stopped",
+                    'i18n_code': '115',
+                    'cid': get_current_cid()
+                }, status_code = 400)
 
-        if server_state == "stopping":
-            return JSONResponse(content = {
-                'status': 'ko',
-                'error': "You can't reboot the Instance while stopping",
-                'i18n_code': '118',
-                'cid': get_current_cid()
-            }, status_code = 400)
+            if server_state == "rebooting":
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': 'Instance already rebooting',
+                    'i18n_code': '116',
+                    'cid': get_current_cid()
+                }, status_code = 400)
 
-    try:
+            if server_state == "starting":
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': "You can't reboot the Instance while starting",
+                    'i18n_code': '117',
+                    'cid': get_current_cid()
+                }, status_code = 400)
+
+            if server_state == "stopping":
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': "You can't reboot the Instance while stopping",
+                    'i18n_code': '118',
+                    'cid': get_current_cid()
+                }, status_code = 400)
+            
+            if is_true(userInstance.is_protected):
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': "You can't reboot a protected instance",
+                    'i18n_code': 'can_not_reboot_protected_instance',
+                    'cid': get_current_cid()
+                }, status_code = 400)
+
         if userInstance.status == "active" and action == "activate":
             return JSONResponse(content = {
                 'status': 'ko',
@@ -239,18 +262,31 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
 
         if action and not action == "":
             update_instance_status(userInstance, target_server_id, action, db)
-        return JSONResponse(content = {
-            'status': 'ok',
-            'message': 'instance successfully updated',
-            'i18n_code': '101'
-        }, status_code = 200)
-    except HTTPError as e:
-        return JSONResponse(content = {
-            'status': 'ko',
-            'error': e.msg,
-            'i18n_code': e.headers['i18n_code'],
-            'cid': get_current_cid()
-        }, status_code = e.code)
+
+    if is_boolean(is_protected):
+        if is_true(is_protected) and userInstance.is_protected:
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'Instance already protected',
+                'i18n_code': 'instance_already_protected',
+                'cid': get_current_cid()
+            }, status_code = 400)
+
+        if is_false(is_protected) and not userInstance.is_protected:
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'Instance already unprotected',
+                'i18n_code': 'instance_already_unprotected',
+                'cid': get_current_cid()
+            }, status_code = 400)
+
+        Instance.updateProtection(userInstance.id, is_protected, db)
+
+    return JSONResponse(content = {
+        'status': 'ok',
+        'message': 'instance successfully updated',
+        'i18n_code': '101'
+    }, status_code = 200)
 
 def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, project_id, payload, db):
     instance_name = payload.name

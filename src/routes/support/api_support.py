@@ -6,7 +6,7 @@ from schemas.User import UserSchema
 from database.postgres_db import get_db
 from schemas.Support import SupportTicketSchema, SupportTicketReplySchema
 from middleware.auth_guard import get_current_active_user
-from controllers.support import get_support_tickets, add_support_ticket, get_support_ticket, reply_support_ticket, auto_close_tickets
+from controllers.support import delete_reply_support_ticket, get_support_tickets, add_support_ticket, get_support_ticket, reply_support_ticket, auto_close_tickets, update_reply_support_ticket, update_support_ticket
 
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
@@ -24,27 +24,44 @@ def get_tickets(current_user: Annotated[UserSchema, Depends(get_current_active_u
         increment_counter(_counter, Method.GET, Action.ALL)
         return get_support_tickets(current_user, db)
 
-@router.post("")
-def add_ticket(current_user: Annotated[UserSchema, Depends(get_current_active_user)], payload: SupportTicketSchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST)):
-        increment_counter(_counter, Method.POST)
-        return add_support_ticket(current_user, payload, db)
-
-@router.post("/auto-close")
-def auto_close_support_tickets(current_user: Annotated[UserSchema, Depends(get_current_active_user)], db: Session = Depends(get_db)):
-   with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.ALL)):
-        increment_counter(_counter, Method.POST, Action.AUTOCLOSE)
-        return auto_close_tickets(current_user, db)
-
 @router.get("/{ticket_id}")
 def get_support_ticket_by_id(current_user: Annotated[UserSchema, Depends(get_current_active_user)], ticket_id: str, db: Session = Depends(get_db)):
     with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET)):
         increment_counter(_counter, Method.GET)
         return get_support_ticket(current_user, ticket_id, db)
 
+@router.post("")
+def add_ticket(current_user: Annotated[UserSchema, Depends(get_current_active_user)], payload: SupportTicketSchema, db: Session = Depends(get_db)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST)):
+        increment_counter(_counter, Method.POST)
+        return add_support_ticket(current_user, payload, db)
+    
 @router.post("/{ticket_id}")
 def reply_support_ticket_by_id(current_user: Annotated[UserSchema, Depends(get_current_active_user)], payload: SupportTicketReplySchema, ticket_id: str, db: Session = Depends(get_db)):
     with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.REPLY)):
         increment_counter(_counter, Method.GET, Action.REPLY)
         return reply_support_ticket(current_user, payload, ticket_id, db)
+    
+@router.patch("/{ticket_id}/reply/{reply_id}")
+def update_reply_support_ticket_by_id(current_user: Annotated[UserSchema, Depends(get_current_active_user)], ticket_id: str, reply_id: str, payload: SupportTicketReplySchema, db: Session = Depends(get_db)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.PATCH)):
+        increment_counter(_counter, Method.PATCH)
+        return update_reply_support_ticket(current_user, ticket_id, reply_id, payload, db)
+    
+@router.delete("/{ticket_id}/reply/{reply_id}")
+def delete_reply_support_ticket_by_id(current_user: Annotated[UserSchema, Depends(get_current_active_user)], ticket_id: str, reply_id: str, db: Session = Depends(get_db)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.DELETE)):
+        increment_counter(_counter, Method.DELETE)
+        return delete_reply_support_ticket(current_user, ticket_id, reply_id, db)
+    
+@router.patch("/{ticket_id}")
+def update_support_ticket_by_id(current_user: Annotated[UserSchema, Depends(get_current_active_user)], ticket_id: str, payload: SupportTicketSchema, db: Session = Depends(get_db)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.PATCH)):
+        increment_counter(_counter, Method.PATCH)
+        return update_support_ticket(current_user, ticket_id, payload, db)
 
+@router.post("/auto-close")
+def auto_close_support_tickets(current_user: Annotated[UserSchema, Depends(get_current_active_user)], db: Session = Depends(get_db)):
+   with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.ALL)):
+        increment_counter(_counter, Method.POST, Action.AUTOCLOSE)
+        return auto_close_tickets(current_user, db)

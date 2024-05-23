@@ -105,6 +105,7 @@ def reply_support_ticket(current_user, payload, ticket_id, db):
         new_reply = SupportTicketLog(**payload.dict())
         new_reply.user_id = current_user.id
         new_reply.ticket_id = ticket.id
+        new_reply.creation_date = datetime.now().isoformat()
         new_reply.change_date = datetime.now().isoformat()
         new_reply.save(db)
         add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, payload.message)
@@ -122,6 +123,111 @@ def reply_support_ticket(current_user, payload, ticket_id, db):
             'i18n_code ': e.headers[ 'i18n_code '],
             'cid': get_current_cid()
         }, status_code = e.code)
+    
+def update_reply_support_ticket(current_user, ticket_id, reply_id, payload, db):
+    try:
+        if is_not_numeric(ticket_id) or is_not_numeric(reply_id):
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'Invalid ticket id or reply id',
+                'i18n_code': '400',
+                'cid': get_current_cid()
+            }, status_code = 400)
+
+        ticket = SupportTicket.getUserSupportTicket(current_user.id, ticket_id, db)
+        if not ticket:
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'ticket not found',
+                'cid': get_current_cid()
+            }, status_code = 404)
+
+        reply = SupportTicketLog.getTicketLog(reply_id, db)
+        if not reply:
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'reply not found',
+                'i18n_code': 'reply_not_found',
+                'cid': get_current_cid()
+            }, status_code = 404)
+
+        if reply.user_id != current_user.id:
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'You are not allowed to update this reply',
+                'i18n_code': 'user_not_allowed_to_update_reply',
+                'cid': get_current_cid()
+            }, status_code = 403)
+
+        SupportTicketLog.updateTicketLog(reply_id, payload.message, db)
+        update_message = "\n__User:___{}\n__Updated message:__\n{}".format(current_user.email, payload.message)
+        add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, update_message)
+        log_msg("INFO", "[Support] User {} has updated support ticket reply #{}".format(current_user.email, reply.id))
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': 'Support ticket reply updated successfully.',
+            'i18n_code': 'support_ticket_updated_successfully'
+        }, status_code = 200)
+    except Exception as e:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Failed to update support ticket reply.',
+            'message': str(e),
+            'i18n_code': 'support_ticket_update_failed',
+            'cid': get_current_cid()
+        }, status_code = 500)
+    
+def delete_reply_support_ticket(current_user, ticket_id, reply_id, db):
+    try:
+        if is_not_numeric(ticket_id) or is_not_numeric(reply_id):
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'Invalid ticket id or reply id',
+                'i18n_code': '400',
+                'cid': get_current_cid()
+            }, status_code = 400)
+
+        ticket = SupportTicket.getUserSupportTicket(current_user.id, ticket_id, db)
+        if not ticket:
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'ticket not found',
+                'cid': get_current_cid()
+            }, status_code = 404)
+
+        reply = SupportTicketLog.getTicketLog(reply_id, db)
+        if not reply:
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'reply not found',
+                'cid': get_current_cid()
+            }, status_code = 404)
+
+        if reply.user_id != current_user.id:
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'You are not allowed to delete this reply',
+                'i18n_code': 'user_not_allowed_to_delete_reply',
+                'cid': get_current_cid()
+            }, status_code = 403)
+
+        deleted_message = "\n__User:___{}\n__Deleted message:__\n{}".format(current_user.email, reply.message)
+        add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, deleted_message)
+        log_msg("INFO", "[Support] User {} has deleted support ticket reply #{}".format(current_user.email, reply.id))
+        SupportTicketLog.deleteTicketLog(reply_id, db)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': 'Support ticket reply deleted successfully.',
+            'i18n_code': 'support_ticket_reply_deleted_successfully'
+        }, status_code = 200)
+    except Exception as e:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Failed to delete support ticket reply.',
+            'message': str(e),
+            'i18n_code': 'support_ticket_reply_delete_failed',
+            'cid': get_current_cid()
+        }, status_code = 500)
 
 def auto_close_tickets(current_user, db):
     try:
@@ -134,6 +240,7 @@ def auto_close_tickets(current_user, db):
                 is_admin=True,
                 ticket_id=ticket.id,
                 message=message,
+                creation_date=datetime.now().isoformat(),
                 change_date=datetime.now().isoformat(),
                 user_id=current_user.id
             )
@@ -152,3 +259,46 @@ def auto_close_tickets(current_user, db):
             'message': str(e),
             'cid': get_current_cid()    
         }, status_code=500)
+    
+def update_support_ticket(current_user, ticket_id, payload, db):
+    try:
+        if is_not_numeric(ticket_id):
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'Invalid ticket id',
+                'i18n_code': '400',
+                'cid': get_current_cid()
+            }, status_code = 400)
+
+        ticket = SupportTicket.getUserSupportTicket(current_user.id, ticket_id, db)
+        if not ticket:
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error ':  'ticket not found ',
+                'cid': get_current_cid()
+            }, status_code = 404)
+
+        if payload.severity not in ["low", "medium", "high"]:
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error ': 'severity needs to be low, medium or high ',
+                'cid': get_current_cid()
+            }, status_code = 400)
+
+        SupportTicket.updateTicket(ticket.id, payload, db)
+        update_message = "\n__User:___{}\n__Updated description:__\n{}".format(current_user.email, payload.message)
+        add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, update_message)
+        log_msg("INFO", "[Support] User {} has updated support ticket #{}".format(current_user.email, ticket.id))
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': 'Support ticket updated successfully.',
+            'i18n_code': 'support_ticket_updated_successfully'
+        }, status_code = 200)
+    except Exception as e:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Failed to update support ticket.',
+            'message': str(e),
+            'i18n_code': 'support_ticket_update_failed',
+            'cid': get_current_cid()
+        }, status_code = 500)

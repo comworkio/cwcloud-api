@@ -1,7 +1,8 @@
 import re
 import random
 import math
-
+from datetime import datetime, timedelta
+from utils.jwt import jwt_encode
 from utils.common import is_empty
 
 def check_password(password):
@@ -77,3 +78,13 @@ def is_not_ref_invoice_valid(ref):
 def is_forbidden (var):
     forbidden_chars = ["'" , "\"", "&", ";", "|", "\\", "$"]
     return any(char in var for char in forbidden_chars)
+
+def generate_token(user):
+    token = jwt_encode({
+        'exp': (datetime.now() + timedelta(minutes = 5)).timestamp(),
+        'id': user.id,
+        'email': user.email,
+        'time': datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+    })
+
+    return token

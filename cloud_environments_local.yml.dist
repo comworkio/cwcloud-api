@@ -109,6 +109,15 @@ ovh_instance_types: &ovhInstancesTypes
     localstorage: 0 GB
     price_variable: PRICE_b2_15
 
+azure_instance_types: &azureInstanceTypes
+  - type: Standard_DS2_v2
+    core: 2
+    ram: 7GB
+    disk: 100GB
+    bandwidth: 1500Mbps
+    localstorage: 400GB
+    price_variable: PRICE_Standard_DS2_v2
+
 providers:
   - name: aws
     driver: AwsDriver
@@ -236,7 +245,33 @@ providers:
         zones:
           - name: nova
             instance_types: *ovhInstancesTypes
-
+  - name: azure
+    driver: AzureDriver
+    regions:
+      - name: westeurope
+        zones: ["1"]
+        az_virtual_network_name: cwcloud-network-westeu
+        az_subnet_name: cwcloud-subnet-westeu
+        az_security_group_name: cwcloud-security-group-westeu
+      - name: northeurope
+        zones: ["1"]
+        az_virtual_network_name: cwcloud-network-northeu
+        az_subnet_name: cwcloud-subnet-northeu
+        az_security_group_name: cwcloud-security-group-northeu
+    instance_types: ["Standard_DS2_v2"]
+    storage_types: ["Standard_LRS", "Premium_LRS"]
+    storage_available_regions: ["westeurope", "northeurope"]
+    registry_types: ["public", "private"]
+    registry_available_regions: ["westeurope", "northeurope"]
+    instance_configs:
+      - region: westeurope
+        zones:
+          - name: "1"
+            instance_types: *azureInstanceTypes
+      - region: northeurope
+        zones:
+          - name: "1"
+            instance_types: *azureInstanceTypes
 dns_zones:
   - name: comwork.cloud
     driver: VoidDriver
@@ -260,4 +295,6 @@ images:
   - fr-par-2: 58aaf1f7-b24b-4bb6-83e1-117346eac703
   - nl-ams-1: 839b0a5d-ef0a-4848-96b8-4432ca688709
   - pl-waw-1: af5dc0c9-4acc-44ea-895d-7a5cc5c0d9c3
+  - northeurope-1: CentOS-NorthEurope-1
+  - westeurope-1: CentOS-WestEurope-1
 

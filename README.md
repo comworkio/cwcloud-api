@@ -69,9 +69,6 @@ You can also run the front following the `README.md` of this repository: https:/
 
 And updating this environment variable: `REACT_APP_APIURL=http://localhost:5002`
 
-* Login: `sre-devops@comwork.io`
-* Password: `cloud456`
-
 ### Unit tests
 
 Here's how to run the unit test locally:

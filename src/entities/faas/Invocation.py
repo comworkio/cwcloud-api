@@ -20,3 +20,7 @@ class InvocationEntity(Base):
         for invocation in invocations:
             invocation.invoker_id = new_invoker_id
         db.commit()
+
+    @staticmethod
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}

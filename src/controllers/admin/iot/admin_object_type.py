@@ -11,7 +11,7 @@ def get_object_types(current_user, db):
     return object_types
 
 def get_object_type(current_user, object_type_id, db):
-    object_type = ObjectType.findById(object_type_id)
+    object_type = ObjectType.findById(object_type_id, db)
     if not object_type:
         return JSONResponse(content = {
             'status': 'ko',
@@ -51,7 +51,7 @@ def add_object_type(current_user, payload, db):
         }, status_code = e.status_code)
 
 def update_object_type(current_user, object_type_id, payload, db):
-    object_type = ObjectType.findById(object_type_id)
+    object_type = ObjectType.findById(object_type_id, db)
     if not object_type:
         return JSONResponse(content = {
             'status': 'ko',
@@ -73,7 +73,7 @@ def update_object_type(current_user, object_type_id, payload, db):
     }, status_code = 200)
 
 def delete_object_type(current_user, object_type_id, db):
-    object_type = ObjectType.findById(object_type_id)
+    object_type = ObjectType.findById(object_type_id, db)
     if not object_type:
         return JSONResponse(content = {
             'status': 'ko',

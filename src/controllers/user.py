@@ -5,12 +5,13 @@ from datetime import datetime, timedelta
 from urllib.error import HTTPError
 from jose.exceptions import ExpiredSignatureError, JOSEError, JWTError
 
+from entities.iot.Device import Device
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 
 from entities.User import User
 
-from utils.common import generate_hash_password, is_boolean, is_empty, is_false, is_true, verify_password
+from utils.common import generate_hash_password, is_boolean, is_empty, is_false, is_not_empty, is_true, verify_password
 from utils.encoder import AlchemyEncoder
 from utils.jwt import jwt_decode, jwt_encode
 from utils.logger import log_msg
@@ -372,6 +373,9 @@ def confirm_user_account(token, db):
                 'cid': get_current_cid()
             }, status_code = 409)
         User.updateConfirmation(user.id, True, db)
+        device = Device.getUserLatestInactiveDevice(user.email, db)
+        if is_not_empty(device):
+            Device.activateDevice(device.id, db)
         return JSONResponse(content = {
             'status': 'ok',
             'email': user.email, 

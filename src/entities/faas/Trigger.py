@@ -29,3 +29,7 @@ class TriggerEntity(Base):
     @staticmethod
     def findUserTriggerById(user_id, trigger_id, db):
         return db.query(TriggerEntity).filter(TriggerEntity.owner_id == user_id, TriggerEntity.id == trigger_id).first()
+
+    @staticmethod
+    def findTriggersByFunctionId(function_id, db):
+        return db.query(TriggerEntity).filter(TriggerEntity.content['function_id'].cast(String) == function_id).all()

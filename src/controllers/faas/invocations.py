@@ -1,19 +1,21 @@
+import json
 import os
 import time
-
+import asyncio
 from datetime import datetime
-
+import requests
 from adapters.AdapterConfig import get_adapter
-from entities.User import User
 
 from entities.faas.Function import FunctionEntity
 from entities.faas.Invocation import InvocationEntity
 from entities.faas.InvocationExecutionTrace import InvocationExecutionTraceEntity
 
-from utils.common import is_empty, is_false, is_not_empty, is_not_empty_key, is_not_numeric, is_not_uuid, is_true
+from utils.common import del_key_if_exists, is_empty, is_false, is_not_empty, is_not_empty_key, is_not_numeric, is_not_uuid, is_true, object_as_dict
+from utils.encoder import AlchemyEncoder
 from utils.faas.invocations import _in_progress, is_unknown_state
 from utils.faas.functions import is_not_owner
 from utils.faas.invoker import get_email_invoker, get_invoker_id, override_invoker_id
+from utils.faas.iot import send_payload_in_realtime
 from utils.logger import log_msg
 from utils.observability.cid import get_current_cid
 
@@ -134,6 +136,36 @@ def invoke_sync(payload, current_user, user_auth, db):
 
     return search_result_invocation
 
+async def async_send_payload_in_realtime(callback, safe_payload):
+    await send_payload_in_realtime(callback, safe_payload)
+
+def send_result_to_callbacks(payload, invocation, function):
+    if payload.content.state != _in_progress:
+        old_invocation_json = json.loads(json.dumps(invocation, cls = AlchemyEncoder))
+        safe_payload = old_invocation_json.copy()
+        del_key_if_exists(safe_payload['content'], 'env')
+        del_key_if_exists(safe_payload['content'], 'user_auth')
+
+        serverless_function = json.loads(json.dumps(function, cls = AlchemyEncoder))
+
+        #? invoke legacy faas functions with http callbacks
+        if is_not_empty_key(serverless_function['content'], 'callback_url'):
+            callback_headers = { "Authorization": serverless_function['content']['callback_authorization_header'], "Content-Type": "application/json" } if is_not_empty_key(serverless_function['content'], 'callback_authorization_header') else { "Content-Type": "application/json" }
+            callback_url = serverless_function['content']['callback_url']
+            log_msg("DEBUG", "[consume][handle] invoke callback: {}".format(callback_url))
+            requests.post(callback_url, json = safe_payload, headers = callback_headers)
+        else:
+            if is_not_empty_key(serverless_function['content'], 'callbacks'):
+                callbacks = serverless_function['content']['callbacks']
+                for callback in callbacks:
+                    if is_not_empty_key(callback, 'endpoint'):
+                        if callback['type'] == "http":
+                            callback_headers = { "Authorization": callback['token'], "Content-Type": "application/json" } if is_not_empty_key(callback, 'token') else { "Content-Type": "application/json" }
+                            log_msg("DEBUG", "[consume][handle] invoke callback: {}".format(callback['endpoint']))
+                            requests.post(callback['endpoint'], json = safe_payload, headers = callback_headers)
+                        elif callback['type'] == "websocket" or callback['type'] == "mqtt":
+                            asyncio.run(async_send_payload_in_realtime(callback, safe_payload))
+
 def complete(id, payload, current_user, db):
     if is_empty(payload.content.state):
         return {
@@ -231,7 +263,9 @@ def complete(id, payload, current_user, db):
         "updated_at": updated_at
     })
     db.commit()
-    
+
+    send_result_to_callbacks(payload, old_invocation, function)
+
     return {
         'status': 'ok',
         'code': 200,

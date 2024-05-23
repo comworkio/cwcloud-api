@@ -52,6 +52,18 @@ class SupportTicket(Base):
         db.commit()
 
     @staticmethod
+    def updateTicket(ticket_id, payload, db):
+        udpated_at = datetime.now().isoformat()
+        db.query(SupportTicket).filter(SupportTicket.id == ticket_id).update({
+            "severity": payload.severity,
+            "selected_product": payload.product,
+            "subject": payload.subject,
+            "message": payload.message,
+            "last_update": udpated_at
+        })
+        db.commit()
+
+    @staticmethod
     def attach_gitlab_issue(ticket_id, gitlab_issue_id, db):
         db.query(SupportTicket).filter(SupportTicket.id == ticket_id).update({"gitlab_issue_id": gitlab_issue_id})
         db.commit()

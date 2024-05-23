@@ -18,19 +18,71 @@ DEFAULT_EMAIL_ADAPTER = get_default_adapter("emails")
 
 current_year = datetime.now().year
 
-def send_confirmation_email(receiver_email, activateLink, subject):
-    log_msg("INFO", "[send_confirmation_email] activateLink = {}".format(activateLink))
+def send_email_with_chosen_template(receiver_email, activateLink, subject, template):
     if EMAIL_ADAPTER().is_disabled():
         return {}
 
-    file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader = file_loader)
-    template = env.get_template('confirmation_mail.j2')
     content = template.render(
         activateLink = activateLink,
         currentYear = current_year
     )
     log_msg("INFO", "[send_email] Send from = {}, to = {}, content = {}".format(EMAIL_EXPEDITOR, receiver_email, activateLink))
+    return EMAIL_ADAPTER().send({
+        'from': EMAIL_EXPEDITOR,
+        'to': receiver_email,
+        'content': content,
+        'subject': subject
+    })
+
+def send_confirmation_email(receiver_email, activateLink, subject):
+    log_msg("INFO", "[send_confirmation_email] activateLink = {}".format(activateLink))
+    file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
+    env = Environment(loader = file_loader)
+    template = env.get_template('confirmation_mail.j2')
+    return send_email_with_chosen_template(receiver_email, activateLink, subject, template)
+
+def send_device_confirmation_email(receiver_email, activateLink, subject):
+    log_msg("INFO", "[send_device_confirmation_email] activateLink = {}".format(activateLink))
+    file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
+    env = Environment(loader = file_loader)
+    template = env.get_template('/iot/device_confirmation_mail.j2')
+    return send_email_with_chosen_template(receiver_email, activateLink, subject, template)
+
+def send_user_and_device_confirmation_email(receiver_email, generated_password, activateLink, subject):
+    log_msg("INFO", "[send_user_and_device_confirmation_email] activateLink = {}".format(activateLink))
+    if EMAIL_ADAPTER().is_disabled():
+        return {}
+
+    file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
+    env = Environment(loader = file_loader)
+    template = env.get_template('/iot/user_and_device_confirmation_mail.j2')
+    content = template.render(
+        email = receiver_email,
+        password = generated_password,
+        activateLink = activateLink,
+        currentYear = current_year
+    )
+    log_msg("INFO", "[send_email] Send from = {}, to = {}, content = {}".format(EMAIL_EXPEDITOR, receiver_email, activateLink))
+    return EMAIL_ADAPTER().send({
+        'from': EMAIL_EXPEDITOR,
+        'to': receiver_email,
+        'content': content,
+        'subject': subject
+    })
+
+def send_user_confirmation_email_without_activation_link(receiver_email, generated_password, subject):
+    log_msg("INFO", "[send_user_confirmation_email_without_activation_link] generated_password = {}".format(generated_password))
+    if EMAIL_ADAPTER().is_disabled():
+        return {}
+
+    file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
+    env = Environment(loader = file_loader)
+    template = env.get_template('/confirmation_mail_without_activation_link.j2')
+    content = template.render(
+        password = generated_password,
+        currentYear = current_year
+    )
+    log_msg("INFO", "[send_email] Send from = {}, to = {}, content = {}".format(EMAIL_EXPEDITOR, receiver_email, generated_password))
     return EMAIL_ADAPTER().send({
         'from': EMAIL_EXPEDITOR,
         'to': receiver_email,

@@ -45,6 +45,7 @@ class TestAdminInstance(TestCase):
         instance.root_dns_zone = "comwork.cloud"
         instance.user_id = 1
         instance.id = instance_id
+        instance.is_protected = False
 
         environment = Environment()
         environment.name = "code"
@@ -81,7 +82,7 @@ class TestAdminInstance(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":null,"hash":"aabbcc","id":1,"ip_address":null,"modification_date":null,"name":"test-instance","project_id":null,"provider":"scaleway","region":"fr-par","root_dns_zone":"comwork.cloud","status":"deleted","type":"DEV1-S","user":null,"user_id":1,"zone":"1","environment":"code","path":"code","project":{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}}')
+        self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":null,"hash":"aabbcc","id":1,"ip_address":null,"is_protected":false,"modification_date":null,"name":"test-instance","project_id":null,"provider":"scaleway","region":"fr-par","root_dns_zone":"comwork.cloud","status":"deleted","type":"DEV1-S","user":null,"user_id":1,"zone":"1","environment":"code","path":"code","project":{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}}')
 
     @patch('utils.dynamic_name.generate_hashed_name', side_effect = lambda p: ("aabbcc", p, "test-aabbcc"))
     @patch('entities.User.User.getUserByEmail')
@@ -146,6 +147,7 @@ class TestAdminInstance(TestCase):
         new_instance.id = instance_id
         new_instance.environment = environment
         new_instance.project = project
+        new_instance.is_protected = False
         register_instance.return_value = new_instance
 
         payload = InstanceProvisionSchema(
@@ -165,4 +167,4 @@ class TestAdminInstance(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":null,"hash":"aabbcc","id":1,"ip_address":null,"modification_date":null,"name":"test-aabbcc","project_id":null,"provider":"scaleway","region":"fr-par","root_dns_zone":"comwork.cloud","status":"ok","type":"DEV1-S","user":null,"user_id":1,"zone":"1","environment":"code","path":"code","gitlab_project":"https://gitlab.comwork.io/dynamic/test_project"}')
+        self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":null,"hash":"aabbcc","id":1,"ip_address":null,"is_protected":false,"modification_date":null,"name":"test-aabbcc","project_id":null,"provider":"scaleway","region":"fr-par","root_dns_zone":"comwork.cloud","status":"ok","type":"DEV1-S","user":null,"user_id":1,"zone":"1","environment":"code","path":"code","gitlab_project":"https://gitlab.comwork.io/dynamic/test_project"}')

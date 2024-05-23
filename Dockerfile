@@ -28,6 +28,7 @@ RUN apt update && \
 
 RUN curl -fsSL https://get.pulumi.com | sh
 ENV PATH="/root/.pulumi/bin:${PATH}"
+ENV API_MAX_RESULTS=100
 
 # FIX pulumi public bucket has been removed
 # See this issue: https://github.com/pulumiverse/pulumi-scaleway/issues/117
@@ -43,6 +44,7 @@ COPY ./requirements.txt /app/requirements.txt
 
 RUN find . -name '*.pyc' -type f -delete && \
     pip install --upgrade pip && \
+    pip install pulumi_azure_native && \
     pip install --no-cache-dir -r requirements.txt && \
     curl -fsSL https://gitlab.comwork.io/oss/lbrlabs/-/raw/main/lbrlabs_ovh.tgz -o lbrlabs_ovh.tgz && \
     tar -xvzf lbrlabs_ovh.tgz && \
@@ -62,7 +64,6 @@ CMD ["python", "src/app.py"]
 
 FROM api as scheduler
 
-ENV API_MAX_RESULTS=100
 
 CMD ["python", "src/scheduler.py"]
 

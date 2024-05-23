@@ -7,7 +7,8 @@ from utils.dns_zones import get_first_dns_zone_doc
 from utils.provider import get_provider_infos
 
 class InstanceUpdateSchema(BaseModel):
-    status: str = "poweroff"
+    status: Optional[str]
+    is_protected: Optional[bool]
 
 class InstanceAttachSchema(BaseModel):
     name: str = "Instance Name"

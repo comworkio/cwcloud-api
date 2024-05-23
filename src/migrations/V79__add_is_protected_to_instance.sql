@@ -1,0 +1,1 @@
+ALTER TABLE public.instance ADD COLUMN is_protected BOOLEAN NOT NULL DEFAULT FALSE; 

@@ -5,6 +5,7 @@ import lbrlabs_pulumi_scaleway as scaleway
 import lbrlabs_pulumi_ovh as ovh
 import pulumi_cloudflare as cloudflare
 import pulumi_aws as aws
+import pulumi_azure_native as azure_native
 
 from utils.common import is_empty, is_not_empty, is_not_empty_key
 from utils.logger import log_msg
@@ -62,6 +63,20 @@ def register_aws_domain(record_name, environment, instance_ip, root_dns_zone):
         type = "A",
         ttl = 300,
         records = [instance_ip])
+
+def register_azure_domain(record_name, environment, instance_ip, root_dns_zone):
+    dns_zone = "{}.{}".format(environment, root_dns_zone)
+    sub_domain = "{}.{}".format(record_name, environment)
+    log_msg("INFO", "[register_domain][azure] register domain {}.{}".format(record_name, dns_zone))
+    azure_native.network.RecordSet("recordSet",
+    a_records=[azure_native.network.ARecordArgs(
+        ipv4_address=instance_ip,
+    )],
+    record_type="A",
+    relative_record_set_name=sub_domain,
+    resource_group_name="rg1",
+    ttl=3600,
+    zone_name=root_dns_zone)
 
 def get_dns_zone_driver(dns_zone):
     config_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'cloud_environments.yml'))

@@ -1,7 +1,9 @@
 import base64
 import re
-
+import time
+import os
 from passlib.context import CryptContext
+import sqlalchemy
 
 pwd_context = CryptContext(schemes = ["bcrypt"], deprecated = "auto")
 
@@ -50,6 +52,10 @@ def is_empty_key(vdict, key):
 
 def is_not_empty_key(vdict, key):
     return not is_empty_key(vdict, key)
+
+def del_key_if_exists(vdict, key):
+    if is_not_empty_key(vdict, key):
+        del vdict[key]
 
 def is_numeric (var):
     if isinstance(var, int):
@@ -126,5 +132,23 @@ def convert_dict_keys_to_camel_case(data):
    elif isinstance(data, list):
        return [convert_dict_keys_to_camel_case(item) for item in data]
    else:
-       return data
-   
+       return data   
+
+def create_file_locally(file_name, file_content):
+    with open(f"{file_name}.pem" , "w") as file:
+        file.write(file_content)
+    time.sleep(1)
+
+def delete_file_locally(file_name):
+    os.remove(f"{file_name}.pem")
+
+def get_admin_status(current_user):
+    if is_empty(current_user):
+        return False
+    else:
+        return current_user.is_admin
+
+def object_as_dict(obj):
+    return {c.key: getattr(obj, c.key)
+            for c in sqlalchemy.inspect(obj).mapper.column_attrs}
+

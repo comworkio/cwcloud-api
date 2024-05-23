@@ -3,6 +3,8 @@ markupsafe>=2.1.1
 pulumi-openstack==3.9.0
 pulumi-aws>=5.0.0, <6.0.0
 pulumi-gcp>=6.57.0,<7.0.0
+azure-mgmt-compute==30.6.0
+azure-identity==1.15.0
 lbrlabs-pulumi-scaleway==1.7.0
 pulumi-cloudflare==4.13.0
 openstacksdk==0.100.0
@@ -13,7 +15,6 @@ google-api-python-client==2.91.0
 google-cloud-compute
 jinja2 >= 2.7
 pyyaml >= 6.0
-Werkzeug==2.2.2
 protobuf~=3.19.0
 python-gitlab >= 3.4.0
 grpcio<=1.43.0

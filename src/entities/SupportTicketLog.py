@@ -9,6 +9,7 @@ class SupportTicketLog(Base):
     is_admin = Column(Boolean, default = False)
     ticket_id = Column(Integer)
     message = Column(Text)
+    creation_date = Column(String(100))
     change_date = Column(String(100))
     user_id = Column(Integer, ForeignKey("user.id"))
 
@@ -20,6 +21,25 @@ class SupportTicketLog(Base):
     def getTicketLogs(ticket_id, db):
         ticket_logs = db.query(SupportTicketLog).filter(SupportTicketLog.ticket_id == ticket_id).all()
         return ticket_logs
+    
+    @staticmethod
+    def getTicketLog(reply_id, db):
+        ticket_log = db.query(SupportTicketLog).filter(SupportTicketLog.id == reply_id).first()
+        return ticket_log
+    
+    @staticmethod
+    def updateTicketLog(reply_id, message, db):
+        change_date = datetime.now().isoformat()
+        db.query(SupportTicketLog).filter(SupportTicketLog.id == reply_id).update({
+            "message": message,
+            "change_date": change_date
+        })
+        db.commit()
+
+    @staticmethod
+    def deleteTicketLog(reply_id, db):
+        db.query(SupportTicketLog).filter(SupportTicketLog.id == reply_id).delete()
+        db.commit()
 
     @staticmethod
     def deleteTicketReplies(ticket_id, db):

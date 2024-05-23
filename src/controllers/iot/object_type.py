@@ -1,7 +1,12 @@
+import base64
 from datetime import datetime
+import json
 from entities.iot.ObjectType import ObjectType
 from fastapi.responses import JSONResponse
 from fastapi import HTTPException
+from utils.common import is_true
+from utils.encoder import AlchemyEncoder
+from utils.file import quiet_remove
 from utils.iot.object_type import object_type_user_content_check
 from utils.observability.cid import get_current_cid
 
@@ -85,4 +90,56 @@ def delete_object_type(current_user, object_type_id, db):
         'status': 'ok',
         'message': 'Object type successfully deleted',
         'i18n_code': 'object_type_deleted'
+    }, status_code = 200)
+
+def import_new_object_type(current_user, object_type_file, db):
+    object_type_json = object_type_file.file.read()
+    object_type_dict = json.loads(object_type_json)
+    current_date = datetime.now().date().strftime('%Y-%m-%d')
+
+    new_object_type = ObjectType()
+    new_object_type.user_id = current_user.id
+    new_object_type.content = object_type_dict["content"]
+    new_object_type.created_at = current_date
+    new_object_type.updated_at = current_date
+    db.add(new_object_type)
+    db.commit()
+
+    return JSONResponse(content = {
+        'status': 'ok',
+        'message': 'Object type successfully imported',
+        'id': str(new_object_type.id),
+        'i18n_code': 'object_type_imported'
+    }, status_code = 201)
+
+
+def export_object_type(current_user, object_type_id, db):
+    object_type = ObjectType.findUserObjectTypeById(current_user.id, object_type_id, db)
+
+    if is_true(current_user.is_admin):
+        object_type = ObjectType.findById(object_type_id, db)
+
+    if not object_type:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Object type not found',
+            'i18n_code': 'object_type_not_found',
+            'cid': get_current_cid()
+        }, status_code = 404)
+    
+    object_type_dict = json.loads(json.dumps(object_type, cls = AlchemyEncoder))
+    object_type_json = json.dumps(object_type_dict, indent=4)
+    file_name = f"object_type_{object_type_id}.json"
+    with open(file_name, "w") as outfile:
+        outfile.write(object_type_json)
+
+    encoded_string = ""
+    with open(file_name, "rb") as json_file:
+        encoded_string = base64.b64encode(json_file.read()).decode()
+        json_file.close()
+    quiet_remove(file_name)
+
+    return JSONResponse(content = {
+        "file_name": file_name,
+        "blob": str(encoded_string)
     }, status_code = 200)
