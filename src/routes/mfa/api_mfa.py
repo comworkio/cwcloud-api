@@ -75,7 +75,7 @@ def delete_MFA(current_user: Annotated[UserSchema, Depends(get_current_active_us
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': '2fa method not found',
-                    'i18n_code': '404',
+                    'i18n_code': '2fa_method_not_found',
                     'cid': get_current_cid()
                 }, status_code = 404)
             Mfa.deleteOne(method.id, db)
@@ -121,7 +121,7 @@ def register_u2f(current_user: Annotated[UserSchema, Depends(get_current_active_
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid code',
-                'i18n_code': '333333',
+                'i18n_code': 'invalid_code',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -140,7 +140,7 @@ def verify_u2f(current_user: Annotated[UserSchema, Depends(pre_token_required)],
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'Invalid code',
-                    'i18n_code': '333333',
+                    'i18n_code': 'invalid_code',
                     'cid': get_current_cid()
                 }, status_code = 400)
 
@@ -164,7 +164,7 @@ def verify_u2f(current_user: Annotated[UserSchema, Depends(pre_token_required)],
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid code',
-                'i18n_code': '333333',
+                'i18n_code': 'invalid_code',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -238,7 +238,7 @@ def post(current_user: Annotated[UserSchema, Depends(pre_token_required)], paylo
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': '2fa method not found',
-                'i18n_code': '404',
+                'i18n_code': '2fa_method_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -247,7 +247,7 @@ def post(current_user: Annotated[UserSchema, Depends(pre_token_required)], paylo
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': '2fa authentification failed',
-                'i18n_code': '333333',
+                'i18n_code': 'invalid_code',
                 'cid': get_current_cid()
             }, status_code = 400)
 

@@ -25,7 +25,7 @@ def get_instance(current_user, provider, region, instance_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist',
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -33,7 +33,7 @@ def get_instance(current_user, provider, region, instance_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid instance id',
-            'i18n_code': "400",
+            'i18n_code': "invalid_instance_id",
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -46,7 +46,7 @@ def get_instance(current_user, provider, region, instance_id, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Instance not found',
-                'i18n_code': "104",
+                'i18n_code': "instance_not_found",
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -62,7 +62,7 @@ def remove_instance(current_user, provider, region, instance_id, db, bt: Backgro
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist',
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -70,7 +70,7 @@ def remove_instance(current_user, provider, region, instance_id, db, bt: Backgro
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid instance id',
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -80,7 +80,7 @@ def remove_instance(current_user, provider, region, instance_id, db, bt: Backgro
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Instance not found',
-            'i18n_code': '104',
+            'i18n_code': "instance_not_found",
             'cid': get_current_cid()
         }, status_code = 404)
     if is_true(user_instance.is_protected):
@@ -101,7 +101,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist',
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -109,7 +109,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid instance id',
-            'i18n_code': '400',
+            'i18n_code': 'invalid_instance_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -119,7 +119,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Instance not found',
-            'i18n_code': '104',
+            'i18n_code': 'instance_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -128,7 +128,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Instance not found',
-            'i18n_code': '104',
+            'i18n_code': 'instance_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -139,7 +139,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'action doesnt exist',
-                'i18n_code': '106',
+                'i18n_code': 'action_not_exist',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -150,7 +150,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'Instance already stopped',
-                    'i18n_code': '107',
+                    'i18n_code': 'instance_stopped',
                     'cid': get_current_cid()
                 }, status_code = 400)
 
@@ -158,7 +158,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': "You can't stop the Instance while rebooting",
-                    'i18n_code': '108',
+                    'i18n_code': 'can_not_stop_instance_while_reboot',
                     'cid': get_current_cid()
                 }, status_code = 400)
 
@@ -166,7 +166,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': "You can't stop the Instance while starting",
-                    'i18n_code': '109',
+                    'i18n_code': 'can_not_stop_instance_while_start',
                     'cid': get_current_cid()
                 }, status_code = 400)
 
@@ -174,7 +174,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'Instance already stopping',
-                    'i18n_code': '110',
+                    'i18n_code': 'instance_stopping',
                     'cid': get_current_cid()
                 }, status_code = 400)
 
@@ -183,7 +183,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'Instance already running',
-                    'i18n_code': '111',
+                    'i18n_code': 'instance_running',
                     'cid': get_current_cid()
                 }, status_code = 400)
 
@@ -191,7 +191,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': "You can't start the Instance while rebooting",
-                    'i18n_code': '112',
+                    'i18n_code': 'can_not_start_instance_while_reboot',
                     'cid': get_current_cid()
                 }, status_code = 400)
 
@@ -199,7 +199,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'Instance already starting',
-                    'i18n_code': '113',
+                    'i18n_code': 'instance_starting',
                     'cid': get_current_cid()
                 }, status_code = 400)
 
@@ -207,7 +207,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': "You can't start the Instance while stopping",
-                    'i18n_code': '114',
+                    'i18n_code': 'can_not_start_instance_while_stop',
                     'cid': get_current_cid()
                 }, status_code = 400)
 
@@ -216,7 +216,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': "You can't reboot the Instance when it is stopped",
-                    'i18n_code': '115',
+                    'i18n_code': 'can_not_reboot_instance_while_stop',
                     'cid': get_current_cid()
                 }, status_code = 400)
 
@@ -224,7 +224,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'Instance already rebooting',
-                    'i18n_code': '116',
+                    'i18n_code': 'instance_rebooting',
                     'cid': get_current_cid()
                 }, status_code = 400)
 
@@ -232,7 +232,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': "You can't reboot the Instance while starting",
-                    'i18n_code': '117',
+                    'i18n_code': 'can_not_reboot_instance_while_start',
                     'cid': get_current_cid()
                 }, status_code = 400)
 
@@ -240,7 +240,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': "You can't reboot the Instance while stopping",
-                    'i18n_code': '118',
+                    'i18n_code': 'can_not_reboot_instance_while_stop',
                     'cid': get_current_cid()
                 }, status_code = 400)
             
@@ -256,7 +256,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'instance already active',
-                'i18n_code': '119',
+                'i18n_code': 'instance_active',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -310,14 +310,14 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Instance not found',
-            'i18n_code': '104',
+            'i18n_code': "instance_not_found",
             'cid': get_current_cid()
         }, status_code = 404)
     if userInstance.status != "deleted":
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Instance already running with this playbook',
-            'i18n_code': '127',
+            'i18n_code': 'instance_running_with_playbook',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -331,7 +331,7 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'you dont have access to create resources',
-            'i18n_code': '126',
+            'i18n_code': 'can_not_create_ressources',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -339,7 +339,7 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist',
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -348,7 +348,7 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Project not found',
-            'i18n_code': '204',
+            'i18n_code': 'project_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -357,21 +357,21 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Project has no playbooks',
-            'i18n_code': '206',
+            'i18n_code': 'project_has_no_playbooks',
             'cid': get_current_cid()
         }, status_code = 400)
     if is_empty(instance_name):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'please specify the playbook you want to attach',
-            'i18n_code': '121',
+            'i18n_code': 'select_playbook',
             'cid': get_current_cid()
         }, status_code = 400)
     if not instance_name in [name.split("playbook-")[1] for name in project_playbooks]:
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'playbook not found',
-            'i18n_code': '122',
+            'i18n_code': 'playbook_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -383,7 +383,7 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Instance type does not exist',
-                'i18n_code': '105',
+                'i18n_code': 'instance_type_not_exist',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -392,7 +392,7 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'region does not exist',
-            'i18n_code': '1404',
+            'i18n_code': 'region_not_exist',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -400,7 +400,7 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'zone does not exist', 
-            'i18n_code': '1110',
+            'i18n_code': 'zone_not_exist',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -413,7 +413,7 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'environment not found',
-            'i18n_code': '804',
+            'i18n_code': 'environment_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
     try:
@@ -450,7 +450,7 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'stack already exists',
-            'i18n_code': '1105',
+            'i18n_code': 'stack_exists',
             'cid': get_current_cid()
         }, status_code = 409)
     except HTTPError as e:
@@ -498,7 +498,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'you dont have access to create resources',
-            'i18n_code': '126',
+            'i18n_code': 'can_not_create_ressources',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -506,7 +506,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist',
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
     if  len(get_dns_zones())>0:
@@ -519,7 +519,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'please provide a valid root dns zone',
-                'i18n_code': '1108',
+                'i18n_code': 'provide_valid_root_dns_zone',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -527,7 +527,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'please provide a project id or a project name or a project url',
-            'i18n_code': '1107',
+            'i18n_code':  'provide_project_id_or_name_or_url',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -535,7 +535,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'please provide instance name',
-            'i18n_code': '1106',
+            'i18n_code':  'provide_instance_name',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -545,7 +545,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found',
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -555,7 +555,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found',
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -565,7 +565,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found',
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -574,7 +574,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'region does not exist',
-            'i18n_code': '1404',
+            'i18n_code': 'region_not_exist',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -582,7 +582,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'zone does not exist',
-            'i18n_code': '1110',
+            'i18n_code': 'zone_not_exist',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -594,7 +594,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Instance type does not exist',
-                'i18n_code': '105',
+                'i18n_code': 'instance_type_not_exist',
                 'cid': get_current_cid()
             }, status_code = 400)
     from entities.Environment import Environment
@@ -605,7 +605,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'environment not found',
-                'i18n_code': '804',
+                'i18n_code': 'environment_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -614,7 +614,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found with gitlab',
-                'i18n_code': '210',
+                'i18n_code':  'project_not_found_with_gitlab',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -628,7 +628,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'playbook already exists',
-                    'i18n_code': '1111',
+                    'i18n_code':  'playbook_exists',
                     'cid': get_current_cid()
                 }, status_code = 404)
 
@@ -666,7 +666,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'stack already exists',
-            'i18n_code': '1105',
+            'i18n_code': 'stack_exists',
             'cid': get_current_cid()
         }, status_code = 409)
     except HTTPError as e:
@@ -690,7 +690,7 @@ def get_instances(current_user, provider, region, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist',
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 

@@ -27,7 +27,7 @@ def get_current_user_data(current_user, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'user not found', 
-            'i18n_code': '304',
+            'i18n_code': 'user_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
     return user
@@ -46,8 +46,8 @@ def update_user_informations(current_user, payload, db):
     if user and int(user.id) != int(current_user.id) :
         return JSONResponse(content = {
             'status': 'ko',
-            'error': f'email already exists', 
-            'i18n_code': '305',
+            'error': 'email already exists', 
+            'i18n_code': 'email_exist',
             'cid': get_current_cid()            
         },status_code = 409)
 
@@ -55,7 +55,7 @@ def update_user_informations(current_user, payload, db):
     return JSONResponse(content = {
             'status': 'ok',
             'message': f'user successfully updated', 
-            'i18n_code': '301'
+            'i18n_code': 'user_updated'
         }, status_code = 200)
 
 def create_customer(email):
@@ -88,7 +88,7 @@ def create_user_account(payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'email already exists', 
-                'i18n_code': '305',
+                'i18n_code': 'email_exist',
                 'cid': get_current_cid()
             }, status_code = 409)
 
@@ -109,7 +109,7 @@ def create_user_account(payload, db):
         log_msg("INFO", f"[api_user_signup] User {email} has joined comwork cloud")
         log_msg("INFO", f"[api_user_signup] Sending confirmation email to {email}")
         send_confirmation_email(new_user.email, activation_link, subject)
-        return JSONResponse(content = {'status': 'ok', 'message': 'user successfully created', 'id': new_user.id, 'i18n_code': '300'}, status_code = 201)
+        return JSONResponse(content = {'status': 'ok', 'message': 'user successfully created', 'id': new_user.id, 'i18n_code': 'user_created'}, status_code = 201)
     except HTTPException as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -150,7 +150,7 @@ def update_user_autopayment(current_user, payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'default payment method must be selected', 
-            'i18n_code': '1300',
+            'i18n_code': 'payment_method_must_be_selected',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -195,7 +195,7 @@ def update_user_password(current_user, payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'user not found', 
-            'i18n_code': '304',
+            'i18n_code': 'user_not_found',
             'cid': get_current_cid()
         }, status_code = 409)
 
@@ -203,7 +203,7 @@ def update_user_password(current_user, payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'wrong password', 
-            'i18n_code': '311',
+            'i18n_code': 'wrong_password',
             'cid': get_current_cid()
         }, status_code = 409)
 
@@ -211,7 +211,7 @@ def update_user_password(current_user, payload, db):
     return JSONResponse(content = {
         'status': 'ok',
         'message': f'user successfully updated', 
-        'i18n_code': '301'
+        'i18n_code': 'user_updated'
         }, status_code = 200)
 
 def forget_password_email(payload, db):
@@ -230,7 +230,7 @@ def forget_password_email(payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found', 
-                'i18n_code': '304'
+                'i18n_code': 'user_not_found'
             }, status_code = 409)
 
         subject = "Forgotten password"
@@ -243,7 +243,11 @@ def forget_password_email(payload, db):
         activation_link = "{}/reset-password/{}".format(os.getenv("DOMAIN"), token)
         send_forget_password_email(user.email, activation_link, subject)
         log_msg("INFO", f"[api_reset_password] User {user.email} requested a reset password email")
-        return JSONResponse(content = {'status': 'ok', "message": "successfully sent reset password email", "i18n_code": "309"}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            "message": "successfully sent reset password email",
+            "i18n_code": "reset_password_success"
+        }, status_code = 200)
     except HTTPException as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -277,12 +281,16 @@ def user_reset_password(payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found', 
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 409)
 
         User.updateUserPasswordAndConfirm(user.id, password, db)
-        return JSONResponse(content = {'status': 'ok', 'message': 'user successfully updated', 'i18n_code': '301'}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': 'user successfully updated',
+            'i18n_code': 'user_updated'
+        }, status_code = 200)
     except HTTPException as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -296,7 +304,7 @@ def verify_user_token(token, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'a confirmation token is mandatory', 
-            'i18n_code': '312',
+            'i18n_code': 'confirm_token_mandatory',
             'cid': get_current_cid()
         }, status_code = 400)
     try:
@@ -306,14 +314,14 @@ def verify_user_token(token, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found', 
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         return JSONResponse(content = {
             'status': 'ok',
             'email': user.email, 
             'message': 'user verified', 
-            'i18n_code': '307'
+            'i18n_code': 'user_verified'
         }, status_code = 200)
     except HTTPException as e:
         return JSONResponse(content = {
@@ -327,7 +335,7 @@ def verify_user_token(token, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'user verification failed', 
-            'i18n_code': '308',
+            'i18n_code': 'user_verification_failed',
             'cid': get_current_cid()
         }, status_code = 400)
     except JOSEError as e:
@@ -335,7 +343,7 @@ def verify_user_token(token, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'invalid jwt token', 
-            'i18n_code': '313',
+            'i18n_code': 'invalid_jwt_token',
             'cid': get_current_cid()
         }, status_code = 400)
     except Exception as e:
@@ -343,7 +351,7 @@ def verify_user_token(token, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'technical error', 
-            'i18n_code': '314',
+            'i18n_code': 'technical_error',
             'cid': get_current_cid()
         }, status_code = 500)
 
@@ -352,7 +360,7 @@ def confirm_user_account(token, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'a confirmation token is mandatory', 
-            'i18n_code': '312',
+            'i18n_code': 'confirm_token_mandatory',
             'cid': get_current_cid()
         }, status_code = 400)
     try:
@@ -362,14 +370,14 @@ def confirm_user_account(token, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found', 
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         if user.confirmed:
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user already confirmed', 
-                'i18n_code': '310',
+                'i18n_code': 'user_already_confirmed',
                 'cid': get_current_cid()
             }, status_code = 409)
         User.updateConfirmation(user.id, True, db)
@@ -380,7 +388,7 @@ def confirm_user_account(token, db):
             'status': 'ok',
             'email': user.email, 
             'message': 'user successfully confirmed', 
-            'i18n_code': '303'
+            'i18n_code': 'user_confirmed'
         }, status_code = 200)
     except HTTPException as e:
         return JSONResponse(content = {
@@ -394,14 +402,14 @@ def confirm_user_account(token, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'invalid jwt token', 
-            'i18n_code': '313',
+            'i18n_code': 'invalid_jwt_token',
             'cid': get_current_cid()
         }, status_code = 400)
     except ExpiredSignatureError:
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'user verification failed', 
-            'i18n_code': '308',
+            'i18n_code': 'user_verification_failed',
             'cid': get_current_cid()
         }, status_code = 400)
     except Exception as e:
@@ -409,7 +417,7 @@ def confirm_user_account(token, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'technical error', 
-            'i18n_code': '314',
+            'i18n_code': 'technical_error',
             'cid': get_current_cid()
         }, status_code = 500)
 
@@ -429,14 +437,14 @@ def confirmation_email(payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found', 
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         if user.confirmed:
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user already confirmed', 
-                'i18n_code': '310',
+                'i18n_code': 'user_already_confirmed',
                 'cid': get_current_cid()
             }, status_code = 409)
 
@@ -450,7 +458,11 @@ def confirmation_email(payload, db):
         activation_link = "{}/confirmation/{}".format(os.getenv("DOMAIN"), token)
         log_msg("INFO", f"[api_confirm_account] User {user.email} requested a confirm account email")
         send_confirmation_email(user.email, activation_link, subject)
-        return JSONResponse(content = {'status': 'ok', "message": "successfully send email confirmation", "i18n_code": "306"}, status_code = 200)
+        return JSONResponse(content = {
+            'status': 'ok',
+            "message": "successfully send email confirmation",
+            "i18n_code": "success_confirmation_email"
+        }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -505,7 +517,7 @@ def remove_payment_method(current_user, payment_method_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid payment method id', 
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -527,13 +539,14 @@ def remove_payment_method(current_user, payment_method_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'payment method not found', 
-            'i18n_code': '',
+            'i18n_code': 'payment_method_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
     return JSONResponse(content = {
         'status': 'ok',
-        'message': 'payment method successfully removed'
+        'message': 'payment method successfully removed',
+        'i18n_code': 'payment_method_removed'
     }, status_code = 204)
 
 def update_payment_method(current_user, payment_method_id, db):
@@ -549,7 +562,7 @@ def update_payment_method(current_user, payment_method_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid payment method id', 
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -560,7 +573,7 @@ def update_payment_method(current_user, payment_method_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'A default payment method must be set and selected', 
-            'i18n_code': '1300',
+            'i18n_code': 'payment_method_must_be_selected',
             'cid': get_current_cid()
         }, status_code = 400)
     if is_empty(user.st_payment_method_id):
@@ -570,5 +583,6 @@ def update_payment_method(current_user, payment_method_id, db):
 
     return JSONResponse(content = {
         'status': 'ok',
-        'message': 'payment method successfully updated'
+        'message': 'payment method successfully updated',
+        'i18n_code': 'payment_method_updated'
     }, status_code = 204)

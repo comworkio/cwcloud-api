@@ -20,7 +20,7 @@ You can let run the API with thoses files, and you can also update the configura
 ### Run the containers
 
 ```shell
-docker-compose -f docker-compose-local.yml up --build --force-recreate
+docker compose -f docker-compose-local.yml up --build --force-recreate
 ```
 
 ### Test the database
@@ -74,7 +74,7 @@ And updating this environment variable: `REACT_APP_APIURL=http://localhost:5002`
 Here's how to run the unit test locally:
 
 ```shell
-docker-compose -f docker-compose-build.yml up --build --abort-on-container-exit comwork_cloud_tests
+docker compose -f docker-compose-build.yml up --build --abort-on-container-exit comwork_cloud_tests
 ```
 
 ## Linter
@@ -82,7 +82,7 @@ docker-compose -f docker-compose-build.yml up --build --abort-on-container-exit 
 For our project, we're using `ruff` the fastest python linter. Here's how to run it locally:
 
 ```shell
-docker-compose -f docker-compose-build.yml up --build --abort-on-container-exit comwork_cloud_linter
+docker compose -f docker-compose-build.yml up --build --abort-on-container-exit comwork_cloud_linter
 ```
 
 ## Documentation
@@ -105,10 +105,10 @@ Cwcloud-api is providing a `/metrics` http endpoint that can be scrapped by Prom
 
 ![prometheus](./img/prometheus.png)
 
-If you're running locally with docker-compose, you can access to Jaegger UI here: http://localhost:9090
+If you're running locally with docker compose, you can access to Jaegger UI here: http://localhost:9090
 
 And can also send the metrics and some traces through OTLP/Grpc. Here's example of traces with Jaegger:
 
 ![jaegger](./img/jaegger.png)
 
-If you're running locally with docker-compose, you can access to Jaegger UI here: http://localhost:16686
+If you're running locally with docker compose, you can access to Jaegger UI here: http://localhost:16686

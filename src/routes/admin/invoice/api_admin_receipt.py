@@ -44,7 +44,7 @@ def download_receipt(current_user: Annotated[UserSchema, Depends(admin_required)
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'invoice not found',
-                'i18n_code': '604',
+                'i18n_code': 'invoice_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 

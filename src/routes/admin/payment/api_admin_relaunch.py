@@ -45,7 +45,7 @@ def relaunch_payment(current_user: Annotated[UserSchema, Depends(admin_required)
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'invoice not found',
-                'i18n_code': '604',
+                'i18n_code': 'invoice_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -53,7 +53,7 @@ def relaunch_payment(current_user: Annotated[UserSchema, Depends(admin_required)
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'invoice already paid',
-                'i18n_code': '605',
+                'i18n_code': 'invoice_paid',
                 'cid': get_current_cid()
             }, status_code = 404)
 

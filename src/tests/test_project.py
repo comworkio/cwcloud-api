@@ -8,11 +8,12 @@ mock_db = Mock()
 class TestProject(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestProject, self).__init__(*args, **kwargs)
+        
     @patch('entities.Access.Access.getUserAccessesByType', side_effect = lambda x, y, z: [])
     @patch('entities.Project.Project.findProjects', side_effect = lambda x, y: [])
     @patch('entities.Project.Project.getUserProjects', side_effect = lambda x, y : [])
     @patch('entities.Instance.Instance.getActiveUserInstances', side_effect = lambda x, y : [])
-    def test_get_projects(self, getUserProjects, getActiveUserInstances, findProjects, getUserAccessesByType):
+    def test_get_projects(self, getAllProjects, getActiveUserInstances, findProjects, getUserAccessesByType):
         # Given
         from controllers.project import get_projects
 
@@ -71,10 +72,13 @@ class TestProject(TestCase):
 
     @patch('entities.Project.Project.getUserProject')
     @patch('utils.gitlab.get_gitlab_project_tree', side_effect = lambda x, y, z: [])
-    def test_get_project(self, get_gitlab_project_playbooks, getUserProject):
+    @patch('entities.User.User.getUserById') 
+    def test_get_project(self, getUserById, get_gitlab_project_playbooks, getUserProject):
         # Given
         from controllers.project import get_project
         from entities.Project import Project
+        from entities.User import User
+
         project_id = 1
         project = Project()
         project.id = project_id
@@ -87,9 +91,16 @@ class TestProject(TestCase):
         project.gitlab_project_id = "1"
         project.type = "vm"
         getUserProject.return_value = project
+        userId = 1
+        enabled_features = {
+            "daasapi": True,
+            "k8sapi": True
+        }
+        test_user = User(id= userId, enabled_features=enabled_features)
+        getUserById.return_value = test_user
 
         # When
-        result = get_project(test_current_user, project_id, mock_db)
+        result = get_project(test_user, project_id, mock_db)
         response_status_code = result.__dict__['status_code']
 
         # Then
@@ -102,10 +113,13 @@ class TestProject(TestCase):
     @patch('entities.Project.Project.deleteOne', side_effect = lambda x, y : "" )
     @patch('entities.Project.Project.getUserProject')
     @patch('entities.Instance.Instance.getAllActiveInstancesByProject', side_effect = lambda x, y : [])
-    def test_delete_project(self, getAllActiveInstancesByProject, getUserProject, deleteOne, delete_gitlab_project):
+    @patch('entities.User.User.getUserById') 
+    def test_delete_project(self, getUserById, getAllActiveInstancesByProject, getUserProject, deleteOne, delete_gitlab_project):
         # Given
         from controllers.project import delete_project
         from entities.Project import Project
+        from entities.User import User
+
         project_id = 1
         project = Project()
         project.id = project_id
@@ -117,13 +131,20 @@ class TestProject(TestCase):
         project.gitlab_token = "TOKEN"
         project.gitlab_project_id = "1"
         getUserProject.return_value = project
+        userId = 1
+        enabled_features = {
+            "daasapi": True,
+            "k8sapi": True
+        }
+        test_user = User(id= userId, enabled_features=enabled_features)
+        getUserById.return_value = test_user
 
         # When
-        result = delete_project(test_current_user, project_id, mock_db)
+        result = delete_project(test_user, project_id, mock_db)
         response_status_code = result.__dict__['status_code']
 
         # Then
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"project successfully deleted","i18n_code":"202"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"project successfully deleted","i18n_code":"project_deleted"}')

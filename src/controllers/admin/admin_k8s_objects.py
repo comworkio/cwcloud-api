@@ -35,7 +35,7 @@ def get_cluster_configfile(current_user: UserSchema, cluster_id: int, db: Sessio
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Cluster not found', 
-            'i18n_code': '404',
+            'i18n_code': '2fa_method_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -207,7 +207,7 @@ def add_object_to_cluster(current_user:UserSchema, values_file:UploadFile, objec
         return JSONResponse(content = {
             'status': 'ko',
             'error': "Cluster doesn't exist", 
-            'i18n_code': '207',
+            'i18n_code': 'project_name_missing',
             'cid': get_current_cid()
         }, status_code = 404)
     
@@ -216,7 +216,7 @@ def add_object_to_cluster(current_user:UserSchema, values_file:UploadFile, objec
         return JSONResponse(content = {
             'status': 'ko',
             'error': "You don't have any project linked with the mentioned id", 
-            'i18n_code': '207',
+            'i18n_code': 'project_name_missing',
             'cid': get_current_cid()
         }, status_code = 404)
        
@@ -224,7 +224,7 @@ def add_object_to_cluster(current_user:UserSchema, values_file:UploadFile, objec
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'object kind is not supported', 
-            'i18n_code': '207',
+            'i18n_code': 'project_name_missing',
             'cid': get_current_cid()
         }, status_code = 400)
     
@@ -237,7 +237,7 @@ def add_object_to_cluster(current_user:UserSchema, values_file:UploadFile, objec
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'namespace is required',
-            'i18n_code': '207',
+            'i18n_code': 'project_name_missing',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -245,7 +245,7 @@ def add_object_to_cluster(current_user:UserSchema, values_file:UploadFile, objec
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'name is required',
-            'i18n_code': '207',
+            'i18n_code': 'project_name_missing',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -288,7 +288,7 @@ def apply_resource(kc_content, file, manifest: ObjectSchema, isUpdate: bool = Fa
         return JSONResponse(content = {
             'status': 'ko',
             'error': b['message'], 
-            'i18n_code': '1494',
+            'i18n_code': 'error_while_create_object',
             'cid': get_current_cid()
         }, status_code = 400)    
     
@@ -297,7 +297,7 @@ def get_object(current_user: UserSchema, object: ObjectSchema, db: Session):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'object kind is not supported', 
-            'i18n_code': '207',
+            'i18n_code': 'project_name_missing',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -325,6 +325,6 @@ def get_object(current_user: UserSchema, object: ObjectSchema, db: Session):
         return JSONResponse(content = {
             'status': 'ko',
             'error': b['message'], 
-            'i18n_code': '1494',
+            'i18n_code': 'error_while_create_object',
             'cid': get_current_cid()
         }, status_code = 400)

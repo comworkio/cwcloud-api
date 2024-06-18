@@ -29,7 +29,10 @@ def download_config_file(current_user: Annotated[UserSchema, Depends(get_current
         increment_counter(_counter, Method.GET, Action.DOWNLOAD)
         apiKey = ApiKeys.getUserApiKey(current_user.id, key_id, db)
         if not apiKey:
-            return JSONResponse(content = {"error": "api key not found", "i18n_code": "0000000"}, status_code = 404)
+            return JSONResponse(content = {
+                "error": "api key not found",
+                "i18n_code": "api_key_not_found"
+            }, status_code = 404)
         providers = get_providers()
         first_provider = providers[0]["name"]
         first_provider_region = get_provider_infos(first_provider, "regions")[0]["name"]

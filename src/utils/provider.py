@@ -31,7 +31,7 @@ def get_provider_infos(provider, key):
         result = loaded_data['providers']
         provider = [p for p in result if p['name'] == provider]
         if not len(provider)>0:
-            raise HTTPError("504", 404, 'provider not found', hdrs = {"i18n_code": "504"}, fp = None)
+            raise HTTPError("provider_not_exist", 404, 'provider not found', hdrs = {"i18n_code": "provider_not_exist"}, fp = None)
     return provider[0][key]
 
 def get_driver(provider):
@@ -44,7 +44,7 @@ def get_provider_instance_price(provider, region, zone, type):
     instances_pricing = get_provider_instances_pricing_by_region_zone(provider, region, zone)
     filtered_instances_pricing = [instance for instance in instances_pricing if instance['name'] == type]
     if not len(filtered_instances_pricing)>0:
-        raise HTTPError("124", 404, 'instance type in this zone not found', hdrs = {"i18n_code": "124"}, fp = None)
+        raise HTTPError("instance_type_in_zone_not_found", 404, 'instance type in this zone not found', hdrs = {"i18n_code": "instance_type_in_zone_not_found"}, fp = None)
     instance_price = filtered_instances_pricing[0]['price']
     if is_empty(instance_price):
         return 0
@@ -70,10 +70,10 @@ def get_provider_available_instances_config_by_region_zone(provider, region, zon
     instances_configs = get_provider_infos(provider, 'instance_configs')
     region_instances_configs = [config for config in instances_configs if config['region'] == region]
     if not len(region_instances_configs)>0:
-        raise HTTPError("125", 404, 'instance in this region not found', hdrs = {"i18n_code": "125"}, fp = None)
+        raise HTTPError("instance_in_region_not_found", 404, 'instance in this region not found', hdrs = {"i18n_code": "instance_in_region_not_found"}, fp = None)
     zone_instances_configs = [config for config in region_instances_configs[0]['zones'] if str(config['name']) == str(zone)]
     if not len(zone_instances_configs)>0:
-        raise HTTPError("124", 404, 'instance type in this zone not found', hdrs = {"i18n_code": "124"}, fp = None)
+        raise HTTPError("instance_type_in_zone_not_found", 404, 'instance type in this zone not found', hdrs = {"i18n_code": "instance_type_in_zone_not_found"}, fp = None)
 
     filtered_instances = [instance for instance in zone_instances_configs[0]['instance_types'] if'disabled' not in instance.keys() or not instance['disabled'] and os.getenv(instance['price_variable'])]
     return list(map(lambda instance: instance, filtered_instances))
@@ -82,10 +82,10 @@ def get_provider_available_instances_by_region_zone(provider, region, zone):
     instances_configs = get_provider_infos(provider, 'instance_configs')
     region_instances_configs = [config for config in instances_configs if config['region'] == region]
     if not len(region_instances_configs)>0:
-        raise HTTPError("125", 404, 'instance in this region not found', hdrs = {"i18n_code": "125"}, fp = None)
+        raise HTTPError("instance_in_region_not_found", 404, 'instance in this region not found', hdrs = {"i18n_code": "instance_in_region_not_found"}, fp = None)
     zone_instances_configs = [config for config in region_instances_configs[0]['zones'] if str(config['name']) == str(zone)]
     if not len(zone_instances_configs)>0:
-        raise HTTPError("124", 404, 'instance type in this zone not found', hdrs = {"i18n_code": "124"}, fp = None)
+        raise HTTPError("instance_type_in_zone_not_found", 404, 'instance type in this zone not found', hdrs = {"i18n_code": "instance_type_in_zone_not_found"}, fp = None)
 
     filtered_instances = [instance for instance in zone_instances_configs[0]['instance_types'] if 'disabled' not in instance.keys() or not instance['disabled'] and os.getenv(instance['price_variable'])]
     return list(map(lambda instance: instance['type'], filtered_instances))
@@ -123,10 +123,10 @@ def get_provider_instances_pricing_by_region_zone(provider, region, zone):
     instances_configs = get_provider_infos(provider, 'instance_configs')
     region_instances_configs = [config for config in instances_configs if config['region'] == region]
     if not len(region_instances_configs)>0:
-        raise HTTPError("125", 404, 'instance in this region not found', hdrs = {"i18n_code": "125"}, fp = None)
+        raise HTTPError("instance_in_region_not_found", 404, 'instance in this region not found', hdrs = {"i18n_code": "instance_in_region_not_found"}, fp = None)
     zone_instances_configs = [config for config in region_instances_configs[0]['zones'] if str(config['name']) == str(zone)]
     if not len(zone_instances_configs)>0:
-        raise HTTPError("124", 404, 'instance type in this zone not found', hdrs = {"i18n_code": "124"}, fp = None)
+        raise HTTPError("instance_type_in_zone_not_found", 404, 'instance type in this zone not found', hdrs = {"i18n_code": "instance_type_in_zone_not_found"}, fp = None)
     filtered_instances = [instance for instance in zone_instances_configs[0]['instance_types'] if 'disabled' not in instance.keys() or not instance['disabled'] and os.getenv(instance['price_variable'])]
     return list(map(lambda instance: {
         "name": instance['type'],

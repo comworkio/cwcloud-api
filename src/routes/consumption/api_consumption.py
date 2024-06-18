@@ -97,7 +97,7 @@ def get_consumption_by_instance_id(current_user: Annotated[UserSchema, Depends(g
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'Instance not found', 
-                    'i18n_code': '104',
+                    'i18n_code': "instance_not_found",
                     'cid': get_current_cid()
                 }, status_code = 404)
             consumptions = []

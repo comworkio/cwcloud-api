@@ -18,14 +18,14 @@ def get_registry(current_user, provider, region, registryId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist', 
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
     if not is_numeric(registryId):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid registry id', 
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -37,7 +37,7 @@ def get_registry(current_user, provider, region, registryId, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'registry not found', 
-                'i18n_code': '904',
+                'i18n_code': 'registry_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         userRegistry = Registry.findRegistry(provider, region, registryId)
@@ -49,14 +49,14 @@ def remove_registry(current_user, provider, region, registryId, db, bt: Backgrou
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist', 
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
     if not is_numeric(registryId):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid registry id', 
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -65,7 +65,7 @@ def remove_registry(current_user, provider, region, registryId, db, bt: Backgrou
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'registry not found', 
-            'i18n_code': '904',
+            'i18n_code': 'registry_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -84,7 +84,7 @@ def remove_registry(current_user, provider, region, registryId, db, bt: Backgrou
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'registry successfully deleted', 
-            'i18n_code': '902'
+            'i18n_code': 'registry_deleted'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -99,14 +99,14 @@ def update_registry(current_user, provider, region, registryId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist', 
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
     if not is_numeric(registryId):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid registry id', 
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -115,7 +115,7 @@ def update_registry(current_user, provider, region, registryId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'registry not found', 
-            'i18n_code': '904',
+            'i18n_code': 'registry_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
     try:
@@ -123,7 +123,7 @@ def update_registry(current_user, provider, region, registryId, db):
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'registry successfully updated', 
-            'i18n_code': '902'
+            'i18n_code': 'registry_deleted'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -138,7 +138,7 @@ def get_registries(current_user, provider, region, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist', 
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 

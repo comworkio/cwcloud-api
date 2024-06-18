@@ -32,7 +32,7 @@ def admin_get_environment(environment_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message': 'environment not found', 
-            'i18n_code': '804',
+            'i18n_code': 'environment_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
     env_json = json.loads(json.dumps(env, cls = AlchemyEncoder))
@@ -51,7 +51,7 @@ def admin_get_k8s_environment(environment_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message': 'environment not found', 
-            'i18n_code': '1504',
+            'i18n_code': 'environment_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -66,7 +66,7 @@ def admin_import_environment(env, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'path already exists', 
-            'i18n_code': '808',
+            'i18n_code': 'path_already_exist',
             'cid': get_current_cid()
         }, status_code = 409)
 
@@ -98,7 +98,7 @@ def admin_export_environment(current_user, environment_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message' : 'environment not found', 
-            'i18n_code': '804',
+            'i18n_code': 'environment_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -136,7 +136,7 @@ def admin_update_environment(environment_id, payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'environment name is missing', 
-            'i18n_code': '805',
+            'i18n_code': 'environment_name_missing',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -144,7 +144,7 @@ def admin_update_environment(environment_id, payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'environment path is missing', 
-            'i18n_code': '806',
+            'i18n_code': 'environment_path_missing',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -160,7 +160,7 @@ def admin_update_environment(environment_id, payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'path already exists', 
-            'i18n_code': '808',
+            'i18n_code': 'path_already_exist',
             'cid': get_current_cid()
         }, status_code = 409)
 
@@ -168,7 +168,7 @@ def admin_update_environment(environment_id, payload, db):
     return JSONResponse(content = {
         'status': 'ok',
         'message': 'environment successfully updated', 
-        'i18n_code': '801'
+        'i18n_code': 'environment_updated'
     }, status_code = 200)
 
 def admin_remove_environment(environment_id, db):
@@ -184,7 +184,7 @@ def admin_remove_environment(environment_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message' : 'environment not found', 
-            'i18n_code': '804',
+            'i18n_code': 'environment_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -192,7 +192,7 @@ def admin_remove_environment(environment_id, db):
     return JSONResponse(content = {
         'status': 'ok',
         'message' : 'Environment successfully deleted', 
-        'i18n_code': '802'
+        'i18n_code': 'environment_deleted'
     }, status_code = 200)
 
 def admin_add_environment(payload, db):
@@ -205,7 +205,7 @@ def admin_add_environment(payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'environment name is missing', 
-            'i18n_code': '805',
+            'i18n_code': 'environment_name_missing',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -213,7 +213,7 @@ def admin_add_environment(payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'environment path is missing', 
-            'i18n_code': '806',
+            'i18n_code': 'environment_path_missing',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -221,7 +221,7 @@ def admin_add_environment(payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'environment roles are missing', 
-            'i18n_code': '807',
+            'i18n_code': 'environment_roles_missing',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -230,7 +230,7 @@ def admin_add_environment(payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'path already exists', 
-            'i18n_code': '808',
+            'i18n_code': 'path_already_exist',
             'cid': get_current_cid()
         }, status_code = 409)
 
@@ -283,7 +283,7 @@ def admin_delete_k8s_environment(environment_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message': 'environment not found', 
-            'i18n_code':'1504',
+            'i18n_code':'environment_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -299,7 +299,7 @@ def admin_update_k8s_environment(environment_id, env_data, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message': 'environment not found', 
-            'i18n_code':'1504',
+            'i18n_code':'environment_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
     env.name = env_data.name
@@ -315,7 +315,8 @@ def admin_update_k8s_environment(environment_id, env_data, db):
     env.save(db)
     return JSONResponse(content = {
         'status': 'ok',
-        'message': 'environment updated'
+        'message': 'environment updated',
+        'i18n_code':'environment_updated'
     }, status_code = 200)
 
 def get_charts():

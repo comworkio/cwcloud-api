@@ -26,7 +26,7 @@ def admin_create_bucket(current_user, provider, region, payload, db, bt: Backgro
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'provider does not exist', 
-                'i18n_code': '504',
+                'i18n_code': 'provider_not_exist',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -34,7 +34,7 @@ def admin_create_bucket(current_user, provider, region, payload, db, bt: Backgro
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'please provide bucket name', 
-                'i18n_code': '1101',
+                'i18n_code': 'provide_bucket_name',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -42,7 +42,7 @@ def admin_create_bucket(current_user, provider, region, payload, db, bt: Backgro
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'please provide an email', 
-                'i18n_code': '1102',
+                'i18n_code': 'provide_email',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -54,7 +54,7 @@ def admin_create_bucket(current_user, provider, region, payload, db, bt: Backgro
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'bucket type does not exist', 
-                    'i18n_code': '1103',
+                    'i18n_code': 'bucket_type_not_exist',
                     'cid': get_current_cid()
                 }, status_code = 400)
 
@@ -63,7 +63,7 @@ def admin_create_bucket(current_user, provider, region, payload, db, bt: Backgro
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'region does not exist', 
-                'i18n_code': '1104',
+                'i18n_code': 'region_not_exist',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -73,7 +73,7 @@ def admin_create_bucket(current_user, provider, region, payload, db, bt: Backgro
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found', 
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -89,7 +89,7 @@ def admin_create_bucket(current_user, provider, region, payload, db, bt: Backgro
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'stack already exists', 
-            'i18n_code': '1105',
+            'i18n_code': 'stack_exists',
             'cid': get_current_cid()
         }, status_code = 409)
     except HTTPError as e:
@@ -116,7 +116,7 @@ def admin_get_bucket(current_user, bucket_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Bucket not found', 
-            'i18n_code': 'status_code = 404',
+            'i18n_code': 'bucket_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
     dumpedBucket = json.loads(json.dumps(userBucket, cls = AlchemyEncoder))
@@ -137,7 +137,7 @@ def admin_remove_bucket(current_user, bucket_id, db, bt: BackgroundTasks):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'bucket not found', 
-            'i18n_code': '404',
+            'i18n_code': '2fa_method_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -160,7 +160,7 @@ def admin_remove_bucket(current_user, bucket_id, db, bt: BackgroundTasks):
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'bucket successfully deleted', 
-            'i18n_code': '401'
+            'i18n_code': 'bucket_deleted'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -183,7 +183,7 @@ def admin_refresh_bucket(current_user, bucket_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Bucket not found', 
-            'i18n_code': '104',
+            'i18n_code': "instance_not_found",
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -194,7 +194,7 @@ def admin_refresh_bucket(current_user, bucket_id, db):
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'bucket successfully refreshed', 
-            'i18n_code': '405'
+            'i18n_code': 'bucket_refreshed'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -217,7 +217,7 @@ def admin_update_bucket(current_user, bucket_id, payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'bucket not found', 
-            'i18n_code': '404',
+            'i18n_code': '2fa_method_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -238,14 +238,14 @@ def admin_update_bucket(current_user, bucket_id, payload, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'user not found', 
-                    'i18n_code': '304',
+                    'i18n_code': 'user_not_found',
                     'cid': get_current_cid()
                 }, status_code = 404)
             Bucket.patch(bucket_id, {"user_id": user.id}, db)
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'bucket successfully updated', 
-            'i18n_code': '402'
+            'i18n_code': 'bucket_deleted'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -260,7 +260,7 @@ def admin_get_buckets(current_user, provider, region, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist', 
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -273,7 +273,7 @@ def admin_get_user_buckets(current_user, provider, region, user_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist', 
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 

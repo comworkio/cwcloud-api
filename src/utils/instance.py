@@ -30,16 +30,16 @@ def check_exist_instance(userId, instance_name, db):
     from entities.Instance import Instance
     userInstance = Instance.findUserAvailableInstanceByName(userId, instance_name, db)
     if userInstance:
-        raise HTTPError("123", 409, 'instance already exists', hdrs = {"i18n_code": "123"}, fp = None)
+        raise HTTPError("instance_exists", 409, 'instance already exists', hdrs = {"i18n_code": "instance_exists"}, fp = None)
 
     return False
 
 def check_instance_name_validity(name):
     special_characters = " !\"#$%&'()*+,./:;<=>?@[\]^_`{|}~"
     if any(c in special_characters for c in name):
-        raise HTTPError("1118", 400, 'name contains invalid caracters', hdrs = {"i18n_code": "1118"}, fp = None)
+        raise HTTPError("name_contains_invalid_characters", 400, 'name contains invalid caracters', hdrs = {"i18n_code": "name_contains_invalid_characters"}, fp = None)
     if len(name)>50:
-        raise HTTPError("1119", 400, 'name is too long', hdrs = {"i18n_code": "1119"}, fp = None)
+        raise HTTPError("name_is_long", 400, 'name is too long', hdrs = {"i18n_code": "name_is_long"}, fp = None)
 
 def reregister_instance(instanceId, provider, region, zone, instance_type, root_dns_zone, project_id, db):
     from entities.Instance import Instance
@@ -254,7 +254,7 @@ def update_instance_status(instance, server_id, action, db):
                 generate_instance_consumption(instance.user.id, instance, instance_modification_date, nowDate, True, db)
         except Exception as e:
             message = e
-            raise HTTPError("706", 400, message, hdrs = {"i18n_code": "706"}, fp = None)
+            raise HTTPError("unable_generate_consumption", 400, message, hdrs = {"i18n_code": "unable_generate_consumption"}, fp = None)
     else:
         Instance.updateModificationDate(instance.id, nowDate.isoformat(), db)
 
@@ -263,7 +263,7 @@ def generic_remove_instance(userInstance, db, bt: BackgroundTasks):
         return {
             'status': 'ko',
             'error': 'Instance not found',
-            'i18n_code': "104",
+            'i18n_code': "instance_not_found",
             'http_code': 404,
             'cid': get_current_cid()
         }
@@ -283,7 +283,7 @@ def generic_remove_instance(userInstance, db, bt: BackgroundTasks):
             return {
                 'status': 'ko',
                 'error': "You can't delete the instance while it is not running or stopped",
-                'i18n_code': '120',
+                'i18n_code': 'can_not_delete_instance_while_running_or_stopped',
                 'http_code': 400,
                 'cid': get_current_cid()
             }
@@ -303,7 +303,7 @@ def generic_remove_instance(userInstance, db, bt: BackgroundTasks):
         return {
             'status': 'ko',
             'message': 'instance state successfully deleted',
-            'i18n_code': '102',
+            'i18n_code': 'instance_deleted',
             'http_code': 200,
             'cid': get_current_cid()
         }

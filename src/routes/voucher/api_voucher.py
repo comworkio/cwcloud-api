@@ -34,7 +34,7 @@ def add_voucher(current_user: Annotated[UserSchema, Depends(get_current_active_u
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'voucher not found',
-                'i18n_code': '1204',
+                'i18n_code': 'voucher_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -42,7 +42,7 @@ def add_voucher(current_user: Annotated[UserSchema, Depends(get_current_active_u
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'voucher not found',
-                'i18n_code': '1204',
+                'i18n_code': 'voucher_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -52,7 +52,7 @@ def add_voucher(current_user: Annotated[UserSchema, Depends(get_current_active_u
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'voucher not found', 
-                'i18n_code': '1204',
+                'i18n_code': 'voucher_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 

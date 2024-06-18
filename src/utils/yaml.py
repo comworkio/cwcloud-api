@@ -7,5 +7,5 @@ def read_uploaded_yaml_file(input:bytes):
         yaml_data = yaml.safe_load(input)
         return yaml_data
     except yaml.YAMLError as e:
-        raise HTTPError("208", 400, "Invalid yaml value", hdrs = {"i18n_code": "208"}, fp = None)
-    
+        raise HTTPError("invalid_yaml_value", 400, "Invalid yaml value", hdrs = {"i18n_code": "invalid_yaml_value"}, fp = None)
+

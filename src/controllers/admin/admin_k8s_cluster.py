@@ -23,7 +23,7 @@ def get_cluster_by_user(current_user, cluster_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'cluster not found', 
-            'i18n_code': '404',
+            'i18n_code': '2fa_method_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -35,7 +35,7 @@ def get_clusters_byKubeconfigFile(current_user, kubeconfig_file_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'clusters not found', 
-            'i18n_code': '404',
+            'i18n_code': '2fa_method_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -125,7 +125,7 @@ def save_kubeconfig(current_user:UserSchema, kubeconfig:UploadFile, db:Session):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'please verify the kubeconfig file', 
-            'i18n_code': '1400',
+            'i18n_code': 'verify_kubeconfig_file',
             'cid': get_current_cid()
         }, status_code = 400)
     
@@ -158,7 +158,7 @@ def delete_cluster_by_id(current_user, cluster_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'cluster not found', 
-            'i18n_code': '1404',
+            'i18n_code': 'region_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 

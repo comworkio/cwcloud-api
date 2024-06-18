@@ -85,14 +85,14 @@ def delete_api_key(current_user: Annotated[UserSchema, Depends(get_current_activ
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'api key not found',
-                'i18n_code': '0000000',
+                'i18n_code': 'api_key_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         ApiKeys.deleteUserApiKey(current_user.id, key_id, db)
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'api key successfully deleted',
-            'i18n_code': '0000000'
+            'i18n_code': 'api_key_deleted'
         }, status_code = 200)
 
 @router.post("/verify")
@@ -106,7 +106,7 @@ def verify_api_key(payload: ApiKeysVerificationSchema, db: Session = Depends(get
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'please provide an access key',
-                'i18n_code': '0000000',
+                'i18n_code': 'api_key_not_found',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -114,7 +114,7 @@ def verify_api_key(payload: ApiKeysVerificationSchema, db: Session = Depends(get
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'please provide a secret key',
-                'i18n_code': '0000000',
+                'i18n_code': 'api_key_not_found',
                 'cid': get_current_cid()
             }, status_code = 400)
 

@@ -24,7 +24,7 @@ def get_instance_types(provider: str, db: Session = Depends(get_db)):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': "provider doesn't exist", 
-                'i18n_code': '504',
+                'i18n_code': 'provider_not_exist',
                 'cid': get_current_cid()
             }, status_code = 404)
         return {

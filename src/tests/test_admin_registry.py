@@ -89,7 +89,7 @@ class TestAdminRegistry(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(),'{"status":"ok","message":"registry successfully deleted","i18n_code":"901"}')
+        self.assertEqual(result.body.decode(),'{"status":"ok","message":"registry successfully deleted","i18n_code":"registry_deleted"}')
 
     @patch('entities.User.User.getUserByEmail')
     @patch('utils.common.generate_hash_password', side_effect = lambda p: p)
@@ -173,4 +173,4 @@ class TestAdminRegistry(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"registry successfully updated","i18n_code":"902"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"registry successfully updated","i18n_code":"registry_deleted"}')

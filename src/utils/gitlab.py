@@ -355,7 +355,7 @@ def create_gitlab_project(project_name, userid, user_email, host, git_username, 
 
     projectReponse = requests.post(f'{gitlab_host}/api/v4/projects', json = data, headers = {"PRIVATE-TOKEN": token})
     if projectReponse.status_code == 400:
-        raise HTTPError("208", 400, "project already exists", hdrs = {"i18n_code": "208"}, fp = None)
+        raise HTTPError("invalid_yaml_value", 400, "project already exists", hdrs = {"i18n_code": "invalid_yaml_value"}, fp = None)
     elif projectReponse.status_code != 201:
         raise HTTPError("1121", 400, "a problem accured when creating the project, check your access token", hdrs = {"i18n_code": "1121"}, fp = None)
     projectJson = projectReponse.json()

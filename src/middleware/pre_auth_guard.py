@@ -36,7 +36,7 @@ def get_pre_current_user(user_token: str = Depends(user_token_header), db: Sessi
             decoded_mem_token = CACHE_ADAPTER().get(token_data.email)
 
             if not decoded_mem_token == user_token:
-                raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "1002"}, status_code = status.HTTP_401_UNAUTHORIZED)
+                raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
 
             user = User.getUserByEmail(token_data.email, db)
 
@@ -45,15 +45,15 @@ def get_pre_current_user(user_token: str = Depends(user_token_header), db: Sessi
 
         except Exception as ex:
             log_msg("ERROR", "[pre_token_required] unexpected error: type = {}, file = {}, lno = {}, msg = {}".format(type(ex).__name__, __file__, ex.__traceback__.tb_lineno, ex))
-            raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "1002"}, status_code = status.HTTP_401_UNAUTHORIZED)
+            raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
     else:
-        raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "1002"}, status_code = status.HTTP_401_UNAUTHORIZED)
+        raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
     if is_empty(user):
-        raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "1002"}, status_code = status.HTTP_401_UNAUTHORIZED)
+        raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
     else:
         return user
 
 async def pre_token_required(current_user: UserSchema = Depends(get_pre_current_user)):
     if is_empty(current_user.confirmed):
-        raise CwHTTPException(message = {"error": "your account has not been confirmed yet", "i18n_code": "1003"}, status_code = status.HTTP_403_FORBIDDEN)
+        raise CwHTTPException(message = {"error": "your account has not been confirmed yet", "i18n_code": "account_not_confirmed"}, status_code = status.HTTP_403_FORBIDDEN)
     return current_user

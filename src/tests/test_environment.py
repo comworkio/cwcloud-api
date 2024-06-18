@@ -12,10 +12,12 @@ class TestEnvironment(TestCase):
         super(TestEnvironment, self).__init__(*args, **kwargs)
 
     @patch('entities.Environment.Environment.getAvailableEnvironmentById')
-    def test_get_environment(self,getAvailableEnvironmentById):
+    @patch('entities.User.User.getUserById') 
+    def test_get_environment(self, getUserById, getAvailableEnvironmentById):
         # Given
         from controllers.environment import get_environment
         from entities.Environment import Environment
+        from entities.User import User
 
         environment_id = 1 
         environment = Environment()
@@ -31,9 +33,16 @@ class TestEnvironment(TestCase):
         environment.subdomains = "test"
         environment.type = "vm"
         getAvailableEnvironmentById.return_value = environment
+        userId = 1
+        enabled_features = {
+            "daasapi": True,
+            "k8sapi": True
+        }
+        test_user = User(id= userId, enabled_features=enabled_features)
+        getUserById.return_value = test_user
 
         #When
-        result = get_environment(environment_id, mock_db)
+        result = get_environment(test_user, environment_id, mock_db)
         response_status_code = result.__dict__['status_code']
        
         #Then

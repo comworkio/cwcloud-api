@@ -90,7 +90,7 @@ class TestAdminBucket(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"bucket successfully deleted","i18n_code":"401"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"bucket successfully deleted","i18n_code":"bucket_deleted"}')
    
     @patch('entities.User.User.getUserByEmail')
     @patch('utils.common.generate_hash_password', side_effect = lambda p: p)
@@ -177,7 +177,7 @@ class TestAdminBucket(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"bucket successfully updated","i18n_code":"402"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"bucket successfully updated","i18n_code":"bucket_deleted"}')
 
     @patch('entities.Bucket.Bucket.findById')
     @patch('controllers.admin.admin_bucket.refresh_bucket', side_effect = None)
@@ -210,4 +210,4 @@ class TestAdminBucket(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"bucket successfully refreshed","i18n_code":"405"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"bucket successfully refreshed","i18n_code":"bucket_refreshed"}')

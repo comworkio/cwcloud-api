@@ -50,7 +50,7 @@ def create_new_deployment(current_user:UserSchema,deployment:DeploymentSchema, d
         return JSONResponse(content = {
             'status': 'ko',
             'message': 'environment not found',
-            'i18n_code': '1504',
+            'i18n_code': 'environment_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -60,7 +60,7 @@ def create_new_deployment(current_user:UserSchema,deployment:DeploymentSchema, d
         return JSONResponse(content = {
             'status': 'ko',
             'message': 'project not found',
-            'i18n_code': '803',
+            'i18n_code': 'project_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
     
@@ -69,7 +69,7 @@ def create_new_deployment(current_user:UserSchema,deployment:DeploymentSchema, d
         return JSONResponse(content = {
             'status': 'ko',
             'message': "can't select a different environment for this project",
-            'i18n_code': '1606',
+            'i18n_code': 'can_not_selecte_environment_for_project',
             'cid': get_current_cid()
         }, status_code = 400)
     
@@ -78,7 +78,7 @@ def create_new_deployment(current_user:UserSchema,deployment:DeploymentSchema, d
         return JSONResponse(content = {
             'status': 'ko',
             'message': 'cluster not found',
-            'i18n_code': '1404',
+            'i18n_code': 'region_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
     
@@ -123,7 +123,7 @@ def get_deployment(current_user:UserSchema,deployment_id:int, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message': "deployment not found",
-            'i18n_code': '1604',
+            'i18n_code': 'deployment_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -131,7 +131,7 @@ def get_deployment(current_user:UserSchema,deployment_id:int, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message': "you don't have permission to get this deployment",
-            'i18n_code': '1603',
+            'i18n_code': 'no_premission_for_deployment',
             'cid': get_current_cid()
         }, status_code = 403)
     
@@ -146,7 +146,7 @@ def get_deployment(current_user:UserSchema,deployment_id:int, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message': "couldn't connect to the cluster",
-            'i18n_code': '1401',
+            'i18n_code': 'can_not_connect_to_cluster',
             'cid': get_current_cid()
         }, status_code = 500)
     
@@ -201,7 +201,7 @@ def delete_deployment(current_user:UserSchema,deployment_id:int, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message': 'deployment not found',
-            'i18n_code': '1604',
+            'i18n_code': 'deployment_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -209,7 +209,7 @@ def delete_deployment(current_user:UserSchema,deployment_id:int, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message': "you don't have permission to delete this deployment",
-            'i18n_code': '1603',
+            'i18n_code': 'no_premission_for_deployment',
             'cid': get_current_cid()
         }, status_code = 403)
     
@@ -230,6 +230,6 @@ def delete_deployment(current_user:UserSchema,deployment_id:int, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message': "couldn't delete deployment from the cluster",
-            'i18n_code': '1605',
+            'i18n_code': 'can_not_delete_deployment_from_cluster',
             'cid': get_current_cid()
         }, status_code = 500)

@@ -90,33 +90,33 @@ async def get_current_user(user_token: str = Depends(user_token_header), X_Auth_
             try:
                 decoded_mem_token, token_data = await get_mem_user_token(user_token)
                 if not decoded_mem_token:
-                    raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "1002"}, status_code = status.HTTP_401_UNAUTHORIZED)
+                    raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
                 if decoded_mem_token != user_token:
-                    raise CwHTTPException(message = {"error": "authentification failed 2", "i18n_code": "1002"}, status_code = status.HTTP_401_UNAUTHORIZED)
+                    raise CwHTTPException(message = {"error": "authentification failed 2", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
 
                 user = User.getUserByEmail(token_data.email, db)
             except JWTError as e:
-                raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "1002"}, status_code = status.HTTP_401_UNAUTHORIZED)
+                raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
         else:
             if is_not_empty(X_Auth_Token):
                 secret_key = X_Auth_Token
                 user_api_key = ApiKeys.getApiKeyBySecretKey(secret_key, db)
                 if is_empty(user_api_key):
-                    raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "1002"}, status_code = status.HTTP_401_UNAUTHORIZED)
+                    raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
                 user = User.getUserById(user_api_key.user_id, db)
             else:
-                raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "1002"}, status_code = status.HTTP_401_UNAUTHORIZED)
+                raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
         if is_empty(user):
-            raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "1002"}, status_code = status.HTTP_401_UNAUTHORIZED)
+            raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
 
         return user
 
 async def get_current_active_user(current_user: UserSchema = Depends(get_current_user)):
     if is_false(current_user.confirmed):
-        raise CwHTTPException(message = {"error": "your account has not been confirmed yet", "i18n_code": "1003"}, status_code = status.HTTP_403_FORBIDDEN)
+        raise CwHTTPException(message = {"error": "your account has not been confirmed yet", "i18n_code": "account_not_confirmed"}, status_code = status.HTTP_403_FORBIDDEN)
     return current_user
 
 async def admin_required(current_user: UserSchema = Depends(get_current_active_user)):
     if is_false(current_user.is_admin):
-        raise CwHTTPException(message = {"error": "permission denied", "i18n_code": "1001"}, status_code = status.HTTP_403_FORBIDDEN)
+        raise CwHTTPException(message = {"error": "permission denied", "i18n_code": "permission_denied"}, status_code = status.HTTP_403_FORBIDDEN)
     return current_user

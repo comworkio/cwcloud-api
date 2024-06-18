@@ -26,7 +26,7 @@ def admin_add_registry(current_user, provider, region, payload, db, bt: Backgrou
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'provider does not exist', 
-                'i18n_code': '504',
+                'i18n_code': 'provider_not_exist',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -34,7 +34,7 @@ def admin_add_registry(current_user, provider, region, payload, db, bt: Backgrou
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'please provide registry name', 
-                'i18n_code': '1122',
+                'i18n_code': 'provide_registry_name',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -42,7 +42,7 @@ def admin_add_registry(current_user, provider, region, payload, db, bt: Backgrou
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'please provide an email', 
-                'i18n_code': '1102',
+                'i18n_code': 'provide_email',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -55,7 +55,7 @@ def admin_add_registry(current_user, provider, region, payload, db, bt: Backgrou
                     return JSONResponse(content = {
                         'status': 'ko',
                         'error': 'registry type does not exist', 
-                        'i18n_code': '1123',
+                        'i18n_code': 'registry_type_not_exist',
                         'cid': get_current_cid()
                     }, status_code = 400)
         possible_regions = get_provider_infos(provider, "registry_available_regions")
@@ -63,7 +63,7 @@ def admin_add_registry(current_user, provider, region, payload, db, bt: Backgrou
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'region does not exist', 
-                'i18n_code': '1104',
+                'i18n_code': 'region_not_exist',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -73,7 +73,7 @@ def admin_add_registry(current_user, provider, region, payload, db, bt: Backgrou
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found', 
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         userid = exist_user.id
@@ -98,7 +98,7 @@ def admin_add_registry(current_user, provider, region, payload, db, bt: Backgrou
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'stack already exists', 
-            'i18n_code': '1105',
+            'i18n_code': 'stack_exists',
             'cid': get_current_cid()
         }, status_code = 409)
     except HTTPError as e:
@@ -125,7 +125,7 @@ def admin_get_registry(current_user, registryId, db):
         return JSONResponse(content = { 
             'status': 'ko',   
             'error': 'registry not found', 
-            'i18n_code': '904',
+            'i18n_code': 'registry_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
     dumpedRegistry = json.loads(json.dumps(user_Registry, cls = AlchemyEncoder))
@@ -146,7 +146,7 @@ def admin_remove_registry(current_user, registry_id, db, bt: BackgroundTasks):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'registry not found', 
-            'i18n_code': '904',
+            'i18n_code': 'registry_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -169,7 +169,7 @@ def admin_remove_registry(current_user, registry_id, db, bt: BackgroundTasks):
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'registry successfully deleted', 
-            'i18n_code': '901'
+            'i18n_code': 'registry_deleted'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -192,7 +192,7 @@ def admin_update_registry(current_user, registryId, payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'registry not found', 
-            'i18n_code': '904',
+            'i18n_code': 'registry_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
     try:
@@ -206,7 +206,7 @@ def admin_update_registry(current_user, registryId, payload, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'user not found', 
-                    'i18n_code': '304',
+                    'i18n_code': 'user_not_found',
                     'cid': get_current_cid()
                 }, status_code = 404)
             Registry.patch(registryId, {"user_id": user.id}, db)
@@ -214,7 +214,7 @@ def admin_update_registry(current_user, registryId, payload, db):
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'registry successfully updated', 
-            'i18n_code': '902'
+            'i18n_code': 'registry_deleted'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -237,7 +237,7 @@ def admin_refresh_registry(current_user, registry_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Registry not found', 
-            'i18n_code': '904',
+            'i18n_code': 'registry_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
     hashed_registry_name = f"{user_registry.name}-{user_registry.hash}"
@@ -249,7 +249,7 @@ def admin_get_registries(current_user, provider, region, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist', 
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -262,7 +262,7 @@ def admin_get_user_registries(current_user, provider, region, user_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist' , 
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 

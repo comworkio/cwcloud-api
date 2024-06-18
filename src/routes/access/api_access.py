@@ -65,7 +65,7 @@ def create_access(current_user: Annotated[UserSchema, Depends(get_current_active
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found',
-                'i18n_code': "304",
+                'i18n_code': "user_not_found",
                 'cid': get_current_cid()
             }, status_code = 409)
 
@@ -75,7 +75,7 @@ def create_access(current_user: Annotated[UserSchema, Depends(get_current_active
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'access already exists',
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 400)
 

@@ -40,7 +40,7 @@ def login_user(payload: UserLoginSchema, db: Session = Depends(get_db)):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Missing informations for login',
-                'i18n_code': '1004',
+                'i18n_code': 'missing_info_for_login',
                 'cid': get_current_cid()
             }, status_code = 403)
 
@@ -50,7 +50,7 @@ def login_user(payload: UserLoginSchema, db: Session = Depends(get_db)):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Authentification failed',
-                'i18n_code': '1002',
+                'i18n_code': 'auth_failed',
                 'cid': get_current_cid()
             }, status_code = 403)
 
@@ -84,6 +84,6 @@ def login_user(payload: UserLoginSchema, db: Session = Depends(get_db)):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Authentification failed',
-            'i18n_code': '1002',
+            'i18n_code': 'auth_failed',
             'cid': get_current_cid()
         }, status_code = 403)

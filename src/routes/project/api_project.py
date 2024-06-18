@@ -12,6 +12,7 @@ from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
 from utils.observability.counter import create_counter, increment_counter
 from utils.observability.enums import Action, Method
+from utils.permission import check_permissions
 
 router = APIRouter()
 
@@ -19,13 +20,15 @@ _span_prefix = "project"
 _counter = create_counter("project_api", "Project API counter")
 
 @router.get("")
-def get_all_projects(current_user: Annotated[UserSchema, Depends(get_current_active_user)],type: Literal['vm','k8s','all'] = "all" , db: Session = Depends(get_db)):
+def get_all_projects(current_user: Annotated[UserSchema, Depends(get_current_active_user)], type: Literal['vm','k8s', 'all'] = "vm", db: Session = Depends(get_db)):
+    check_permissions(current_user, type, db)
     with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.ALL)):
         increment_counter(_counter, Method.GET, Action.ALL)
-        return get_projects(current_user, db, type)
+        return get_projects(current_user, db)
 
 @router.post("")
 def add_new_project(current_user: Annotated[UserSchema, Depends(get_current_active_user)], payload: ProjectSchema, db: Session = Depends(get_db)):
+    check_permissions(current_user, payload.type, db)
     with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST)):
         increment_counter(_counter, Method.POST)
         return add_project(current_user, payload, db)

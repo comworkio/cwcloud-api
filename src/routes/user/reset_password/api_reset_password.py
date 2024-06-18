@@ -36,7 +36,7 @@ def reset_password(current_user: Annotated[UserSchema, Depends(admin_required)],
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'User not found',
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -66,11 +66,11 @@ def reset_password(current_user: Annotated[UserSchema, Depends(admin_required)],
                 'status': 'ok',
                 'message': 'User successfully updated',
                 'new_password': user_new_password,
-                'i18n_code': '301'
+                'i18n_code': 'user_updated'
             }, status_code = 200)
 
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'User successfully updated',
-            'i18n_code': '301'
+            'i18n_code': 'user_updated'
         }, status_code = 200)

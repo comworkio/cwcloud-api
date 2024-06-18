@@ -35,7 +35,7 @@ def download_invoice_by_invoice_ref(current_user: Annotated[UserSchema, Depends(
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'invoice not found', 
-                'i18n_code': '604',
+                'i18n_code': 'invoice_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -83,7 +83,7 @@ def get_invoice_by_ref(current_user: Annotated[UserSchema, Depends(get_current_a
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'invoice not found', 
-                'i18n_code': '604',
+                'i18n_code': 'invoice_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 

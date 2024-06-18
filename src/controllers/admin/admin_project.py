@@ -27,7 +27,7 @@ def admin_transfer_project (project_id, payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found', 
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -37,7 +37,7 @@ def admin_transfer_project (project_id, payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found', 
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 409)
 
@@ -86,7 +86,7 @@ def admin_add_project(payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found', 
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         if is_empty(project_type):
@@ -127,7 +127,7 @@ def admin_get_project(project_id, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found', 
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -160,7 +160,7 @@ def admin_remove_project(project_id, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found', 
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         project_instances = Instance.getAllActiveInstancesByProject(project_id, db)
@@ -168,7 +168,7 @@ def admin_remove_project(project_id, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project still holds active instances', 
-                'i18n_code': '205',
+                'i18n_code': 'project_hold_active_instances',
                 'cid': get_current_cid()
             }, status_code = 400)
         delete_gitlab_project(project_id, project.gitlab_host, project.access_token)
@@ -176,7 +176,7 @@ def admin_remove_project(project_id, db):
         return JSONResponse(content = {
             'status': 'ok',
             'message' : 'project successfully deleted', 
-            'i18n_code': '202'
+            'i18n_code': 'project_deleted'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -193,7 +193,7 @@ def admin_get_project_by_name(project_name, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found', 
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         playbooks = get_gitlab_project_playbooks(project.id, project.gitlab_host, project.access_token)
@@ -217,7 +217,7 @@ def admin_remove_project_by_name(project_name, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found', 
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         project_instances = Instance.getAllActiveInstancesByProject(project.id, db)
@@ -225,7 +225,7 @@ def admin_remove_project_by_name(project_name, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project still holds active instances', 
-                'i18n_code': '205',
+                'i18n_code': 'project_hold_active_instances',
                 'cid': get_current_cid()
             }, status_code = 400)
         delete_gitlab_project(project.id, project.gitlab_host, project.access_token)
@@ -233,7 +233,7 @@ def admin_remove_project_by_name(project_name, db):
         return JSONResponse(content = {
             'status': 'ok',
             'message' : 'project successfully deleted', 
-            'i18n_code': '202'
+            'i18n_code': 'project_deleted'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -250,7 +250,7 @@ def admin_get_project_by_url(project_url, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found', 
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         playbooks = get_gitlab_project_playbooks(project.id, project.gitlab_host, project.access_token)
@@ -274,7 +274,7 @@ def admin_remove_project_by_url(project_url, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found', 
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         project_instances = Instance.getAllActiveInstancesByProject(project.id, db)
@@ -282,7 +282,7 @@ def admin_remove_project_by_url(project_url, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project still holds active instances', 
-                'i18n_code': '205',
+                'i18n_code': 'project_hold_active_instances',
                 'cid': get_current_cid()
             }, status_code = 400)
         delete_gitlab_project(project.id, project.gitlab_host, project.access_token)
@@ -290,7 +290,7 @@ def admin_remove_project_by_url(project_url, db):
         return JSONResponse(content = {
             'status': 'ok',
             'message' : 'project successfully deleted', 
-            'i18n_code': '202'
+            'i18n_code': 'project_deleted'
             }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {

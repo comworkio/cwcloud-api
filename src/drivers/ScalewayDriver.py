@@ -198,7 +198,7 @@ class ScalewayDriver(ProviderDriver):
                                 json = actionData)
         if res.status_code == 404:
             message = f"resource {server_id} not found."
-            raise HTTPError("104", res.status_code, message, hdrs = {"i18n_code": "104"}, fp = None)
+            raise HTTPError("instance_not_found", res.status_code, message, hdrs = {"i18n_code": "instance_not_found"}, fp = None)
 
     def create_bucket(self, user_email, bucket_id, hashed_bucket_name, region, bucket_type):
         def create_pulumi_program():

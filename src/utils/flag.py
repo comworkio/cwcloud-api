@@ -6,6 +6,7 @@ ALL_FLAGS = [
     'billable',
     'without_vat',
     'auto_pay',
+    'daasapi',
     'emailapi',
     'disable_emails',
     'cwaiapi',

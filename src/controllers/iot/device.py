@@ -98,7 +98,7 @@ def confirm_device_by_token(token, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found', 
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         device = Device.getUserLatestInactiveDevice(user.email, db)

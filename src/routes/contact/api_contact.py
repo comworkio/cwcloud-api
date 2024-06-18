@@ -30,7 +30,7 @@ def contact_with_us(payload: ContactSchema):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'missing informations', 
-                'i18n_code': '1207',
+                'i18n_code': 'missing_info',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -38,7 +38,7 @@ def contact_with_us(payload: ContactSchema):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid email', 
-                'i18n_code': '1206',
+                'i18n_code': 'invalid_email',
                 'cid': get_current_cid()
             }, status_code = 400)
 

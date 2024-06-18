@@ -220,7 +220,7 @@ def send_invoice_email(email, file_name, encoded_file, send, edition = False, da
         return response
     except Exception as ex:
         log_msg("ERROR", "[mail] unexpected error : type = {}, file = {}, lno = {}, msg = {}".format(type(ex).__name__, __file__, ex.__traceback__.tb_lineno, ex))
-        raise HTTPError("1114", 409, 'could not send invoice pdf email', hdrs = {"i18n_code": "1112"}, fp = None)
+        raise HTTPError("could_not_send_invoice_email", 409, 'could not send invoice pdf email', hdrs = {"i18n_code": "could_not_invoice_email"}, fp = None)
 
 def send_create_instance_email(user_email, project_repo_url, instance_name, environment, access_password, root_dns_zone):
     if EMAIL_ADAPTER().is_disabled():

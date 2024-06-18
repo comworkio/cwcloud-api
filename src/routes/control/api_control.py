@@ -77,7 +77,7 @@ def handle_instance_error_creation(request: Request, bt: BackgroundTasks, instan
             return JSONResponse(content = {
                 'status': 'ok',
                 'message': 'instance successfully deleted', 
-                'i18n_code': '102'
+                'i18n_code': 'instance_deleted'
             }, status_code = 200)
         except HTTPError as e:
             return JSONResponse(content = {
@@ -140,7 +140,7 @@ def update_instance(request: Request, instance_id: str, payload: ControlUpdateIn
             return JSONResponse(content = {
                 'status': 'ok',
                 'message': 'instance successfully updated', 
-                'i18n_code': '101'
+                'i18n_code': 'instance_updated'
             }, status_code = 200)
         except HTTPError as e:
             return JSONResponse(content = {

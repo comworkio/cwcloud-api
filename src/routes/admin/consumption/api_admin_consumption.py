@@ -37,7 +37,7 @@ def get_all_consumptions_by_user_id(current_user: Annotated[UserSchema, Depends(
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'instance not found', 
-                    'i18n_code': '104',
+                    'i18n_code': "instance_not_found",
                     'cid': get_current_cid()
                 }, status_code = 404)
 
@@ -82,7 +82,7 @@ def get_all_consumptions_by_instance_id(current_user: Annotated[UserSchema, Depe
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'instance not found', 
-                    'i18n_code': '104',
+                    'i18n_code': "instance_not_found",
                     'cid': get_current_cid()
                 }, status_code = 404)
 

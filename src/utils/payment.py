@@ -89,7 +89,7 @@ def pay(db, user, invoice, voucher_id = "", auto_pay = False):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'voucher not found', 
-                'i18n_code': '1204',
+                'i18n_code': 'voucher_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         created_registered_voucher   = datetime.datetime.fromisoformat(registeredVoucher.created_at)
@@ -102,7 +102,7 @@ def pay(db, user, invoice, voucher_id = "", auto_pay = False):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'voucher has expired', 
-                    'i18n_code': '1205',
+                    'i18n_code': 'voucher_expired',
                     'cid': get_current_cid()
                 }, status_code = 400)
 

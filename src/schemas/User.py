@@ -64,6 +64,7 @@ class EnabledFeatures(BaseModel):
     billable: Optional[bool] = False
     without_vat: Optional[bool] = False
     auto_pay: Optional[bool] = False
+    daasapi: Optional[bool] = False
     emailapi: Optional[bool] = False
     cwaiapi: Optional[bool] = False
     faasapi: Optional[bool] = False

@@ -74,7 +74,7 @@ class TestAdminUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200) 
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully deleted","i18n_code":"302"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully deleted","i18n_code":"user_deleted"}')
     
     @patch('utils.common.is_numeric')
     @patch('entities.User.User.getUserById', side_effect = lambda x,y : User(id= 1 ))    
@@ -93,7 +93,7 @@ class TestAdminUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully confirmed","i18n_code":"303"}')    
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully confirmed","i18n_code":"user_confirmed"}')    
     
     @patch('utils.common.is_numeric')
     @patch('entities.User.User.getUserById', side_effect = lambda x,y : User(id= 1 ))    
@@ -115,7 +115,7 @@ class TestAdminUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200) 
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully updated","i18n_code":"301"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully updated","i18n_code":"user_updated"}')
     
     @patch('utils.common.is_numeric')
     @patch('entities.User.User.getUserById', side_effect = lambda x,y : User(id= 1 ))    
@@ -185,6 +185,7 @@ class TestAdminUser(TestCase):
             faasapi= False,
             disable_emails= False,
             k8sapi= False,
+            daasapi= False,
             iotapi= False
         )
         payload = UserAdminUpdateSchema(
@@ -208,5 +209,5 @@ class TestAdminUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully updated","i18n_code":"301"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully updated","i18n_code":"user_updated"}')
     

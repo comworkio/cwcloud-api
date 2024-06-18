@@ -15,7 +15,7 @@ def get_bucket(current_user, provider, region, bucket_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist',
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -23,7 +23,7 @@ def get_bucket(current_user, provider, region, bucket_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid bucket id',
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -36,7 +36,7 @@ def get_bucket(current_user, provider, region, bucket_id, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Bucket not found',
-                'i18n_code': '404',
+                'i18n_code': '2fa_method_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         user_bucket = Bucket.findBucket(provider, region, access.object_id, db)
@@ -48,14 +48,14 @@ def remove_bucket(current_user, provider, region, bucket_id, db, bt: BackgroundT
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist',
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
     if not is_numeric(bucket_id):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid bucket id',
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
     from entities.Bucket import Bucket
@@ -64,7 +64,7 @@ def remove_bucket(current_user, provider, region, bucket_id, db, bt: BackgroundT
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Bucket not found',
-            'i18n_code': '404',
+            'i18n_code': '2fa_method_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
     user_email = user_bucket.user.email if user_bucket.user is not None else None
@@ -82,7 +82,7 @@ def remove_bucket(current_user, provider, region, bucket_id, db, bt: BackgroundT
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'bucket successfully deleted',
-            'i18n_code': '402'
+            'i18n_code': 'bucket_deleted'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -97,7 +97,7 @@ def update_bucket(current_user, provider, region, bucket_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist',
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -105,7 +105,7 @@ def update_bucket(current_user, provider, region, bucket_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid bucket id',
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
     from entities.Bucket import Bucket
@@ -114,7 +114,7 @@ def update_bucket(current_user, provider, region, bucket_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'bucket not found',
-            'i18n_code': '404',
+            'i18n_code': '2fa_method_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
     try:
@@ -122,7 +122,7 @@ def update_bucket(current_user, provider, region, bucket_id, db):
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'bucket successfully updated',
-            'i18n_code': '402'
+            'i18n_code': 'bucket_deleted'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -137,7 +137,7 @@ def get_buckets(current_user, provider, region, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'provider does not exist',
-            'i18n_code': '504',
+            'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
 

@@ -42,7 +42,7 @@ class TestUser(TestCase):
         result_body = json.loads(result.body.decode())
         result_body.pop('id', None)
         result_body_str = json.dumps(result_body)
-        self.assertEqual(result_body_str, '{"status": "ok", "message": "user successfully created", "i18n_code": "300"}')
+        self.assertEqual(result_body_str, '{"status": "ok", "message": "user successfully created", "i18n_code": "user_created"}')
      
     @patch('entities.Instance.Instance.getActiveUserInstances', side_effect = lambda x,y:[])
     @patch('entities.Access.Access.getUserAccessesByType' , side_effect = lambda x,y,z:[])
@@ -131,7 +131,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)  
         self.assertIsInstance(result, JSONResponse)  
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"successfully sent reset password email","i18n_code":"309"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"successfully sent reset password email","i18n_code":"reset_password_success"}')
     
     @patch('controllers.user.User.getUserByEmail')
     @patch('controllers.user.User.updateUserPassword', side_effect = lambda x,y,z:[])    
@@ -158,7 +158,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)  
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully updated","i18n_code":"301"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully updated","i18n_code":"user_updated"}')
      
     @patch('jose.jwt.decode')
     @patch('controllers.user.send_confirmation_email', side_effect = None)
@@ -183,7 +183,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200) 
         self.assertIsInstance(result, JSONResponse)  
-        self.assertEqual(result.body.decode(), '{"status":"ok","email":"test@example.com","message":"user verified","i18n_code":"307"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","email":"test@example.com","message":"user verified","i18n_code":"user_verified"}')
 
     @patch('entities.User.User.getUserById',side_effect = lambda x,y: User(st_payment_method_id='some_id')  )  
     def test_update_user_autopayment(self , getUserById):
@@ -234,7 +234,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","email":null,"message":"user successfully confirmed","i18n_code":"303"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","email":null,"message":"user successfully confirmed","i18n_code":"user_confirmed"}')
 
     @patch('jose.jwt.encode')
     @patch('controllers.user.send_confirmation_email', side_effect = None)
@@ -263,7 +263,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"successfully send email confirmation","i18n_code":"306"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"successfully send email confirmation","i18n_code":"success_confirmation_email"}')
 
     @patch('controllers.user.listPaymentMethods', side_effect = lambda x: {"id": "1"})
     @patch('entities.User.User.getUserById',side_effect = lambda x,y: User(st_payment_method_id='1')  )  
@@ -322,7 +322,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully updated","i18n_code":"301"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully updated","i18n_code":"user_updated"}')
 
     @patch('controllers.user.retrievePaymentMethod')
     @patch('entities.User.User.getUserById',side_effect = None)
@@ -370,7 +370,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 204)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"payment method successfully updated"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"payment method successfully updated","i18n_code":"payment_method_updated"}')
 
     @patch('controllers.user.PAYMENT_ADAPTER.retrieve_payment_method', side_effect = None)
     @patch('entities.User.User.getUserById',side_effect = lambda x,y: User(st_payment_method_id='some_id')  )  
@@ -396,4 +396,4 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 204)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"payment method successfully removed"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"payment method successfully removed","i18n_code":"payment_method_removed"}')

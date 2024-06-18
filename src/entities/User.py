@@ -108,7 +108,7 @@ class User(Base):
 
     @staticmethod
     def adminUpdateUser(id, payload, db):
-        db.query(User).filter(User.id == id).update({"email": payload.email, "is_admin": payload.is_admin, "company_name": payload.company_name, "registration_number": payload.registration_number, "address": payload.address, "contact_info": payload.contact_info, "enabled_features": {"billable": payload.enabled_features.billable, "without_vat": payload.enabled_features.without_vat, "auto_pay": payload.enabled_features.auto_pay, "emailapi": payload.enabled_features.emailapi, "cwaiapi": payload.enabled_features.cwaiapi, "faasapi": payload.enabled_features.faasapi, "disable_emails": payload.enabled_features.disable_emails, "k8sapi": payload.enabled_features.k8sapi, "iotapi": payload.enabled_features.iotapi}})
+        db.query(User).filter(User.id == id).update({"email": payload.email, "is_admin": payload.is_admin, "company_name": payload.company_name, "registration_number": payload.registration_number, "address": payload.address, "contact_info": payload.contact_info, "enabled_features": {"billable": payload.enabled_features.billable, "without_vat": payload.enabled_features.without_vat, "auto_pay": payload.enabled_features.auto_pay, "emailapi": payload.enabled_features.emailapi, "cwaiapi": payload.enabled_features.cwaiapi, "faasapi": payload.enabled_features.faasapi, "disable_emails": payload.enabled_features.disable_emails, "k8sapi": payload.enabled_features.k8sapi, "daasapi": payload.enabled_features.daasapi, "iotapi": payload.enabled_features.iotapi}})
         db.commit()
 
     @staticmethod

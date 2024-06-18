@@ -75,7 +75,7 @@ def generate_invoice(current_user: Annotated[UserSchema, Depends(admin_required)
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found',
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -198,7 +198,7 @@ def invoice_edition(current_user: Annotated[UserSchema, Depends(admin_required)]
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'invoice not found',
-                'i18n_code': '604',
+                'i18n_code': 'invoice_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -266,7 +266,7 @@ def invoice_edition(current_user: Annotated[UserSchema, Depends(admin_required)]
     return JSONResponse(content = {
         'status': 'ok',
         'message': 'Invoice successfully updated',
-        'i18n_code': '301'
+        'i18n_code': 'user_updated'
     }, status_code = 200)
 
 @router.post("/{invoice_ref}/download")
@@ -287,7 +287,7 @@ def download_invoice(current_user: Annotated[UserSchema, Depends(admin_required)
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'invoice not found',
-                'i18n_code': '604',
+                'i18n_code': 'invoice_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -322,7 +322,7 @@ def get_invoice_by_user_email(current_user: Annotated[UserSchema, Depends(admin_
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found',
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -347,7 +347,7 @@ def get_invoice_by_id(current_user: Annotated[UserSchema, Depends(admin_required
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'invoice not found',
-                'i18n_code': '604',
+                'i18n_code': 'invoice_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -357,7 +357,7 @@ def get_invoice_by_id(current_user: Annotated[UserSchema, Depends(admin_required
 
 @router.patch("/{invoice_id}")
 def update_invoice_status(current_user: Annotated[UserSchema, Depends(admin_required)], invoice_id: str, payload: InvoiceUpdateSchema, db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span(span_format(_span_prefix)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.PATCH)):
         increment_counter(_counter, Method.PATCH)
         status = payload.status
         user_invoice = Invoice.getInvoiceById(invoice_id, db)
@@ -365,7 +365,7 @@ def update_invoice_status(current_user: Annotated[UserSchema, Depends(admin_requ
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'invoice not found',
-                'i18n_code': '604',
+                'i18n_code': 'invoice_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -380,5 +380,5 @@ def update_invoice_status(current_user: Annotated[UserSchema, Depends(admin_requ
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'invoice successfully updated',
-            'i18n_code': '601'
+            'i18n_code': 'invoice_updated'
         }, status_code = 200)

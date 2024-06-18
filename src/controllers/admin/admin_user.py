@@ -30,7 +30,7 @@ def admin_delete_user_2fa(current_user, userId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid user id',
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -39,7 +39,7 @@ def admin_delete_user_2fa(current_user, userId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message' : 'user not found', 
-            'i18n_code': '304',
+            'i18n_code': 'user_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
     from entities.Mfa import Mfa
@@ -55,7 +55,7 @@ def admin_update_user(current_user, userId, payload, db):
         return JSONResponse(content = {
             'status': 'ko',           
             'error': 'the email is not valid', 
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -64,7 +64,7 @@ def admin_update_user(current_user, userId, payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'email already exists', 
-            'i18n_code': '305',
+            'i18n_code': 'email_exist',
             'cid': get_current_cid()
         }, status_code = 409)
 
@@ -72,7 +72,7 @@ def admin_update_user(current_user, userId, payload, db):
     return JSONResponse(content = {
         'status': 'ok',        
         'message': 'user successfully updated', 
-        'i18n_code': '301'
+        'i18n_code': 'user_updated'
     }, status_code = 200)
 
 def admin_remove_user(current_user, userId, db):
@@ -80,7 +80,7 @@ def admin_remove_user(current_user, userId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid user id', 
-            'i18n_code': '400'
+            'i18n_code': 'invalid_payment_method_id'
         }, status_code = 400)
 
     user = User.getUserById(userId, db)
@@ -88,7 +88,7 @@ def admin_remove_user(current_user, userId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message' : 'user not found', 
-            'i18n_code': '304',
+            'i18n_code': 'user_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -103,7 +103,7 @@ def admin_remove_user(current_user, userId, db):
     return JSONResponse(content = {
         'status': 'ok',
         'message' : 'user successfully deleted', 
-        'i18n_code': '302'
+        'i18n_code': 'user_deleted'
     }, status_code = 200)
 
 def admin_update_user_confirmation(current_user, userId, db):
@@ -111,7 +111,7 @@ def admin_update_user_confirmation(current_user, userId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid user id', 
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -120,7 +120,7 @@ def admin_update_user_confirmation(current_user, userId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message' : 'user not found', 
-            'i18n_code': '304',
+            'i18n_code': 'user_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -128,7 +128,7 @@ def admin_update_user_confirmation(current_user, userId, db):
     return JSONResponse(content = {
         'status': 'ok',
         'message' : 'user successfully confirmed', 
-        'i18n_code': '303'
+        'i18n_code': 'user_confirmed'
     }, status_code = 200)
 
 def admin_get_autopayment_users(current_user, db):
@@ -149,7 +149,7 @@ def admin_update_user_role(current_user, userId, payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid user id', 
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -158,7 +158,7 @@ def admin_update_user_role(current_user, userId, payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'message' : 'user not found', 
-            'i18n_code': '304',
+            'i18n_code': 'user_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
@@ -166,7 +166,7 @@ def admin_update_user_role(current_user, userId, payload, db):
     return JSONResponse(content = {
         'status': 'ok',
         'message' : 'user successfully updated', 
-        'i18n_code': '301'
+        'i18n_code': 'user_updated'
     }, status_code = 200)
 
 def create_customer(email):
@@ -199,7 +199,7 @@ def admin_add_user(current_user, payload, db):
             return JSONResponse(content = {
                 'status': 'ko', 
                 'error': 'email already exists', 
-                'i18n_code': '305',
+                'i18n_code': 'email_exist',
                 'cid': get_current_cid()
             }, status_code = 409)
 
@@ -213,7 +213,7 @@ def admin_add_user(current_user, payload, db):
             return JSONResponse(content = {
                 'status': 'ok', 
                 'message': 'user successfully created', 
-                'i18n_code': '300'
+                'i18n_code': 'user_created'
             }, status_code = 200)
 
         subject = "Confirm your account"
@@ -230,7 +230,7 @@ def admin_add_user(current_user, payload, db):
             'status': 'ok', 
             'message': 'user successfully created', 
             'id': new_user.id, 
-            'i18n_code': '300'
+            'i18n_code': 'user_created'
         }, status_code = 201)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -256,7 +256,7 @@ def admin_get_user(current_user, userId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid user id', 
-            'i18n_code': '400',
+            'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
 

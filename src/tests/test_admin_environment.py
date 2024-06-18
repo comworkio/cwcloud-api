@@ -156,7 +156,7 @@ class TestAdminEnvironnement(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)     
-        self.assertEqual(result.body.decode(),'{"status":"ok","message":"Environment successfully deleted","i18n_code":"802"}')
+        self.assertEqual(result.body.decode(),'{"status":"ok","message":"Environment successfully deleted","i18n_code":"environment_deleted"}')
     
     @patch('controllers.admin.admin_environment.Environment.updateEnvironment', side_effect = None)      
     def test_admin_update_environment(self, updateEnvironment):
@@ -198,7 +198,7 @@ class TestAdminEnvironnement(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)       
         self.assertIsInstance(result, JSONResponse)      
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"environment successfully updated","i18n_code":"801"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"environment successfully updated","i18n_code":"environment_updated"}')
 
     @patch('controllers.admin.admin_environment.json.loads', return_value={"name": "Test Environment", "path": "test", "description": "Test Description", "roles": [], "subdomains": [], "environment_template": "template", "doc_template": "template", "is_private": False})    
     @patch('controllers.admin.admin_environment.Environment.getByPath', side_effect = lambda x, y: [])

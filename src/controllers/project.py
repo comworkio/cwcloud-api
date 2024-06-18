@@ -8,11 +8,30 @@ from entities.Project import Project
 from entities.Instance import Instance
 from entities.kubernetes.Deployment import Deployment
 from entities.Environment import Environment
+from entities.User import User
 
 from utils.common import is_empty, is_numeric, is_true
 from utils.encoder import AlchemyEncoder
+from utils.flag import is_flag_disabled
 from utils.gitlab import create_gitlab_project, delete_gitlab_project, get_gitlab_project_playbooks, attach_default_gitlab_project_to_user, detach_user_gitlab_project
 from utils.observability.cid import get_current_cid
+
+def check_permissions(current_user, project, db):
+    user = User.getUserById(current_user.id, db)
+    if is_flag_disabled(user.enabled_features, "daasapi") and project.type == "vm" and not user.is_admin:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'permission denied', 
+            'i18n_code': 'not_daasapi',
+            'cid': get_current_cid()
+        }, status_code = 403)
+    elif is_flag_disabled(user.enabled_features, "k8sapi") and project.type == "k8s" and not user.is_admin:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'permission denied', 
+            'i18n_code': 'not_k8sapi',
+            'cid': get_current_cid()
+        }, status_code = 403)
 
 def transfer_project(current_user, payload, projectId, db):
     try:
@@ -21,7 +40,7 @@ def transfer_project(current_user, payload, projectId, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid project id',
-                'i18n_code': '400',
+                'i18n_code': 'invalid_payment_method_id',
                 'cid': get_current_cid()
             }, status_code = 400)
         project = Project.getUserProject(projectId, current_user.id, db)
@@ -29,7 +48,7 @@ def transfer_project(current_user, payload, projectId, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found', 
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         from entities.User import User
@@ -38,9 +57,11 @@ def transfer_project(current_user, payload, projectId, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'user not found', 
-                'i18n_code': '304',
+                'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 409)
+
+        check_permissions(current_user, project, db)
 
         Project.updateOwner(project.id, user.id, db)
         attach_default_gitlab_project_to_user(project.id, user.email)
@@ -75,14 +96,14 @@ def add_project(current_user, payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project name is missing', 
-                'i18n_code': '207',
+                'i18n_code': 'project_name_missing',
                 'cid': get_current_cid()
             }, status_code = 400)
         if not project_name or project_name == "":
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project name is missing', 
-                'i18n_code': '207',
+                'i18n_code': 'project_name_missing',
                 'cid': get_current_cid()
             }, status_code = 400)
         project_type = payload.type
@@ -99,36 +120,29 @@ def add_project(current_user, payload, db):
             'cid': get_current_cid()
         }, status_code = e.code)
 
-def get_projects(current_user, db, type: str = "all"):
+def get_projects(current_user, db):
     projects = []
-    if type == "all":
-        projects = Project.getUserProjects(current_user.id, db)
-    else:
-        projects = Project.getUserProjectsByType(current_user.id,type, db)
-
+    projects = Project.getUserProjects(current_user.id, db)
     from entities.Access import Access
     other_projects_access = Access.getUserAccessesByType(current_user.id, "project", db)
     other_project_ids = [access.object_id for access in other_projects_access]
     other_projects = Project.findProjects(other_project_ids, db)
     projects.extend(other_projects)
     projectsJson = json.loads(json.dumps(projects, cls = AlchemyEncoder))
-    if type == "vm":
-        from entities.Instance import Instance
-        user_instances = Instance.getActiveUserInstances(current_user.id, db)
-        user_instancesJson = json.loads(json.dumps(user_instances, cls = AlchemyEncoder))
-        populatedProjects = [{**project, "instances": [instance for instance in user_instancesJson if instance["project_id"] == project["id"] ]} for project in projectsJson]
-    else:
-        for project in projectsJson:
-            deployment = Deployment.getFirstByProject(project["id"], db)
-            project["environment"] = None
-            if is_true(deployment):
-                environemnt = Environment.getById(deployment.env_id, db)
-                project["environment"] = {
-                    "id": environemnt.id,
-                    "name": environemnt.name,
-                }
-
-        populatedProjects = [{**project, "instances": []} for project in projectsJson]
+    from entities.Instance import Instance
+    user_instances = Instance.getActiveUserInstances(current_user.id, db)
+    user_instancesJson = json.loads(json.dumps(user_instances, cls = AlchemyEncoder))
+    for project in projectsJson:
+        deployment = Deployment.getFirstByProject(project["id"], db)
+        project["environment"] = None
+        if is_true(deployment):
+            environemnt = Environment.getById(deployment.env_id, db)
+            project["environment"] = {
+                "id": environemnt.id,
+                "name": environemnt.name,
+            }
+    populatedProjects = [{**project, "instances": [instance for instance in user_instancesJson if instance["project_id"] == project["id"] ]} for project in projectsJson]
+    
     return JSONResponse(content = populatedProjects, status_code = 200)
 
 def get_project(current_user, projectId, db):
@@ -137,7 +151,7 @@ def get_project(current_user, projectId, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid project id', 
-                'i18n_code': '400',
+                'i18n_code': 'invalid_payment_method_id',
                 'cid': get_current_cid()
             }, status_code = 400)
         project = Project.getUserProject(projectId, current_user.id, db)
@@ -148,10 +162,13 @@ def get_project(current_user, projectId, db):
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'project not found', 
-                    'i18n_code': '204',
+                    'i18n_code': 'project_not_found',
                     'cid': get_current_cid()
                 }, status_code = 404)
             project = Project.getProjectById(access.object_id, db)
+        
+        check_permissions(current_user, project.type, db)
+
         projectJson = json.loads(json.dumps(project, cls = AlchemyEncoder))
 
         if project.type == "vm":
@@ -178,7 +195,7 @@ def delete_project(current_user, projectId, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid project id', 
-                'i18n_code': '400',
+                'i18n_code': 'invalid_payment_method_id',
                 'cid': get_current_cid()
             }, status_code = 400)
         project = Project.getUserProject(projectId, current_user.id, db)
@@ -186,7 +203,7 @@ def delete_project(current_user, projectId, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found', 
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         project_instances = Instance.getAllActiveInstancesByProject(projectId, db)
@@ -194,15 +211,16 @@ def delete_project(current_user, projectId, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project still holds active instances', 
-                'i18n_code': '205',
+                'i18n_code': 'project_hold_active_instances',
                 'cid': get_current_cid()
             }, status_code = 400)
+        check_permissions(current_user, project, db)
         delete_gitlab_project(projectId, project.gitlab_host, project.access_token)
         Project.deleteOne(projectId, db)
         return JSONResponse(content = {
             'status' : 'ok',
             'message' : 'project successfully deleted', 
-            'i18n_code': '202'
+            'i18n_code': 'project_deleted'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -219,9 +237,10 @@ def get_project_by_name(current_user, project_name, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found', 
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+        check_permissions(current_user, project, db)
         playbooks = get_gitlab_project_playbooks(project.id, project.gitlab_host, project.access_token)
         projectJson = json.loads(json.dumps(project, cls = AlchemyEncoder))
         instancesJson = json.loads(json.dumps(project.instances, cls = AlchemyEncoder))
@@ -243,7 +262,7 @@ def delete_project_by_name(current_user, project_name, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found', 
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         project_instances = Instance.getAllActiveInstancesByProject(project.id, db)
@@ -251,15 +270,16 @@ def delete_project_by_name(current_user, project_name, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project still holds active instances', 
-                'i18n_code': '205',
+                'i18n_code': 'project_hold_active_instances',
                 'cid': get_current_cid()
             }, status_code = 400)
+        check_permissions(current_user, project, db)
         delete_gitlab_project(project.id, project.gitlab_host, project.access_token)
         Project.deleteOne(project.id, db)
         return JSONResponse(content = {
              'status' : 'ok',
             'message' : 'project successfully deleted', 
-            'i18n_code': '202'
+            'i18n_code': 'project_deleted'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -276,9 +296,10 @@ def get_project_by_url(current_user, project_url, db):
             return JSONResponse(content = {
                 'status': 'ko', 
                 'error': 'project not found', 
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+        check_permissions(current_user, project, db)
         playbooks = get_gitlab_project_playbooks(project.id, project.gitlab_host, project.access_token)
         projectJson = json.loads(json.dumps(project, cls = AlchemyEncoder))
         instancesJson = json.loads(json.dumps(project.instances, cls = AlchemyEncoder))
@@ -300,7 +321,7 @@ def delete_project_by_url(current_user, project_url, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found', 
-                'i18n_code': '204',
+                'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
         project_instances = Instance.getAllActiveInstancesByProject(project.id, db)
@@ -308,15 +329,16 @@ def delete_project_by_url(current_user, project_url, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project still holds active instances', 
-                'i18n_code': '205',
+                'i18n_code': 'project_hold_active_instances',
                 'cid': get_current_cid()
             }, status_code = 400)
+        check_permissions(current_user, project, db)
         delete_gitlab_project(project.id, project.gitlab_host, project.access_token)
         Project.deleteOne(project.id, db)
         return JSONResponse(content = {
             'status' : 'ok',
             'message' : 'project successfully deleted', 
-            'i18n_code': '202'
+            'i18n_code': 'project_deleted'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
