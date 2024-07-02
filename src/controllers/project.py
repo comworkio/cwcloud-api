@@ -3,13 +3,13 @@ import json
 from urllib.error import HTTPError
 
 from fastapi.responses import JSONResponse
-
+from fastapi import status
 from entities.Project import Project
 from entities.Instance import Instance
 from entities.kubernetes.Deployment import Deployment
 from entities.Environment import Environment
 from entities.User import User
-
+from exceptions.CwHTTPException import CwHTTPException
 from utils.common import is_empty, is_numeric, is_true
 from utils.encoder import AlchemyEncoder
 from utils.flag import is_flag_disabled
@@ -18,20 +18,28 @@ from utils.observability.cid import get_current_cid
 
 def check_permissions(current_user, project, db):
     user = User.getUserById(current_user.id, db)
-    if is_flag_disabled(user.enabled_features, "daasapi") and project.type == "vm" and not user.is_admin:
-        return JSONResponse(content = {
-            'status': 'ko',
-            'error': 'permission denied', 
-            'i18n_code': 'not_daasapi',
-            'cid': get_current_cid()
-        }, status_code = 403)
-    elif is_flag_disabled(user.enabled_features, "k8sapi") and project.type == "k8s" and not user.is_admin:
-        return JSONResponse(content = {
-            'status': 'ko',
-            'error': 'permission denied', 
-            'i18n_code': 'not_k8sapi',
-            'cid': get_current_cid()
-        }, status_code = 403)
+    if is_true(user.is_admin):
+        return
+    if project.type == "vm" and is_flag_disabled(user.enabled_features, "daasapi"):
+        raise CwHTTPException(
+            message={
+                'status': 'ko',
+                'error': 'permission denied',
+                'i18n_code': 'not_daasapi',
+                'cid': get_current_cid()
+            },
+            status_code=status.HTTP_403_FORBIDDEN
+        )
+    if project.type == "k8s" and is_flag_disabled(user.enabled_features, "k8sapi"):
+        raise CwHTTPException(
+            message={
+                'status': 'ko',
+                'error': 'permission denied',
+                'i18n_code': 'not_k8sapi',
+                'cid': get_current_cid()
+            },
+            status_code=status.HTTP_403_FORBIDDEN
+        )
 
 def transfer_project(current_user, payload, projectId, db):
     try:
@@ -120,9 +128,9 @@ def add_project(current_user, payload, db):
             'cid': get_current_cid()
         }, status_code = e.code)
 
-def get_projects(current_user, db):
+def get_projects(current_user, type, db):
     projects = []
-    projects = Project.getUserProjects(current_user.id, db)
+    projects = Project.getUserProjectsByType(current_user.id, type, db)
     from entities.Access import Access
     other_projects_access = Access.getUserAccessesByType(current_user.id, "project", db)
     other_project_ids = [access.object_id for access in other_projects_access]
@@ -167,7 +175,7 @@ def get_project(current_user, projectId, db):
                 }, status_code = 404)
             project = Project.getProjectById(access.object_id, db)
         
-        check_permissions(current_user, project.type, db)
+        check_permissions(current_user, project, db)
 
         projectJson = json.loads(json.dumps(project, cls = AlchemyEncoder))
 

@@ -11,14 +11,14 @@ class TestProject(TestCase):
         
     @patch('entities.Access.Access.getUserAccessesByType', side_effect = lambda x, y, z: [])
     @patch('entities.Project.Project.findProjects', side_effect = lambda x, y: [])
-    @patch('entities.Project.Project.getUserProjects', side_effect = lambda x, y : [])
+    @patch('entities.Project.Project.getUserProjectsByType', side_effect = lambda x, y, z : [])
     @patch('entities.Instance.Instance.getActiveUserInstances', side_effect = lambda x, y : [])
-    def test_get_projects(self, getAllProjects, getActiveUserInstances, findProjects, getUserAccessesByType):
+    def test_get_projects(self, getActiveUserInstances, getUserProjectsByType, findProjects, getUserAccessesByType):
         # Given
         from controllers.project import get_projects
-
+        getUserProjectsByType.return_value = []
         # When
-        result = get_projects(test_current_user, mock_db)
+        result = get_projects(test_current_user, "all", mock_db)
         response_status_code = result.__dict__['status_code']
 
         # Then
