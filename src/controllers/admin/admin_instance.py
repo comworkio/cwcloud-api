@@ -76,7 +76,7 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
                 root_dns_zone = get_dns_zones()[0]
                 log_msg("INFO", "[api_admin_instance] root_dns_zone is empty, taking the default one {}".format(root_dns_zone))
             elif root_dns_zone not in get_dns_zones():
-                log_msg("ERROR", "[api_admin_instance] the root dns zone is not valid :{}".format(root_dns_zone))
+                log_msg("ERROR", "[api_admin_instance] the root dns zone is not valid: {}".format(root_dns_zone))
                 return JSONResponse(content = {
                     'status': 'ko',
                     'error': 'please provide a valid root dns zone', 

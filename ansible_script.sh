@@ -111,7 +111,7 @@ attach_instance() {
 }
 
 prepare_new_repo_from_infra_playbook() {
-    git clone "${clone_repo}"
+    git clone "${clone_repo}" "infra-playbook"
     cd infra-playbook
     git pull --rebase origin main
     clean_up_files "${environment}"
