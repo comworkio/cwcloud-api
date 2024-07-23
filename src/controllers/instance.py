@@ -638,8 +638,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
         user_project_json = json.loads(json.dumps(exist_project, cls = AlchemyEncoder))
         env_json = json.loads(json.dumps(exist_env, cls = AlchemyEncoder))
 
-        bt.add_task(
-            create_instance,
+        bt.add_task(create_instance,
             provider,
             ami_image,
             new_instance.id,

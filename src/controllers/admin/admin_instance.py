@@ -222,6 +222,7 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
             debug,
             centralized,
             root_dns_zone,
+            payload.args,
             db
         )
 
@@ -394,6 +395,7 @@ def admin_attach_instance(bt: BackgroundTasks, current_user, provider, region, z
             debug,
             centralized,
             userInstance.root_dns_zone,
+            None,
             db
         )
 
