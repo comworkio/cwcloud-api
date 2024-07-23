@@ -30,7 +30,7 @@ def is_not_empty (var):
         return var
     elif isinstance(var, int):
         return not var == 0
-    elif isinstance(var, list):
+    elif isinstance(var, list) or isinstance(var, dict):
         return len(var) > 0
     empty_chars = ["", "null", "nil", "false", "none"]
     return var is not None and not any(c == "{}".format(var).lower() for c in empty_chars)

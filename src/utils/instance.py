@@ -14,7 +14,7 @@ from entities.Instance import Instance
 from utils.api_url import get_api_url
 from utils.driver import sanitize_project_name
 from utils.exec import exec_cmd
-from utils.file import quiet_remove
+from utils.file import create_dir_if_not_exists, quiet_remove
 from utils.gitlab import delete_runner, get_project_runners, inject_default_credentials_to_url, inject_git_credentials_to_url
 from utils.bytes_generator import generate_random_bytes
 from utils.dynamic_name import rehash_dynamic_name
@@ -114,26 +114,22 @@ def refresh_instance(provider, instance_id, hashed_instance_name, environment, i
         Instance.updateTypeAndIp(instance_id, result['type'], result['ip'], db)
 
 def clean_up_ansible_config_files():
-    quiet_remove(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'instance_name.md.j2')))
-    quiet_remove(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'instance_name.yml.j2')))
-    quiet_remove(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'args_values.json')))
+    for filename in ['instance_name.md.j2', 'instance_name.yml.j2', 'args_values.json']:
+        quiet_remove(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', filename)))
+
+def write_ansible_file_content(filename, data):
+    envFile = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', filename))
+    file = open(envFile, "w")
+    file.write(data)
+    file.close()
 
 def prepare_ansible_config_files(env, args: dict):
-    if is_not_empty(args) and args != '\{\}':
-        envFile = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'args_values.json'))
-        file = open(envFile, "w")
-        file.write(json.dumps({"args": args }))
-        file.close()
-    
-    envFile = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'instance_name.yml.j2'))
-    file = open(envFile, "w")
-    file.write(env['environment_template'])
-    file.close()
+    create_dir_if_not_exists(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible')))
+    if is_not_empty(args):
+        write_ansible_file_content('args_values.json', json.dumps({"args": args }))
 
-    envFile = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'instance_name.md.j2'))
-    file = open(envFile, "w")
-    file.write(env['doc_template'])
-    file.close()
+    write_ansible_file_content('instance_name.yml.j2', env['environment_template'])
+    write_ansible_file_content('instance_name.md.j2', env['doc_template'])
 
 def setup_ansible(user_email, gitlab_project, user_project, instance_name, hashed_instance_name, environment, centralized, root_password, access_password, generate_dns, _root_dns_zone, args):
     scriptPath = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible_script.sh'))
