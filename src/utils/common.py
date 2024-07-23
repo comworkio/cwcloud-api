@@ -132,15 +132,7 @@ def convert_dict_keys_to_camel_case(data):
    elif isinstance(data, list):
        return [convert_dict_keys_to_camel_case(item) for item in data]
    else:
-       return data   
-
-def create_file_locally(file_name, file_content):
-    with open(f"{file_name}.pem" , "w") as file:
-        file.write(file_content)
-    time.sleep(1)
-
-def delete_file_locally(file_name):
-    os.remove(f"{file_name}.pem")
+       return data
 
 def get_admin_status(current_user):
     if is_empty(current_user):

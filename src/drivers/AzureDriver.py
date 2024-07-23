@@ -29,6 +29,7 @@ class AzureDriver(ProviderDriver):
             if az_infos is None:
                 log_msg("INFO", "[get_azure_informations] az_virtual_network_name, az_subnet_name, az_security_group_name are missing")
                 return None
+
             az_vnet = az_infos["az_virtual_network_name"]
             az_subnet = az_infos["az_subnet_name"]
             az_security_group = az_infos["az_security_group_name"]
@@ -44,7 +45,8 @@ class AzureDriver(ProviderDriver):
                 sku=network.PublicIPAddressSkuArgs(
                     name=network.PublicIPAddressSkuName.STANDARD,
                 )
-            )   
+            )
+
             # Create a network interface with the virtual network, IP address, and security group
             network_interface = network.NetworkInterface(
                 "network-interface",
@@ -66,6 +68,7 @@ class AzureDriver(ProviderDriver):
                 ],
                 network_interface_name=f"{hashed_instance_name}-network-interface"
             )
+
             # Create the virtual machine
             compute.VirtualMachine(
                 resource_name = hashed_instance_name,
@@ -127,15 +130,19 @@ class AzureDriver(ProviderDriver):
         return {
             "ip": up_res.outputs.get("publicIpAddress").value
         }
+
     def cloud_init_script(self):
         return "cloud-init.yml"
+
     def create_dns_records(self, record_name, environment, ip_address, root_dns_zone):
         register_azure_domain(record_name, environment['path'], ip_address, root_dns_zone)
         for subdomain in unmarshall_list_array(environment['subdomains']):
             dns_record_name = "{}.{}".format(subdomain, record_name)
             register_azure_domain(dns_record_name, environment['path'], ip_address, root_dns_zone)
+
     def refresh_instance(self, instance_id, hashed_instance_name, environment, instance_region, instance_zone):
         return
+
     def get_server_state(self, server):
         switcher = {
             "running": "running",
@@ -149,6 +156,7 @@ class AzureDriver(ProviderDriver):
             "suspended": "stopped"
         }
         return convert_instance_state(switcher, server)
+
     def get_virtual_machine(self, region, zone, instance_name):
         subscription_id = _azure_subscription_id
         resource_group_name = _azure_client_resource_group
@@ -170,6 +178,7 @@ class AzureDriver(ProviderDriver):
         except Exception as ex:
             log_msg("INFO", "[get_virtual_machine_azure] An unexpected error occurred:  {}".format(ex))
             return None
+
     def update_virtual_machine_status(self, region, zone, server_id, action):
         subscription_id = _azure_subscription_id
         resource_group_name = _azure_client_resource_group

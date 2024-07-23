@@ -6,29 +6,18 @@ playbookYaml="
 "
 
 generate_ansible_envs() {
-    input_file="env/args_values_${env_name}.json"
-    json_string=""
+    args_values_file="env/args_values_${env_name}.json"
 
-    if [ -f "$input_file" ]; then
-        json_string=$(cat "$input_file")
-        json_string=${json_string%?}
-        json_string+=","
-        while IFS='=' read -r key value; do
-            value=$(printf '%s\n' "$value" | sed 's/"/\"/g')
-            json_string+="\"${key}\": \"${value}\", "
-        done < <(env)
-        json_string="${json_string%, }"
-        json_string+="}"
-        echo "$json_string" > "$input_file"
-
-        j2 env/${env_name}.yml.j2 "$input_file" > env/${env_name}.yml
-        j2 env/${env_name}.md.j2 "$input_file" > env/${env_name}.md
+    if [[ -f $args_values_file ]]; then
+        j2 env/${env_name}.yml.j2 "${args_values_file}" > env/${env_name}.yml
+        j2 env/${env_name}.md.j2 "${args_values_file}" > env/${env_name}.md
     else
         j2 env/${env_name}.yml.j2 > env/${env_name}.yml
         j2 env/${env_name}.md.j2 > env/${env_name}.md
     fi
+
     j2 .gitlab-ci.yml.j2 > "${env_name}-ci.yml"
-    rm -rf .gitlab-ci.yml.j2 env/${env_name}.yml.j2 env/${env_name}.md.j2  env/args_values_${env_name}.json
+    rm -rf ".gitlab-ci.yml.j2" "env/${env_name}.yml.j2" "env/${env_name}.md.j2" "env/args_values_${env_name}.json"
 }
 
 generate_ansible_playbook(){
@@ -44,12 +33,12 @@ clean_up_files() {
     for file in *; do
         foundFile=0
         for role in "${custom_roles[@]}"; do
-            if [ "$file" = "$role" ]; then
+            if [[ $file = $role ]]; then
                 foundFile=1
                 break 
             fi 
         done
-        if [ $foundFile -eq 0 ]; then 
+        if [[ $foundFile -eq 0 ]]; then
             rm -rf $file
         fi
     done
@@ -166,7 +155,7 @@ create_instance_and_merge_repo() {
 
     for r in ../infra-playbook/roles/*; do
         role_name=$(basename $r)
-        if [ ! -d "roles/${role_name}" ]; then
+        if [[ ! -d "roles/${role_name}" ]]; then
             log_msg "DEBUG" "Missing role ${role_name}, adding..."
             cp -R "${r}" "roles/"
         fi
@@ -174,7 +163,7 @@ create_instance_and_merge_repo() {
 
     for e in ../infra-playbook/env/*; do
         envname=$(basename $e)
-        if [ ! -f "env/${role_name}" ]; then
+        if [[ ! -f "env/${role_name}" ]]; then
             log_msg "DEBUG" "Missing env ${envname}, adding..."
             cp "${e}" "env/"
         fi
@@ -182,19 +171,28 @@ create_instance_and_merge_repo() {
 
     for p in ../infra-playbook/playbook*; do
         playbook_name=$(basename $p)
-        if [ ! -f "${playbook_name}" ]; then
+        if [[ ! -f "${playbook_name}" ]]; then
             log_msg "DEBUG" "Missing playbook ${playbook_name}, adding..."
             cp "${p}" "./"
         fi
     done
-    ci_files=("../infra-playbook/${env_name}-ci.yml" "../infra-playbook/.gitlab-ci.yml" "../infra-playbook/install.sh" "../infra-playbook/README.md" "../infra-playbook/.gitignore")
+
+    ci_files=(
+        "../infra-playbook/${env_name}-ci.yml"
+        "../infra-playbook/.gitlab-ci.yml"
+        "../infra-playbook/install.sh"
+        "../infra-playbook/README.md"
+        "../infra-playbook/.gitignore"
+    )
+
     for f in "${ci_files[@]}"; do
         file_name=$(basename $f)
-        if [ -f "${f}" ] && [ ! -f "${file_name}" ]; then
+        if [[ -f $f ]] && [[ ! -f $file_name ]]; then
             log_msg "DEBUG" "Missing ci file ${file_name}, adding..."
             cp "${f}" "./"
         fi
     done
+
     git add .
     git commit -m "Setting up ansible for ${env_name}"
     git pull origin main --rebase
@@ -202,8 +200,7 @@ create_instance_and_merge_repo() {
     rm -rf ../infra-playbook
 }
 
-
-if [ "$centralized" = "false" ]; then
+if [[ $centralized = "false" ]]; then
     attach_instance
 else
     create_instance_and_merge_repo
