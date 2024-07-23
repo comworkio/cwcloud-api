@@ -6,7 +6,7 @@ from database.postgres_db import get_db
 from middleware.auth_guard import admin_required
 from schemas.User import UserSchema
 from schemas.Support import AdminSupportTicketSchema, SupportTicketReplySchema, SupportTicketSchema
-from controllers.admin.admin_support import add_support_ticket, delete_reply_support_ticket, get_support_tickets, get_support_ticket, reply_support_ticket, delete_support_ticket, update_reply_support_ticket, update_support_ticket
+from controllers.admin.admin_support import add_support_ticket, delete_file_from_ticket_by_id, delete_reply_support_ticket, get_support_tickets, get_support_ticket, reply_support_ticket, delete_support_ticket, update_reply_support_ticket, update_support_ticket
 
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
@@ -65,3 +65,9 @@ def remove_support_ticket_by_id(current_user: Annotated[UserSchema, Depends(admi
     with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.DELETE)):
         increment_counter(_counter, Method.DELETE)
         return delete_support_ticket(current_user, ticket_id, db)
+
+@router.delete("/attach-file/{ticket_id}")
+def unattach_file_from_ticket(current_user: Annotated[UserSchema, Depends(admin_required)], ticket_id: str, attachment_id: str, db: Session = Depends(get_db)):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.DELETE)):
+        increment_counter(_counter, Method.DELETE)
+        return delete_file_from_ticket_by_id(current_user, ticket_id, attachment_id, db)

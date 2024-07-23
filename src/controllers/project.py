@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from fastapi import status
 from entities.Project import Project
 from entities.Instance import Instance
+from entities.Access import Access
 from entities.kubernetes.Deployment import Deployment
 from entities.Environment import Environment
 from entities.User import User
@@ -75,13 +76,11 @@ def transfer_project(current_user, payload, projectId, db):
         attach_default_gitlab_project_to_user(project.id, user.email)
         detach_user_gitlab_project(project.id, current_user.email)
 
-        from entities.Instance import Instance
         Instance.updateProjectInstancesOwner(project.id, user.id, db)
         projectsInstances = Instance.getAllActiveInstancesByProject(project.id, db)
         projectInstancesIds = [instance.id for instance in projectsInstances]
         from entities.Consumption import Consumption
         Consumption.updateConsumptionInstanceOwner(projectInstancesIds, user.id, db)
-        from entities.Access import Access
         Access.updateObjectsAccessesOwner("instance", projectInstancesIds, user.id, db)
         Access.updateObjectAccessesOwner("project", project.id, user.id, db)
 
@@ -131,13 +130,11 @@ def add_project(current_user, payload, db):
 def get_projects(current_user, type, db):
     projects = []
     projects = Project.getUserProjectsByType(current_user.id, type, db)
-    from entities.Access import Access
     other_projects_access = Access.getUserAccessesByType(current_user.id, "project", db)
     other_project_ids = [access.object_id for access in other_projects_access]
     other_projects = Project.findProjects(other_project_ids, db)
     projects.extend(other_projects)
     projectsJson = json.loads(json.dumps(projects, cls = AlchemyEncoder))
-    from entities.Instance import Instance
     user_instances = Instance.getActiveUserInstances(current_user.id, db)
     user_instancesJson = json.loads(json.dumps(user_instances, cls = AlchemyEncoder))
     for project in projectsJson:
@@ -164,7 +161,7 @@ def get_project(current_user, projectId, db):
             }, status_code = 400)
         project = Project.getUserProject(projectId, current_user.id, db)
         if not project:
-            from entities.Access import Access
+            
             access = Access.getUserAccessToObject(current_user.id, "project", projectId, db)
             if not access:
                 return JSONResponse(content = {

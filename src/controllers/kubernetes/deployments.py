@@ -1,26 +1,23 @@
-import yaml
 import json
-import gitlab
 
-from pathlib import Path
-
+import yaml
 from fastapi.responses import JSONResponse
-from kubernetes import config, client
+from kubernetes import client, config
 from urllib3.exceptions import MaxRetryError
 
-from entities.kubernetes.Deployment import Deployment
 from entities.Environment import Environment
 from entities.kubernetes.Cluster import Cluster
+from entities.kubernetes.Deployment import Deployment
 from entities.Project import Project
-from schemas.User import UserSchema
 from schemas.Kubernetes import DeploymentSchema
-
+from schemas.User import UserSchema
+from utils.bytes_generator import generate_random_bytes
 from utils.common import is_not_empty, is_true
 from utils.encoder import AlchemyEncoder
-from utils.gitlab import  push_files_to_repository
 from utils.kubernetes.deployment_env import push_charts
-from utils.kubernetes.k8s_management import set_git_config,delete_custom_resource
-from utils.bytes_generator import generate_random_bytes
+from utils.kubernetes.k8s_management import (delete_custom_resource,
+                                             set_git_config)
+from utils.list import unmarshall_list_array
 from utils.observability.cid import get_current_cid
 
 GROUP = "helm.toolkit.fluxcd.io"
@@ -43,7 +40,7 @@ def get_deployments(current_user: UserSchema, db):
     
     return JSONResponse(content = deploymentJson, status_code = 200)
 
-def create_new_deployment(current_user:UserSchema,deployment:DeploymentSchema, db):
+def create_new_deployment(current_user:UserSchema, deployment:DeploymentSchema, db):
     env: Environment = Environment.getById(deployment.env_id, db)
 
     if not env and not env.type == "vm":
@@ -81,30 +78,16 @@ def create_new_deployment(current_user:UserSchema,deployment:DeploymentSchema, d
             'i18n_code': 'region_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
-    
-    push_charts(project.id, project.gitlab_host, project.access_token, env.roles.split(";"))
+        
+    charts = unmarshall_list_array(env.roles)
+    external_charts = unmarshall_list_array(env.external_roles)
+        
 
-    path = str(Path(__file__).resolve().parents[2]) + '/constants/k8s_app_readme.md'
-    with open(path, 'r') as file:
-        readme_content = file.read()
-
-    files = [
-        {
-            'path': 'Chart.yaml',
-            'content': env.environment_template
-        },
-        { 
-            'path': 'README.md', 
-            'content': readme_content
-        }
-    ]
-
-    gitlab_connection = gitlab.Gitlab(url = project.gitlab_host, private_token=project.access_token)
-    push_files_to_repository(files, gitlab_connection, project.id, 'main', 'Added Chart file')
     generatedHash = generate_random_bytes(6)
     deployment.name = deployment.name.lower()
     kubeconfigFile = cluster.getKuberConfigFileByClusterId(cluster.id, db)
     generatedName = f'{deployment.name}-{generatedHash}'
+    push_charts(project.id, project.gitlab_host, deployment.name, generatedName, env.environment_template, env.doc_template, project.access_token, charts, external_charts, deployment.args)
     set_git_config(kubeconfigFile.content,generatedName,generatedName,project)
     deployment = Deployment(name=deployment.name,
                             description=deployment.description,
@@ -216,12 +199,15 @@ def delete_deployment(current_user:UserSchema,deployment_id:int, db):
     cluster = Cluster.getById(deployment.cluster_id, db)
     kubeconfigFile = cluster.getKuberConfigFileByClusterId(cluster.id, db)
     deleted = delete_custom_resource(GROUP, VERSION, PLURAL, f'{deployment.name}-{deployment.hash}-release', NAMESPACE, kubeconfigFile.content)
-    config.load_kube_config_from_dict(yaml.safe_load(kubeconfigFile.content))
-    v1 = client.CoreV1Api()
-    v1.delete_namespace(f'{deployment.name}-{deployment.hash}')
 
+    deployment.delete(db)
     if is_true(deleted):
-        deployment.delete(db)
+        try:
+            config.load_kube_config_from_dict(yaml.safe_load(kubeconfigFile.content))
+            v1 = client.CoreV1Api()
+            v1.delete_namespace(f'{deployment.name}-{deployment.hash}')
+        except Exception as e:
+            pass
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'deployment deleted'
@@ -229,7 +215,7 @@ def delete_deployment(current_user:UserSchema,deployment_id:int, db):
     else:
         return JSONResponse(content = {
             'status': 'ko',
-            'message': "couldn't delete deployment from the cluster",
+            'message': "couldn't delete deployment from the cluster, but it was deleted from the database",
             'i18n_code': 'can_not_delete_deployment_from_cluster',
             'cid': get_current_cid()
-        }, status_code = 500)
+        }, status_code = 200)

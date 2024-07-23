@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 from sqlalchemy.orm import Session
 from fastapi import Depends, APIRouter
 from schemas.User import UserSchema
@@ -18,13 +18,21 @@ _span_prefix = "env"
 _counter = create_counter("environment_api", "Environment API counter")
 
 @router.get("/all")
-def get_all_environments(current_user: Annotated[UserSchema, Depends(get_current_active_user)], type: Literal['vm','k8s', 'all'] = "vm", db: Session = Depends(get_db)):
+def get_all_environments(
+    current_user: Annotated[UserSchema, Depends(get_current_active_user)],
+    type: Literal["vm", "k8s", "all"] = "vm",
+    page: Optional[int] = None,
+    limit: Optional[int] = None,
+    db: Session = Depends(get_db),
+):
     check_permissions(current_user, type, db)
-    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.ALL)):
+    with get_otel_tracer().start_as_current_span(
+        span_format(_span_prefix, Method.GET, Action.ALL)
+    ):
         increment_counter(_counter, Method.GET, Action.ALL)
         if current_user.is_admin:
-            return admin_get_environments(type, db)
-        return get_environments(type, db)
+            return admin_get_environments(type, page, limit, db)
+        return get_environments(type, page, limit, db)
 
 @router.get("/{environment_id}")
 def get_environment_by_id(current_user: Annotated[UserSchema, Depends(get_current_active_user)], environment_id: str, db: Session = Depends(get_db)):

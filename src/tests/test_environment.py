@@ -49,7 +49,7 @@ class TestEnvironment(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"created_at":null,"description":"test","doc_template":"test","environment_template":"test","external_roles":null,"id":1,"instances":[],"is_private":false,"logo_url":"test","name":"test","path":"test","roles":"test","subdomains":"test","type":"vm"}')
+        self.assertEqual(result.body.decode(), '{"args":null,"created_at":null,"description":"test","doc_template":"test","environment_template":"test","external_roles":null,"id":1,"instances":[],"is_private":false,"logo_url":"test","name":"test","path":"test","roles":"test","subdomains":"test","type":"vm"}')
 
     @patch('entities.Environment.Environment.getAllAvailableEnvironmentsByType',side_effect = lambda x,y : [])
     def test_get_environments(self,getAllAvailableEnvironmentsByType):
@@ -57,7 +57,7 @@ class TestEnvironment(TestCase):
         from controllers.environment import get_environments
 
         #When
-        result = get_environments("vm", mock_db)
+        result = get_environments("vm", None, None, mock_db)
         response_status_code = result.__dict__['status_code']
 
         #Then

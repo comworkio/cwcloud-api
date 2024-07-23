@@ -1,16 +1,18 @@
 import base64
 import json
+from typing import Literal, Optional
 
+from fastapi import UploadFile
 from fastapi.responses import JSONResponse
 
 from entities.Environment import Environment
-from utils.file import quiet_remove
-from utils.gitlab import get_infra_playbook_roles, get_helm_charts
-from utils.kubernetes.deployment_env import generate_chart_yaml
-from utils.list import unmarshall_list_array, marshall_list_string
 from utils.common import is_empty, is_not_numeric, safe_get_entry
 from utils.encoder import AlchemyEncoder
+from utils.file import quiet_remove
+from utils.gitlab import get_helm_charts, get_infra_playbook_roles
+from utils.list import marshall_list_string, unmarshall_list_array
 from utils.observability.cid import get_current_cid
+
 
 def admin_get_roles(current_user):
     rolesJson = get_infra_playbook_roles()
@@ -58,7 +60,7 @@ def admin_get_k8s_environment(environment_id, db):
     env_json = json.loads(json.dumps(env, cls = AlchemyEncoder))
     return JSONResponse(content = env_json, status_code = 200)
 
-def admin_import_environment(env, db):
+def admin_import_environment(env: UploadFile, db):
     env_json = env.file.read()
     env_dict = json.loads(env_json)
     exist_env = Environment.getByPath(env_dict["path"], db)
@@ -69,17 +71,15 @@ def admin_import_environment(env, db):
             'i18n_code': 'path_already_exist',
             'cid': get_current_cid()
         }, status_code = 409)
-
-    new_env = Environment()
-    new_env.name = env_dict["name"]
-    new_env.path = env_dict["path"]
-    new_env.description = env_dict["description"]
-    new_env.roles = env_dict["roles"]
-    new_env.subdomains = safe_get_entry(env_dict, "subdomains")
-    new_env.environment_template = env_dict["environment_template"]
-    new_env.doc_template = env_dict["doc_template"]
-    new_env.is_private = env_dict["is_private"]
-    new_env.logo_url = safe_get_entry(env_dict, "logo_url")
+    elif not env_dict["type"] in ["vm", "k8s"]:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Invalid environment type', 
+            'i18n_code': 'invalid_environment_type',
+            'cid': get_current_cid()
+        }, status_code = 400)
+    new_env: Environment = Environment(**env_dict)
+    new_env.id = None
     new_env.save(db)
     env_json = json.loads(json.dumps(new_env, cls = AlchemyEncoder))
     env_json["id"] = new_env.id
@@ -131,7 +131,7 @@ def admin_update_environment(environment_id, payload, db):
     subdomains = unmarshall_list_array(payload.subdomains)
     is_private = payload.is_private
     logo_url = payload.logo_url
-
+    args = verify_env_args(payload.args)
     if is_empty(name):
         return JSONResponse(content = {
             'status': 'ko',
@@ -164,7 +164,7 @@ def admin_update_environment(environment_id, payload, db):
             'cid': get_current_cid()
         }, status_code = 409)
 
-    Environment.updateEnvironment(environment_id, name, path, description, roles, subdomains, environment_template, doc_template, is_private, logo_url, db)
+    Environment.updateEnvironment(environment_id, name, path, description, roles, subdomains, environment_template, doc_template, is_private, logo_url, args, db)
     return JSONResponse(content = {
         'status': 'ok',
         'message': 'environment successfully updated', 
@@ -200,6 +200,8 @@ def admin_add_environment(payload, db):
     path = payload.path
     roles = unmarshall_list_array(payload.roles)
     subdomains = unmarshall_list_array(payload.subdomains)
+    args = payload.args
+    args = verify_env_args(args)
 
     if is_empty(name):
         return JSONResponse(content = {
@@ -236,9 +238,11 @@ def admin_add_environment(payload, db):
 
     payload.roles = None
     payload.subdomains = None
+    payload.args = None
     new_env = Environment(**payload.dict())
     new_env.roles = marshall_list_string(roles)
     new_env.subdomains = marshall_list_string(subdomains)
+    new_env.args = args
     new_env.type = "vm"
     new_env.save(db)
     env_json = json.loads(json.dumps(new_env, cls = AlchemyEncoder))
@@ -246,23 +250,34 @@ def admin_add_environment(payload, db):
 
     return JSONResponse(content = env_json, status_code = 201)
 
-def admin_get_environments(type,  db):
-    envs = Environment.getByType(type,db)
-    envs_json = json.loads(json.dumps(envs, cls = AlchemyEncoder))
-    return JSONResponse(content = envs_json, status_code = 200)
+def admin_get_environments(type:Literal["vm", "k8s", "all"], page, limit, db):
+    if (page is None and limit is None) or (page < 0 or limit < 0):
+        if(type == "all"):
+            envs = Environment.getAll(db)
+        else:
+            envs = Environment.getByType(type, db)
+    else:
+        if(type == "all"):
+            envs = Environment.getAllPaginated(page, limit, db)
+        else:
+            envs = Environment.getByTypePaginated(type, page, limit, db)
+    envs_json = json.loads(json.dumps(envs, cls=AlchemyEncoder))
+    return JSONResponse(content=envs_json, status_code=200)
 
 def admin_add_k8s_environment(env_data, db):
     env = Environment(name=env_data.name,
                     type="k8s",
                     description=env_data.description,
+                    path=env_data.path,
                     logo_url=env_data.logo_url,
                     is_private=env_data.is_private,
                     external_roles=json.dumps([chart.__dict__ for chart in env_data.external_charts]) if  env_data.external_charts else None,
-                    roles=env_data.charts)
+                    roles=env_data.charts,
+                    environment_template=env_data.environment_template,
+                    doc_template=env_data.doc_template)
 
-    charts = unmarshall_list_array(env.roles)
-    env.environment_template = generate_chart_yaml(charts, env_data.external_charts)
-
+    args = verify_env_args(env_data.args)
+    env.args = args
     env.save(db)
     return JSONResponse(content = {
         'status': 'ok',
@@ -304,14 +319,16 @@ def admin_update_k8s_environment(environment_id, env_data, db):
         }, status_code = 404)
     env.name = env_data.name
     env.description = env_data.description
+    env.path = env_data.path    
     env.logo_url = env_data.logo_url
     env.is_private = env_data.is_private
     env.roles = env_data.charts
+    env.environment_template = env_data.environment_template
+    env.doc_template = env_data.doc_template
     env.external_roles=json.dumps([chart.__dict__ for chart in env_data.external_charts]) if  env_data.external_charts else None
 
-    charts = unmarshall_list_array(env.roles)
-    env.environment_template = generate_chart_yaml(charts, env_data.external_charts)
-
+    args = verify_env_args(env_data.args)
+    env.args = args
     env.save(db)
     return JSONResponse(content = {
         'status': 'ok',
@@ -321,3 +338,16 @@ def admin_update_k8s_environment(environment_id, env_data, db):
 
 def get_charts():
     return JSONResponse(content = get_helm_charts(), status_code = 200)
+
+def verify_env_args(args:Optional[list[str]] = None):
+    if(args is None):
+        args = []
+    try:
+        return json.dumps(args)
+    except Exception:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'args is not a valid json list', 
+            'i18n_code': 'args_not_valid_json_list',
+            'cid': get_current_cid()
+        }, status_code = 400)

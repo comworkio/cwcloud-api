@@ -275,14 +275,19 @@ providers:
 dns_zones:
   - name: comwork.cloud
     driver: VoidDriver
+    provider: void
   - name: comwork.dev
     driver: VoidDriver
+    provider: void
   - name: comwork.info
     driver: VoidDriver
+    provider: void
   - name: comwork.ovh
     driver: VoidDriver
+    provider: void
   - name: comwork.click
     driver: VoidDriver
+    provider: void
 
 images:
   - WAW1-nova: 96009942-9261-4c23-9ba5-1b5d589b3d4b

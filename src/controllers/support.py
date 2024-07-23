@@ -3,9 +3,13 @@ import json
 import os
 from datetime import datetime
 from urllib.error import HTTPError
-from fastapi.responses import JSONResponse
+from uuid import uuid4
+from entities.SupportTicketAttachment import SupportTicketAttachment
+from fastapi.responses import JSONResponse, FileResponse
 from entities.SupportTicket import SupportTicket
 from entities.SupportTicketLog import SupportTicketLog
+from entities.User import User
+from utils.bucket import delete_from_bucket, download_from_bucket, upload_bucket
 from utils.logger import log_msg
 from utils.common import is_not_numeric
 from utils.encoder import AlchemyEncoder
@@ -36,9 +40,19 @@ def get_support_ticket(current_user, ticket_id, db):
         }, status_code = 404)
 
     ticket_replies = SupportTicketLog.getTicketLogs(ticket_id, db)
+    attachments = [{
+        "id": attachment.id,
+        "name": attachment.name,
+        "has_rights": current_user.is_admin or current_user.id == attachment.user_id
+    } for attachment in SupportTicketAttachment.getAttachmentsByTicketId(ticket_id, db)]
+
     supportTicketsJson = json.loads(json.dumps(supportTicket, cls = AlchemyEncoder))
     userSupportTicketJson = json.loads(json.dumps(supportTicket.user, cls = AlchemyEncoder))
-    supportTicketsResult = {**supportTicketsJson, "user": userSupportTicketJson}
+    supportTicketsResult = {
+        **supportTicketsJson,
+        "user": userSupportTicketJson,
+        "attachments": attachments,
+    }
 
     supportTicketRepliesJson = []
     for ticket in ticket_replies:
@@ -302,3 +316,122 @@ def update_support_ticket(current_user, ticket_id, payload, db):
             'i18n_code': 'support_ticket_update_failed',
             'cid': get_current_cid()
         }, status_code = 500)
+
+def attach_file_to_ticket_by_id(current_user, ticket_id, files, db):
+    if is_not_numeric(ticket_id):
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Invalid ticket id', 
+            'i18n_code': 'invalid_ticket_id',
+            'cid': get_current_cid()
+        }, status_code = 400)
+ 
+    if current_user.is_admin:
+        ticket: SupportTicket = SupportTicket.getSupportTicket(ticket_id, db)
+    else:
+        ticket: SupportTicket = SupportTicket.getUserSupportTicket(current_user.id, ticket_id, db)
+    if not ticket:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'ticket not found',
+            'cid': get_current_cid()
+        }, status_code = 404)
+
+    if not files:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'No files attached', 
+            'i18n_code': 'no_files_attached',
+            'cid': get_current_cid()
+        }, status_code = 400)
+
+    for file in files:
+        os.makedirs('uploaded_files', exist_ok=True)
+        file_name_under_bucket = uuid4().__str__()
+        file_path = os.path.join('uploaded_files', file_name_under_bucket)
+        with open(file_path, "wb") as file_object:
+            file_object.write(file.file.read())    
+        upload_bucket(file_name_under_bucket, file_path)
+        SupportTicketAttachment(
+            mime_type = file.content_type,
+            storage_key = file_path,
+            name = file.filename,
+            support_ticket_id = ticket_id,
+            user_id = current_user.id
+        ).save(db)
+
+    return JSONResponse(content = {
+        'status': 'ok',
+        'message': 'file successfully attached',
+        'i18n_code': 'file_attached_successfully'
+    }, status_code = 200)
+    
+def download_file_from_ticket_by_id(current_user, ticket_id, attachment_id, db):
+    if is_not_numeric(ticket_id):
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Invalid ticket id', 
+            'i18n_code': 'invalid_ticket_id',
+            'cid': get_current_cid()
+        }, status_code = 400)
+    
+    if current_user.is_admin:
+        ticket: SupportTicket = SupportTicket.getSupportTicket(ticket_id, db)
+    else:
+        ticket: SupportTicket = SupportTicket.getUserSupportTicket(current_user.id, ticket_id, db)
+    
+    if not ticket:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'ticket not found',
+            'cid': get_current_cid()
+        }, status_code = 404)
+
+    attachment: SupportTicketAttachment = SupportTicketAttachment.getAttachmentByTicketId(ticket_id, attachment_id, db)
+
+    if not attachment:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': 'Attachment not found',
+            'i18n_code': 'attachment_not_found',
+            'cid': get_current_cid()
+        }, status_code = 404)
+    
+    download_from_bucket(attachment.name, attachment.storage_key)
+    return FileResponse(attachment.storage_key, filename = attachment.name)
+            
+        
+def delete_file_from_ticket_by_id(current_user: User, ticket_id, attachment_id, db):
+    if is_not_numeric(ticket_id):
+        return JSONResponse(content={
+            'status': 'ko',
+            'error': 'Invalid ticket id',
+            'i18n_code': 'invalid_ticket_id',
+            'cid': get_current_cid()
+        }, status_code=400)
+
+    attachment: SupportTicketAttachment = SupportTicketAttachment.getAttachmentByTicketId(ticket_id, attachment_id, db)
+    if attachment is None:
+        return JSONResponse(content={
+            'status': 'ko',
+            'error': 'Attachment not found',
+            'i18n_code': 'attachment_not_found',
+            'cid': get_current_cid()
+        }, status_code=404)
+
+    if not current_user.is_admin and attachment.user_id != current_user.id:
+        return JSONResponse(content={
+            'status': 'ko',
+            'error': 'You are not allowed to delete this attachment',
+            'i18n_code': 'no_privilege',
+            'cid': get_current_cid()
+        }, status_code=403)
+
+    SupportTicketAttachment.deleteAttachmentById(attachment.id, db)
+    delete_from_bucket(attachment.name, attachment.storage_key)
+    return JSONResponse(content={
+        'status': 'ok',
+        'message': 'file successfully deleted',
+        'i18n_code': 'file_deleted_successfully'
+    }, status_code=200)
+            

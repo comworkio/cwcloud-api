@@ -1,5 +1,6 @@
 import os
 import importlib
+import json
 
 from urllib.error import HTTPError
 from jinja2 import Environment, FileSystemLoader
@@ -80,10 +81,10 @@ def get_virtual_machine(provider, region, zone, instance_name):
     ProviderDriver = getattr(ProviderDriverModule, get_driver(provider))
     return ProviderDriver().get_virtual_machine(region, zone, instance_name)
 
-def create_instance(provider, ami_image, instance_id, user_email, instance_name, hashed_instance_name, environment, instance_region, instance_zone, generate_dns, gitlab_project, user_project, instance_type, debug, centralized, root_dns_zone, db):
+def create_instance(provider, ami_image, instance_id, user_email, instance_name, hashed_instance_name, environment, instance_region, instance_zone, generate_dns, gitlab_project, user_project, instance_type, debug, centralized, root_dns_zone, args, db):
     root_password = generate_random_bytes(20)
     access_password = generate_random_bytes(20)
-    setup_ansible(user_email, gitlab_project, user_project, instance_name, hashed_instance_name, environment, centralized, root_password, access_password, generate_dns, root_dns_zone)
+    setup_ansible(user_email, gitlab_project, user_project, instance_name, hashed_instance_name, environment, centralized, root_password, access_password, generate_dns, root_dns_zone, args)
 
     try:
         if is_false(debug):
@@ -115,8 +116,15 @@ def refresh_instance(provider, instance_id, hashed_instance_name, environment, i
 def clean_up_ansible_config_files():
     quiet_remove(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'instance_name.md.j2')))
     quiet_remove(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'instance_name.yml.j2')))
+    quiet_remove(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'args_values.json')))
 
-def prepare_ansible_config_files(env):
+def prepare_ansible_config_files(env, args: dict):
+    if is_not_empty(args) and args != '\{\}':
+        envFile = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'args_values.json'))
+        file = open(envFile, "w")
+        file.write(json.dumps({"args": args }))
+        file.close()
+    
     envFile = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible', 'instance_name.yml.j2'))
     file = open(envFile, "w")
     file.write(env['environment_template'])
@@ -127,7 +135,7 @@ def prepare_ansible_config_files(env):
     file.write(env['doc_template'])
     file.close()
 
-def setup_ansible(user_email, gitlab_project, user_project, instance_name, hashed_instance_name, environment, centralized, root_password, access_password, generate_dns, _root_dns_zone):
+def setup_ansible(user_email, gitlab_project, user_project, instance_name, hashed_instance_name, environment, centralized, root_password, access_password, generate_dns, _root_dns_zone, args):
     scriptPath = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'ansible_script.sh'))
     cloned_repo = os.getenv('GIT_PLAYBOOK_REPO_URL')
     if is_disabled(cloned_repo):
@@ -152,7 +160,7 @@ def setup_ansible(user_email, gitlab_project, user_project, instance_name, hashe
 
     root_dns_zone = ""
 
-    prepare_ansible_config_files(environment)
+    prepare_ansible_config_files(environment, args)
 
     if is_not_empty(_root_dns_zone):
         root_dns_zone = _root_dns_zone

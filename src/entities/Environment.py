@@ -1,5 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, String, Boolean, Integer, Text, CheckConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from database.postgres_db import Base
 from utils.list import marshall_list_string
@@ -22,6 +23,7 @@ class Environment(Base):
     external_roles = Column(Text)
     type = Column(String(25),default = "vm", nullable = False)
     subdomains = Column(String(300))
+    args = Column(JSONB)
     instances = relationship('Instance', backref = 'environment', lazy = "select")
 
     def save(self, db):
@@ -54,8 +56,22 @@ class Environment(Base):
         return env
     
     @staticmethod
+    def getAllPaginated(page, limit, db):
+        env = db.query(Environment).limit(limit).offset(page * limit).all()
+        return env
+    
+    def getByTypePaginated(type, page, limit, db):
+        env = db.query(Environment).filter(Environment.type == type).limit(limit).offset(page * limit).all()
+        return env
+    
+    @staticmethod
     def getAllAvailableEnvironments(db):
         env = db.query(Environment).filter(Environment.is_private is False).all()
+        return env
+    
+    @staticmethod
+    def getAllAvailableEnvironmentsPaged(page, limit, db):
+        env = db.query(Environment).filter(Environment.is_private is False).limit(limit).offset(page * limit).all()
         return env
 
     @staticmethod
@@ -64,11 +80,16 @@ class Environment(Base):
         return env
     
     @staticmethod
+    def getAllAvailableEnvironmentsByTypePaged(type, page, limit, db):
+        env = db.query(Environment).filter(Environment.is_private is False, Environment.type == type).limit(limit).offset(page * limit).all()
+        return env
+    
+    @staticmethod
     def deleteOne(envId, db):
         db.query(Environment).filter(Environment.id == envId).delete()
         db.commit()
 
     @staticmethod
-    def updateEnvironment(id, name, path, description, roles, subdomains, environment_template, doc_template, is_private, logo_url, db):
-        db.query(Environment).filter(Environment.id == id).update({"name": name, "path": path, "description": description, "roles": marshall_list_string(roles), "subdomains": marshall_list_string(subdomains), "environment_template": environment_template, "doc_template": doc_template, "is_private": is_private, "logo_url": logo_url})
+    def updateEnvironment(id, name, path, description, roles, subdomains, environment_template, doc_template, is_private, logo_url, args, db):
+        db.query(Environment).filter(Environment.id == id).update({"name": name, "path": path, "description": description, "roles": marshall_list_string(roles), "subdomains": marshall_list_string(subdomains), "environment_template": environment_template, "doc_template": doc_template, "is_private": is_private, "logo_url": logo_url, "args": args})
         db.commit()

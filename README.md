@@ -112,3 +112,13 @@ And can also send the metrics and some traces through OTLP/Grpc. Here's example 
 ![jaegger](./img/jaegger.png)
 
 If you're running locally with docker compose, you can access to Jaegger UI here: http://localhost:16686
+
+## How to update VERSION file
+In case you are going to contribute to this project (a new feature, a fix etc...) you need to update the VERSION file where you will find the current version of the project.  
+Currently, we are following the `Semantic versioning` which uses a three-part number system: MAJOR.MINOR.PATCH, and follows these rules:
+
+- **MAJOR version**: Incremented when you make incompatible API changes. This indicates that the changes may break backward compatibility with previous versions. Users may need to make modifications to their code to adapt to the new version.
+
+- **MINOR version**: Incremented when you add functionality in a backward-compatible manner. This means new features are introduced, but the existing functionality remains unchanged and compatible with previous versions.
+
+- **PATCH version**: Incremented when you make backward-compatible bug fixes. This implies that the changes fix bugs without affecting the existing functionality or adding new features.

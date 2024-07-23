@@ -71,7 +71,10 @@ class Project(Base):
 
     @staticmethod
     def getUserProjectsByType(userId, type, db):
-        projects = db.query(Project).filter(Project.userid == userId, Project.type == type).all()
+        if type == "all":
+            projects = db.query(Project).filter(Project.userid == userId).all()
+        else:
+            projects = db.query(Project).filter(Project.userid == userId, Project.type == type).all()
         return projects
     
     @staticmethod

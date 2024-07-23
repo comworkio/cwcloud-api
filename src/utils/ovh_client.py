@@ -1,7 +1,9 @@
 import os
+
 import ovh
 
 from utils.logger import log_msg
+from utils.provider import get_provider_dns_zones
 
 service_name = os.getenv('OVH_SERVICENAME')
 ovh_client = ovh.Client(
@@ -52,3 +54,26 @@ def delete_ovh_bucket(name, region, user_id):
     for access_key in access_keys:
         ovh_client.delete('/cloud/project/{}/user/{}/s3Credentials/{}'.format(service_name, user_id, access_key))
     ovh_client.delete('/cloud/project/{}/user/{}'.format(service_name, user_id))
+def list_ovh_dns_records():
+    zones =  get_provider_dns_zones("ovh")
+    records = []
+    for zone in zones:
+        record_ids = ovh_client.get(f'/domain/zone/{zone}/record')
+        for record_id in record_ids:
+            record = ovh_client.get(f'/domain/zone/{zone}/record/{record_id}')
+            records.append({
+                'id': record_id,
+                'zone': zone,
+                'record': record['subDomain'],
+                'type': record['fieldType'],
+                'ttl': record['ttl'],
+                'data': record['target']
+            })
+    return records
+
+def create_custom_dns_record(record_name, dns_zone, record_type, ttl, data):
+    record = ovh_client.post(f'/domain/zone/{dns_zone}/record', fieldType = record_type, subDomain = record_name, ttl = ttl, target = data)
+    return record
+
+def delete_ovh_dns_record(record_id, dns_zone):
+    ovh_client.delete(f'/domain/zone/{dns_zone}/record/{record_id}')

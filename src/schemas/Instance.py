@@ -1,10 +1,11 @@
 import os
+from typing import Any, Dict, Optional
 
-from typing import Optional
 from pydantic import BaseModel
 
 from utils.dns_zones import get_first_dns_zone_doc
 from utils.provider import get_provider_infos
+
 
 class InstanceUpdateSchema(BaseModel):
     status: Optional[str]
@@ -24,4 +25,4 @@ class InstanceProvisionSchema(BaseModel):
     debug: Optional[str]
     type: str = get_provider_infos(os.environ['DEFAULT_PROVIDER'], 'instance_types')[0]
     root_dns_zone: str = get_first_dns_zone_doc()
-
+    args: Optional[Dict[str, Any]]

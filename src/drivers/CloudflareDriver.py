@@ -67,3 +67,12 @@ class CloudflareDriver(ProviderDriver):
 
     def delete_registry(self, registry, user_email):
         return
+    
+    def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
+        return 
+    
+    def delete_dns_records(self, record_id, record_name, dns_zone):
+        return
+    
+    def list_dns_records(self):
+        return 

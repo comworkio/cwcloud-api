@@ -252,3 +252,12 @@ class GcpDriver(ProviderDriver):
         stack = auto.select_stack(hashed_name, sanitize_project_name(user_email), program = self.delete_registry)
         stack.destroy()
         delete_registry_service_account(service_account_email)
+    
+    def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
+        return 
+    
+    def delete_dns_records(self, record_id, record_name, dns_zone):
+        return
+    
+    def list_dns_records(self):
+        return 

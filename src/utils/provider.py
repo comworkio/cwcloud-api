@@ -132,3 +132,12 @@ def get_provider_instances_pricing_by_region_zone(provider, region, zone):
         "name": instance['type'],
         "price": os.getenv(instance['price_variable'])
     }, filtered_instances))
+
+def get_provider_dns_zones(provider):
+    config_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'cloud_environments.yml'))
+    result = []
+    with open(config_path, "r") as stream:
+        loaded_data = yaml.safe_load(stream)
+        dns_zones = loaded_data['dns_zones']
+        result = [dns_zone['name'] for dns_zone in dns_zones if dns_zone['provider'] == provider]
+    return result

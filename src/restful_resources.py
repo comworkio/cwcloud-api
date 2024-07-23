@@ -56,6 +56,7 @@ def import_resources(app):
     from routes.admin.iot import api_admin_object_type
     from routes.admin.iot import api_admin_device
     from routes.admin.iot import api_admin_data
+    from routes.admin.dns import api_admin_dns
     
     version = os.environ['API_VERSION']
 
@@ -127,3 +128,4 @@ def import_resources(app):
     app.include_router(api_admin_payment.router, tags = ['Admin Payment and Voucher'], prefix = f'/{version}/admin/pay')
     app.include_router(api_admin_relaunch.router, tags = ['Admin Payment and Voucher'], prefix = f'/{version}/admin/relaunch')
     app.include_router(api_admin_voucher.router, tags = ['Admin Payment and Voucher'], prefix = f'/{version}/admin/voucher')
+    app.include_router(api_admin_dns.router, tags = ['Admin DNS'], prefix = f'/{version}/admin/dns')

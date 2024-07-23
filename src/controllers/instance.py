@@ -440,6 +440,7 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
             debug,
             centralized,
             userInstance.root_dns_zone,
+            None,
             db
         )
 
@@ -655,6 +656,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
             debug,
             centralized,
             root_dns_zone,
+            payload.args,
             db
         )
 

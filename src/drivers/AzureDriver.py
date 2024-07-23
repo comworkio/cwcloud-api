@@ -188,20 +188,37 @@ class AzureDriver(ProviderDriver):
                 log_msg("INFO", "[poweron_machine_azure] vm {} powered on".format(instance_name))
         
         except Exception as ex:
-            log_msg("INFO", "[update_virtual_machine_status] An unexpected error occurred:  {}".format(ex))                    
+            log_msg("INFO", "[update_virtual_machine_status] An unexpected error occurred:  {}".format(ex))   
+                 
     def create_bucket(self, user_email, bucket_id, hashed_bucket_name, region, bucket_type):
-        return        
+        return
+
     def update_bucket_credentials(self, bucket, user_email):
         return
+
     def delete_bucket(self, bucket, user_email):
         return
+
     def create_registry(self, user_email, registry_id, hashed_name, region, type):
         return
+
     def update_registry_credentials(self, registry, user_email):
         return
+
     def delete_registry(self, registry, user_email):
         return
+
     def refresh_registry(self, user_email, registry_id, hashed_registry_name):
         return {}
+
     def refresh_bucket(self, user_email, bucket_id, hashed_bucket_name):
         return
+    
+    def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
+        return 
+    
+    def delete_dns_records(self, record_id, record_name, dns_zone):
+        return
+    
+    def list_dns_records(self):
+        return 

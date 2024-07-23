@@ -1,19 +1,19 @@
-import os
 import importlib
-import requests
-import pulumi
-import lbrlabs_pulumi_scaleway as scaleway
-
-from pulumi import automation as auto, ResourceOptions
+import os
 from urllib.error import HTTPError
 
-from drivers.ProviderDriver import ProviderDriver
+import lbrlabs_pulumi_scaleway as scaleway
+import pulumi
+import requests
+from pulumi import ResourceOptions
+from pulumi import automation as auto
 
+from drivers.ProviderDriver import ProviderDriver
 from utils.common import is_not_empty, is_true
 from utils.dns_zones import get_dns_zone_driver, register_scaleway_domain
+from utils.driver import convert_instance_state, sanitize_project_name
 from utils.dynamic_name import rehash_dynamic_name
 from utils.list import unmarshall_list_array
-from utils.driver import sanitize_project_name, convert_instance_state
 from utils.logger import log_msg
 
 SCW_API_URL = "https://api.scaleway.com"
@@ -40,7 +40,58 @@ class ScalewayDriver(ProviderDriver):
         for subdomain in unmarshall_list_array(environment['subdomains']):
             dns_record_name = "{}.{}".format(subdomain, record_name)
             register_scaleway_domain(dns_record_name, environment['path'], ip_address, root_dns_zone)
-
+            
+    def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
+        sw_api_key = os.getenv('SCW_SECRET_KEY')
+        data = {
+            "changes": [{
+                "add": {
+                    "records": [
+                        {
+                            "name": record_name,
+                            "ttl": ttl,
+                            "type": record_type,
+                            "data": data,
+                            "priority": 0,
+                        }
+                    ]}
+                }]
+            }
+        requests.patch(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{dns_zone}/records', headers = {"X-Auth-Token": sw_api_key}, json = data)
+        return {"record": record_name, "zone": dns_zone, "type": record_type, "ttl": ttl, "data": data}
+        
+    def list_dns_records(self):
+        sw_api_key = os.getenv('SCW_SECRET_KEY')
+        dnsZonesResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/domains', headers = {"X-Auth-Token": sw_api_key})
+        dnsZones = dnsZonesResponse.json()["domains"]
+        allRecords = []
+        for zone in dnsZones:
+            zoneName = zone['domain']
+            zoneRecordsResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{zoneName}/records', headers = {"X-Auth-Token": sw_api_key})
+            zoneRecords = zoneRecordsResponse.json()["records"]
+            for record in zoneRecords:
+                allRecords.append({
+                    "id": record['id'],
+                    "zone": zoneName,
+                    "record": record['name'],
+                    "ttl": record['ttl'],
+                    "type": record['type'],
+                    "data": record['data']
+                })
+        return allRecords
+    
+    def delete_dns_records(self, id, record_name, root_dns_zone):
+        sw_api_key = os.getenv('SCW_SECRET_KEY')
+        data = {
+            "changes": [{
+                "delete": {
+                    "id": id
+                    }
+                }]
+            }
+        requests.patch(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{root_dns_zone}/records', headers = {"X-Auth-Token": sw_api_key}, json = data)   
+        return {"id": id, "record": record_name, "zone": root_dns_zone}
+         
     def create_instance(self, instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone):
         def create_pulumi_program():
             region_zone = "{}-{}".format(instance_region, instance_zone)

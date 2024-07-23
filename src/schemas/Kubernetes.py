@@ -1,3 +1,4 @@
+from typing import Any, Dict, Optional
 from pydantic import BaseModel
 
 class ObjectAddSchema(BaseModel):
@@ -21,3 +22,4 @@ class DeploymentSchema(BaseModel):
     env_id: int
     cluster_id: int
     project_id: int
+    args: Optional[Dict[str, Any]]

@@ -14,7 +14,7 @@ from utils.dns_zones import get_dns_zone_driver, register_ovh_domain
 from utils.driver import sanitize_project_name
 from utils.dynamic_name import rehash_dynamic_name
 from utils.logger import log_msg
-from utils.ovh_client import create_ovh_bucket, delete_ovh_bucket, update_ovh_bucket_credentials, update_ovh_registry_credentials, ovh_client
+from utils.ovh_client import create_custom_dns_record, create_ovh_bucket, delete_ovh_bucket, delete_ovh_dns_record, list_ovh_dns_records, update_ovh_bucket_credentials, update_ovh_registry_credentials, ovh_client
 from utils.list import unmarshall_list_array
 
 def get_openstack_connection(region):
@@ -214,3 +214,14 @@ class OvhDriver(ProviderDriver):
 
     def cloud_init_script(self):
         return "cloud-init.yml"
+    
+    def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
+        create_custom_dns_record(record_name, dns_zone, record_type, ttl, data)
+        return {"record": record_name, "zone": dns_zone, "type": record_type, "ttl": ttl, "data": data}
+    
+    def delete_dns_records(self, id, record_name, root_dns_zone):
+        delete_ovh_dns_record(id, root_dns_zone)
+        return  {"id": id, "record": record_name, "zone": root_dns_zone}
+    
+    def list_dns_records(self):
+        return list_ovh_dns_records()

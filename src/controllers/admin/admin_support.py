@@ -1,8 +1,10 @@
 from datetime import datetime
 from urllib.error import HTTPError
 from entities.SupportTicket import SupportTicket
+from entities.SupportTicketAttachment import SupportTicketAttachment
 from entities.SupportTicketLog import SupportTicketLog
 from entities.User import User
+from utils.bucket import delete_from_bucket
 from utils.common import is_not_empty, is_not_numeric, is_numeric
 from utils.gitlab import add_gitlab_issue, add_gitlab_issue_comment, close_gitlab_issue, reopen_gitlab_issue
 from utils.encoder import AlchemyEncoder
@@ -84,6 +86,12 @@ def get_support_ticket(current_user, ticket_id, db):
 
     from entities.SupportTicketLog import SupportTicketLog
     ticket_replies = SupportTicketLog.getTicketLogs(ticket_id, db)
+    attachments = [{
+        "id": attachment.id,
+        "name": attachment.name,
+        "has_rights": current_user.is_admin or current_user.id == attachment.user_id
+    } for attachment in SupportTicketAttachment.getAttachmentsByTicketId(ticket_id, db)]
+
     supportTicketsJson = json.loads(json.dumps(supportTicket, cls = AlchemyEncoder))
     userSupportTicketJson = json.loads(json.dumps(supportTicket.user, cls = AlchemyEncoder))
     supportTicketsResult = {**supportTicketsJson, 'user':userSupportTicketJson}
@@ -93,7 +101,11 @@ def get_support_ticket(current_user, ticket_id, db):
         userJson = json.loads(json.dumps(ticket.user, cls = AlchemyEncoder))
         supportTicketRepliesJson.append({**ticketJson, 'user':userJson})
 
-    supportTickerResponse = {**supportTicketsResult, 'replies':supportTicketRepliesJson}
+    supportTickerResponse = {
+        **supportTicketsResult,
+        'replies':supportTicketRepliesJson,
+        "attachments": attachments
+    }
     return JSONResponse(content = supportTickerResponse, status_code = 200)
 
 def delete_support_ticket(current_user, ticket_id, db):
@@ -327,3 +339,29 @@ def update_support_ticket(current_user, ticket_id, payload, db):
             'i18n_code': 'support_ticket_update_failed',
             'cid': get_current_cid()
         }, status_code = 500)
+
+def delete_file_from_ticket_by_id(current_user, ticket_id, attachment_id, db):
+    if is_not_numeric(ticket_id):
+        return JSONResponse(content={
+            'status': 'ko',
+            'error': 'Invalid ticket id',
+            'i18n_code': 'invalid_ticket_id',
+            'cid': get_current_cid()
+        }, status_code=400)
+
+    attachment: SupportTicketAttachment = SupportTicketAttachment.getAttachmentByTicketId(ticket_id, attachment_id, db)
+    if attachment is None:
+        return JSONResponse(content={
+            'status': 'ko',
+            'error': 'Attachment not found',
+            'i18n_code': 'attachment_not_found',
+            'cid': get_current_cid()
+        }, status_code=404)
+
+    SupportTicketAttachment.deleteAttachmentById(attachment.id, db)
+    delete_from_bucket(attachment.name, attachment.storage_key)
+    return JSONResponse(content={
+        'status': 'ok',
+        'message': 'file successfully deleted',
+        'i18n_code': 'file_deleted_successfully'
+    }, status_code=200)

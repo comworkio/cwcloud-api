@@ -6,10 +6,29 @@ playbookYaml="
 "
 
 generate_ansible_envs() {
-    j2 env/${env_name}.yml.j2 > env/${env_name}.yml
-    j2 env/${env_name}.md.j2 > env/${env_name}.md
+    input_file="env/args_values_${env_name}.json"
+    json_string=""
+
+    if [ -f "$input_file" ]; then
+        json_string=$(cat "$input_file")
+        json_string=${json_string%?}
+        json_string+=","
+        while IFS='=' read -r key value; do
+            value=$(printf '%s\n' "$value" | sed 's/"/\"/g')
+            json_string+="\"${key}\": \"${value}\", "
+        done < <(env)
+        json_string="${json_string%, }"
+        json_string+="}"
+        echo "$json_string" > "$input_file"
+
+        j2 env/${env_name}.yml.j2 "$input_file" > env/${env_name}.yml
+        j2 env/${env_name}.md.j2 "$input_file" > env/${env_name}.md
+    else
+        j2 env/${env_name}.yml.j2 > env/${env_name}.yml
+        j2 env/${env_name}.md.j2 > env/${env_name}.md
+    fi
     j2 .gitlab-ci.yml.j2 > "${env_name}-ci.yml"
-    rm -rf .gitlab-ci.yml.j2 env/${env_name}.yml.j2 env/${env_name}.md.j2 
+    rm -rf .gitlab-ci.yml.j2 env/${env_name}.yml.j2 env/${env_name}.md.j2  env/args_values_${env_name}.json
 }
 
 generate_ansible_playbook(){
@@ -130,6 +149,7 @@ prepare_new_repo_from_infra_playbook() {
     mkdir env
     cp ../ansible/instance_name.yml.j2 env/${env_name}.yml.j2
     cp ../ansible/instance_name.md.j2 env/${env_name}.md.j2
+    cp ../ansible/args_values.json env/args_values_${env_name}.json
     cp ../ansible/.gitlab-ci.yml.j2 .
     cp ../ansible/install.sh .
     cp ../ansible/README.md .

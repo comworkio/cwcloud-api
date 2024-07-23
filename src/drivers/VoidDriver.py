@@ -9,6 +9,18 @@ class VoidDriver(ProviderDriver):
     def create_instance(self, instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone):
         log_msg("INFO", "[VoidDriver][create_instance] instance_id = {}, ami_image = {}, hashed_instance_name = {}, environment = {}, instance_region = {}, instance_type = {}, generate_dns = {}, root_dns_zone = {}".format(instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone))
         return {}
+    
+    def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
+        log_msg("INFO", "[VoidDriver][create_custom_dns_record] record_name = {}, dns_zone = {}, record_type = {}, ttl = {}, data = {}".format(record_name, dns_zone, record_type, ttl, data))
+        return {}
+    
+    def delete_dns_records(self, record_id, record_name, dns_zone):
+        log_msg("INFO", "[VoidDriver][delete_dns_records] record_id = {}, record_name = {}, dns_zone = {}".format(record_id, record_name, dns_zone))
+        return {}
+    
+    def list_dns_records(self):
+        log_msg("INFO", "[VoidDriver][list_dns_records]")
+        return []    
 
     def refresh_instance(self, instance_id, hashed_instance_name, environment, instance_region, instance_zone):
         log_msg("INFO", "[VoidDriver][refresh_instance] instance_id = {}, hashed_instance_name = {}, environment = {}, instance_region = {}, instance_zone = {}".format(instance_id, hashed_instance_name, environment, instance_region, instance_zone))
