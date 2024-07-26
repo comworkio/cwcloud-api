@@ -63,13 +63,35 @@ def create_bucket(provider, user_email, bucket_id, hashed_bucket_name, region, b
     log_msg("DEBUG", "[create_bucket] driver result = {}".format(result))
     Bucket.update(bucket_id, result['endpoint'], result['user_id'] if "user_id" in result else None, result['access_key'], result['secret_key'], "active", db)
 
-url = os.getenv('BUCKET_URL')
 access_key = os.getenv('SCW_ACCESS_KEY')
 secret_key = os.getenv('SCW_SECRET_KEY')
-bucket_name = os.getenv('BUCKET_NAME')
 bucket_region = os.getenv('BUCKET_REGION')
 
-def upload_bucket(target_name, file_path):
+invoice_bucket_url = os.getenv('BUCKET_URL')
+invoice_bucket_name = os.getenv('BUCKET_NAME')
+
+attachment_bucket_url = os.getenv('ATTACHMENT_BUCKET_URL') or invoice_bucket_url
+attachment_bucket_name = os.getenv('ATTACHMENT_BUCKET_NAME') or invoice_bucket_name
+
+def upload_to_attachment_bucket(target_name, file_path):
+    upload_bucket(target_name, file_path, attachment_bucket_url, attachment_bucket_name)
+
+def download_from_attachment_bucket(target_name, file_path):
+    download_from_bucket(target_name, file_path, attachment_bucket_url, attachment_bucket_name)
+
+def delete_from_attachment_bucket(target_name, file_path):
+    delete_from_bucket(target_name, file_path, attachment_bucket_url, attachment_bucket_name)
+
+def upload_to_invoices_bucket(target_name, file_path):
+    upload_bucket(target_name, file_path, invoice_bucket_url, invoice_bucket_name)
+
+def download_from_invoices_bucket(target_name, file_path):
+    download_from_bucket(target_name, file_path, invoice_bucket_url, invoice_bucket_name)
+
+def delete_from_invoices_bucket(target_name, file_path):
+    delete_from_bucket(target_name, file_path, invoice_bucket_url, invoice_bucket_name)
+
+def upload_bucket(target_name, file_path, url, bucket_name):
     if url and access_key and secret_key and bucket_name and bucket_region:
         client = Minio(url, region = bucket_region, access_key = access_key, secret_key = secret_key)
         found = client.bucket_exists(bucket_name)
@@ -78,7 +100,7 @@ def upload_bucket(target_name, file_path):
             client.make_bucket(bucket_name)
         client.fput_object(bucket_name, target_name, file_path)
 
-def download_from_bucket(target_name, file_path):
+def download_from_bucket(target_name, file_path, url, bucket_name):
     if url and access_key and secret_key and bucket_name and bucket_region:
         try:
             client = Minio(url, region = bucket_region, access_key = access_key, secret_key = secret_key)
@@ -97,7 +119,7 @@ def download_from_bucket(target_name, file_path):
                 'cid': get_current_cid()
             }
         
-def delete_from_bucket(target_name, file_path):
+def delete_from_bucket(target_name, file_path, url, bucket_name):
     if url and access_key and secret_key and bucket_name and bucket_region:
         try:
             client = Minio(url, region = bucket_region, access_key = access_key, secret_key = secret_key)

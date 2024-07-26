@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime
 from jinja2 import Environment, FileSystemLoader
 
-from utils.bucket import upload_bucket
+from utils.bucket import upload_to_invoices_bucket
 from utils.common import is_empty, is_not_empty, is_true
 
 from entities.Invoice import Invoice
@@ -169,7 +169,7 @@ def generate_receipt_pdf(invoice_ref, invoice_date, client, total_ht, total_ttc,
     }
     pdfkit.from_string(pdf_content, name_file, options = options)
     path_file = "{}/{}".format(datetime.fromisoformat(str(invoice_date)).strftime('%Y-%m'), name_file)
-    upload_bucket(path_file, name_file)
+    upload_to_invoices_bucket(path_file, name_file)
     return name_file
 
 def increase_invoice_number(current_year, max_invoice_ref):

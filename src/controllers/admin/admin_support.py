@@ -4,7 +4,7 @@ from entities.SupportTicket import SupportTicket
 from entities.SupportTicketAttachment import SupportTicketAttachment
 from entities.SupportTicketLog import SupportTicketLog
 from entities.User import User
-from utils.bucket import delete_from_bucket
+from utils.bucket import delete_from_attachment_bucket
 from utils.common import is_not_empty, is_not_numeric, is_numeric
 from utils.gitlab import add_gitlab_issue, add_gitlab_issue_comment, close_gitlab_issue, reopen_gitlab_issue
 from utils.encoder import AlchemyEncoder
@@ -359,7 +359,7 @@ def delete_file_from_ticket_by_id(current_user, ticket_id, attachment_id, db):
         }, status_code=404)
 
     SupportTicketAttachment.deleteAttachmentById(attachment.id, db)
-    delete_from_bucket(attachment.name, attachment.storage_key)
+    delete_from_attachment_bucket(attachment.name, attachment.storage_key)
     return JSONResponse(content={
         'status': 'ok',
         'message': 'file successfully deleted',

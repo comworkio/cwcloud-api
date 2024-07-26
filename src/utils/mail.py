@@ -9,7 +9,7 @@ from adapters.AdapterConfig import get_adapter, get_default_adapter
 
 from utils.common import is_empty, is_not_empty, is_true
 from utils.logger import log_msg
-from utils.bucket import upload_bucket
+from utils.bucket import upload_to_invoices_bucket
 
 EMAIL_EXPEDITOR = os.environ['EMAIL_EXPEDITOR']
 EMAIL_ACCOUNTING = os.getenv('EMAIL_ACCOUNTING') if is_not_empty(os.getenv('EMAIL_ACCOUNTING')) else EMAIL_EXPEDITOR
@@ -216,7 +216,7 @@ def send_invoice_email(email, file_name, encoded_file, send, edition = False, da
         response = EMAIL_ADAPTER().send(email_payload) if is_true(send) else DEFAULT_EMAIL_ADAPTER().send(email_payload)
         log_msg("DEBUG", "[mail][send_invoice_email] file_name = {}, date_path = {}".format(file_name, date_path))
         path_file = "{}/{}".format(date_path, file_name)
-        upload_bucket(path_file, file_name)
+        upload_to_invoices_bucket(path_file, file_name)
         return response
     except Exception as ex:
         log_msg("ERROR", "[mail] unexpected error : type = {}, file = {}, lno = {}, msg = {}".format(type(ex).__name__, __file__, ex.__traceback__.tb_lineno, ex))

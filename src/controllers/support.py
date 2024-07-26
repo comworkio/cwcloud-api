@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from entities.SupportTicket import SupportTicket
 from entities.SupportTicketLog import SupportTicketLog
 from entities.User import User
-from utils.bucket import delete_from_bucket, download_from_bucket, upload_bucket
+from utils.bucket import delete_from_attachment_bucket, download_from_attachment_bucket, upload_to_attachment_bucket
 from utils.logger import log_msg
 from utils.common import is_not_numeric
 from utils.encoder import AlchemyEncoder
@@ -351,7 +351,7 @@ def attach_file_to_ticket_by_id(current_user, ticket_id, files, db):
         file_path = os.path.join('uploaded_files', file_name_under_bucket)
         with open(file_path, "wb") as file_object:
             file_object.write(file.file.read())    
-        upload_bucket(file_name_under_bucket, file_path)
+        upload_to_attachment_bucket(file_name_under_bucket, file_path)
         SupportTicketAttachment(
             mime_type = file.content_type,
             storage_key = file_path,
@@ -397,7 +397,7 @@ def download_file_from_ticket_by_id(current_user, ticket_id, attachment_id, db):
             'cid': get_current_cid()
         }, status_code = 404)
     
-    download_from_bucket(attachment.name, attachment.storage_key)
+    download_from_attachment_bucket(attachment.name, attachment.storage_key)
     return FileResponse(attachment.storage_key, filename = attachment.name)
             
         
@@ -428,7 +428,7 @@ def delete_file_from_ticket_by_id(current_user: User, ticket_id, attachment_id, 
         }, status_code=403)
 
     SupportTicketAttachment.deleteAttachmentById(attachment.id, db)
-    delete_from_bucket(attachment.name, attachment.storage_key)
+    delete_from_attachment_bucket(attachment.name, attachment.storage_key)
     return JSONResponse(content={
         'status': 'ok',
         'message': 'file successfully deleted',
