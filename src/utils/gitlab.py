@@ -254,7 +254,7 @@ def get_gitlab_project(project_id, gitlab_host, access_token):
 
     projectReponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}', headers = {"PRIVATE-TOKEN": access_token})
     if projectReponse.status_code == 404:
-        raise HTTPError("204", 404, "project not found", hdrs = {"i18n_code": "204"}, fp = None)
+        raise HTTPError("project_not_found_with_gitlab", 404, "project not found", hdrs = {"i18n_code": "project_not_found_with_gitlab"}, fp = None)
     project = projectReponse.json()
     return project
 
@@ -301,7 +301,7 @@ def get_gitlab_file_content(project_id, instance_name, gitlab_host, access_token
 
     fileResponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}/repository/files/playbook-{instance_name}.yml/blame?ref=main', headers = {"PRIVATE-TOKEN": access_token})
     if fileResponse.status_code == 404:
-        raise HTTPError("204", 404, "project not found", hdrs = {"i18n_code": "204"}, fp = None)
+        raise HTTPError("project_not_found_with_gitlab", 404, "project not found", hdrs = {"i18n_code": "project_not_found_with_gitlab"}, fp = None)
     fileJson = fileResponse.json()
     fileLines = fileJson[0]['lines']
     return fileLines
@@ -364,9 +364,9 @@ def create_gitlab_project(project_name, userid, user_email, host, git_username, 
 
     projectReponse = requests.post(f'{gitlab_host}/api/v4/projects', json = data, headers = {"PRIVATE-TOKEN": token})
     if projectReponse.status_code == 400:
-        raise HTTPError("invalid_yaml_value", 400, "project already exists", hdrs = {"i18n_code": "invalid_yaml_value"}, fp = None)
+        raise HTTPError("project_already_exists_gitlab", 400, "project already exists", hdrs = {"i18n_code": "project_already_exists_gitlab"}, fp = None)
     elif projectReponse.status_code != 201:
-        raise HTTPError("1121", 400, "a problem accured when creating the project, check your access token", hdrs = {"i18n_code": "1121"}, fp = None)
+        raise HTTPError("creation_project_error_with_gitlab", 400, "a problem accured when creating the project, check your access token", hdrs = {"i18n_code": "creation_project_error_with_gitlab"}, fp = None)
     projectJson = projectReponse.json()
 
     if gitlab_host == GITLAB_URL and not gitlab_host in get_public_instances():
@@ -405,7 +405,7 @@ def get_project_runners(project_id, gitlab_host, access_token):
 
     runnersResponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}/runners', headers = {"PRIVATE-TOKEN": access_token})
     if runnersResponse.status_code == 404:
-        raise HTTPError("204", 404, "project not found", hdrs = {"i18n_code": "204"}, fp = None)
+        raise HTTPError("project_not_found_with_gitlab", 404, "project not found", hdrs = {"i18n_code": "project_not_found_with_gitlab"}, fp = None)
 
     runnersJson = runnersResponse.json()
     return runnersJson
@@ -417,7 +417,7 @@ def delete_runner(runnerId, gitlab_host, access_token):
 
     deleteResponse = requests.delete(f'{gitlab_host}/api/v4/runners/{runnerId}', headers = {"PRIVATE-TOKEN": access_token})
     if deleteResponse.status_code == 404:
-        raise HTTPError("1114", 400, "runner not found", hdrs = {"i18n_code": "1114"}, fp = None)
+        raise HTTPError("runner_not_found", 400, "runner not found", hdrs = {"i18n_code": "runner_not_found"}, fp = None)
 
 def delete_project_runners(project_id, gitlab_host, access_token):
     check_gitlab_url(gitlab_host)
