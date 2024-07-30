@@ -473,6 +473,14 @@ def admin_remove_instance(current_user, instance_id, db, bt: BackgroundTasks):
             'cid': get_current_cid()
         }, status_code = 400)
     result_remove = generic_remove_instance(user_instance, db, bt)
+    if is_false(result_remove['status']):
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': result_remove["error"],
+            'i18n_code': result_remove["i18n_code"],
+            'cid': get_current_cid()
+        }, status_code = result_remove["http_code"])
+
     return JSONResponse(content = result_remove["message"], status_code = result_remove["http_code"])
 
 def admin_refresh_instance(current_user, instance_id, db):

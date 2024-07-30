@@ -309,7 +309,7 @@ def generic_remove_instance(userInstance, db, bt: BackgroundTasks):
 
         update_instance_status(userInstance, target_server_id, "delete", db)
         return {
-            'status': 'ko',
+            'status': 'ok',
             'message': 'instance state successfully deleted',
             'i18n_code': 'instance_deleted',
             'http_code': 200,
