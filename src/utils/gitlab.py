@@ -1,18 +1,17 @@
-import base64
 import os
+import base64
 import random
-from datetime import datetime, timedelta
-from urllib.error import HTTPError
-from urllib.parse import urlparse
-
 import gitlab
 import requests
 import yaml
 
+from datetime import datetime, timedelta
+from urllib.error import HTTPError
+from urllib.parse import urlparse
+
 from utils.api_url import is_url_not_responding
 from utils.bytes_generator import generate_random_bytes
-from utils.common import (exists_entry, is_disabled, is_empty, is_not_empty,
-                          safe_compare_entry, safe_contain_entry)
+from utils.common import exists_entry, is_disabled, is_empty, is_not_empty, safe_compare_entry, safe_contain_entry
 from utils.logger import log_msg
 from utils.mail import send_email
 

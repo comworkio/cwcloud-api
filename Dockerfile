@@ -30,15 +30,9 @@ RUN curl -fsSL https://get.pulumi.com | sh
 ENV PATH="/root/.pulumi/bin:${PATH}"
 ENV API_MAX_RESULTS=100
 
-# FIX pulumi public bucket has been removed
-# See this issue: https://github.com/pulumiverse/pulumi-scaleway/issues/117
-ARG PULUMI_SCW_OLD_VERSION=0.1.8 \
-    PULUMI_SCW_VERSION=1.7.0 \
-    PULUMI_OVH_VERSION=0.0.4
+ARG PULUMI_OVH_VERSION=0.0.4
 
-RUN pulumi plugin install resource scaleway v${PULUMI_SCW_OLD_VERSION} --server https://pulumi-scw.s3.fr-par.scw.cloud/v${PULUMI_SCW_OLD_VERSION}/ && \
-    pulumi plugin install resource scaleway v${PULUMI_SCW_VERSION} --server https://pulumi-scw.s3.fr-par.scw.cloud/v${PULUMI_SCW_VERSION}/ && \
-    pulumi plugin install resource ovh v${PULUMI_OVH_VERSION} --server https://pulumi-ovh.s3.fr-par.scw.cloud/v${PULUMI_OVH_VERSION}/
+RUN pulumi plugin install resource ovh v${PULUMI_OVH_VERSION} --server https://pulumi-ovh.s3.fr-par.scw.cloud/v${PULUMI_OVH_VERSION}/
 
 COPY ./requirements.txt /app/requirements.txt
 

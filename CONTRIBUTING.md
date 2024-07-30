@@ -15,4 +15,3 @@ The docker images tags are the following:
 * `ce-{semver}` and `ce-{semver}-{sha}`: for the merge un the `main` branch for the community edition
 
 Semver stands for "Semantic versioning" which is explained [here](https://semver.org/)
-

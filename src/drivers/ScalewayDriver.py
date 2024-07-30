@@ -2,9 +2,10 @@ import importlib
 import os
 from urllib.error import HTTPError
 
-import lbrlabs_pulumi_scaleway as scaleway
+import pulumiverse_scaleway as scaleway
 import pulumi
 import requests
+
 from pulumi import ResourceOptions
 from pulumi import automation as auto
 
@@ -97,14 +98,15 @@ class ScalewayDriver(ProviderDriver):
             region_zone = "{}-{}".format(instance_region, instance_zone)
             instance_ip = scaleway.InstanceIp("publicIp", zone = region_zone)
             new_instance = scaleway.InstanceServer(hashed_instance_name,
-                                    type = instance_type,
-                                    image = ami_image,
-                                    name = hashed_instance_name,
-                                    ip_id = instance_ip.id,
-                                    zone = region_zone,
-                                    user_data = {
-                                        "cloud-init": (lambda path: open(path).read())(self.cloud_init_script())
-                                    })
+                type = instance_type,
+                image = ami_image,
+                name = hashed_instance_name,
+                ip_id = instance_ip.id,
+                zone = region_zone,
+                user_data = {
+                    "cloud-init": (lambda path: open(path).read())(self.cloud_init_script())
+                }
+            )
 
             if is_true(generate_dns):
                 dns_driver = get_dns_zone_driver(root_dns_zone)

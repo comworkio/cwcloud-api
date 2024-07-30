@@ -1,13 +1,13 @@
 pulumi==3.116.1
 markupsafe>=2.1.1
 pulumi_azure_native
-pulumi-openstack==3.9.0  
-pulumi-aws>=5.0.0, <6.0.0  
-pulumi-gcp>=6.57.0,<7.0.0 
+pulumi-openstack==3.9.0
+pulumi-aws>=5.0.0, <6.0.0
+pulumi-gcp>=6.57.0,<7.0.0
 azure-mgmt-compute==30.6.0
 azure-identity==1.15.0
-lbrlabs-pulumi-scaleway==1.7.0
-pulumi-cloudflare==4.13.0 
+pulumiverse-scaleway==1.15.0
+pulumi-cloudflare==4.13.0
 openstacksdk==0.100.0
 google-cloud-containeranalysis==2.12.1
 google-cloud-storage==2.10.0
@@ -31,11 +31,11 @@ python-dotenv
 boto3
 j2cli-3==0.0.1
 fastapi==0.95.1
-pydantic[email] 
+pydantic[email]
 asgi-correlation-id
 requests==2.30.0
 uvicorn==0.22.0
-SQLAlchemy==1.4.46 
+SQLAlchemy==1.4.46
 redis
 nats-py
 fastapi-utils==0.2.1
@@ -55,7 +55,7 @@ nkeys
 croniter
 apscheduler
 kubernetes==28.1.0
-GitPython==3.1.40 
+GitPython==3.1.40
 ruff
 psutil
 prometheus-fastapi-instrumentator
@@ -64,4 +64,3 @@ opentelemetry-sdk
 opentelemetry-instrumentation-fastapi
 opentelemetry-exporter-otlp
 paho-mqtt==1.6.1
-
