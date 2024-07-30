@@ -298,7 +298,11 @@ def generic_remove_instance(userInstance, db, bt: BackgroundTasks):
             log_msg("WARN", "[generic_remove_instance] unexpected error (delete_instance) : {}".format(ae))
 
         runners = get_project_runners(userInstance.project.id, userInstance.project.gitlab_host, userInstance.project.access_token) if is_not_empty(userInstance.project) else []
-        filtered_runners = [runner for runner in runners if runner['ip_address'] == userInstance.ip_address]
+        try:
+            filtered_runners = [runner for runner in runners if runner['ip_address'] == userInstance.ip_address]
+        except TypeError as te:
+            log_msg("WARN", "[generic_remove_instance] unexpected type error, runners = {}, te = {}".format(runners, te))
+            filtered_runners = []
 
         if len(filtered_runners) > 0:
             delete_runner(filtered_runners[0]['id'], userInstance.project.gitlab_host, userInstance.project.access_token)
