@@ -430,20 +430,20 @@ def delete_project_runners(project_id, gitlab_host, access_token):
             delete_runner(runner['id'], gitlab_host, access_token)
 
 def delete_gitlab_project(project_id, gitlab_host, access_token):
-    default_token = os.getenv('GIT_PRIVATE_TOKEN')
-    if is_disabled(access_token):
-        return
-
-    delete_project_runners(project_id, gitlab_host, access_token)
-    if is_disabled(default_token):
-        return
-
     check_gitlab_url(gitlab_host)
+    default_token = os.getenv('GIT_PRIVATE_TOKEN')
+    if is_disabled(access_token) or is_disabled(default_token):
+        return
+
+    try:
+        delete_project_runners(project_id, gitlab_host, access_token)
+    except HTTPError as he:
+        log_msg("WARN", "[delete_gitlab_project] something went wrong when deleting project's runners: he = {}".format(he))
 
     token = default_token if GITLAB_URL == gitlab_host else access_token
     res = requests.delete(f'{gitlab_host}/api/v4/projects/{project_id}', headers = {"PRIVATE-TOKEN": token})
     if res.status_code != 202:
-        log_msg("WARN", "[delete_gitlab_project] something went wrong when deleting project : status = {}".format(res.status_code))
+        log_msg("WARN", "[delete_gitlab_project] something went wrong when deleting project: status = {}".format(res.status_code))
 
 def read_file_from_gitlab(project_id, file_path, branch, access_token, host):
     gitlab_instance = gitlab.Gitlab(host, private_token=access_token)
