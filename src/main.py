@@ -1,5 +1,4 @@
 import os
-import logging
 
 from uuid import uuid4
 from fastapi import FastAPI, Request, HTTPException
@@ -20,12 +19,7 @@ from utils.observability.cid import get_current_cid
 from utils.observability.metrics import metrics
 from utils.observability.otel import init_otel_metrics, init_otel_tracer, init_otel_logger
 
-logger = logging.getLogger('git')
-logger.setLevel(logging.INFO)
-logger = logging.getLogger('kubernetes')
-logger.setLevel(logging.INFO)
-
-log_msg("INFO", "[main] the application is starting with version = {}".format(os.environ['APP_VERSION']))
+log_msg("INFO", "[main] the application is starting with version = {}".format(os.environ['APP_VERSION']), True)
 Base.metadata.create_all(bind = dbEngine)
 
 app = FastAPI(

@@ -171,5 +171,5 @@ class User(Base):
 
     @staticmethod
     def getFirstAdminUser(db):
-        user = db.query(User).filter(User.is_admin is True).first()
+        user = db.query(User).filter(User.is_admin).first()
         return user

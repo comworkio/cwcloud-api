@@ -216,11 +216,22 @@ class OvhDriver(ProviderDriver):
         return "cloud-init.yml"
     
     def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
-        create_custom_dns_record(record_name, dns_zone, record_type, ttl, data)
+        def create_pulumi_program():
+            create_custom_dns_record(record_name, dns_zone, record_type, ttl, data)
+        
+        stack = auto.create_or_select_stack(stack_name = "ovh-create{}-{}".format(record_name, dns_zone),
+                                            project_name = "dns-records",
+                                            program = create_pulumi_program)
+        stack.up()
         return {"record": record_name, "zone": dns_zone, "type": record_type, "ttl": ttl, "data": data}
     
     def delete_dns_records(self, id, record_name, root_dns_zone):
-        delete_ovh_dns_record(id, root_dns_zone)
+        def create_pulumi_program():
+            delete_ovh_dns_record(id, root_dns_zone)
+        stack = auto.create_or_select_stack(stack_name = "ovh-delete{}-{}".format(id, record_name),
+                                            project_name = "dns-records",
+                                            program = create_pulumi_program)
+        stack.up()
         return  {"id": id, "record": record_name, "zone": root_dns_zone}
     
     def list_dns_records(self):

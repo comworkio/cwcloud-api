@@ -8,6 +8,7 @@ import pulumi_gcp as gcp
 
 from pulumi import automation as auto
 from google.cloud import compute_v1
+from google.cloud import dns
 from google.oauth2 import service_account
 
 from drivers.ProviderDriver import ProviderDriver
@@ -17,8 +18,10 @@ from utils.dns_zones import get_dns_zone_driver
 from utils.driver import convert_instance_state, sanitize_project_name
 from utils.dynamic_name import rehash_dynamic_name
 from utils.firewall import get_firewall_tags
-from utils.gcp_client import _gcp_project_id, _google_app_cred_str, _google_app_credentials, update_credentials_policy_registry, delete_registry_service_account, delete_bucket_service_account, get_gcp_instance_name, update_bucket_keys, update_policy_and_credentials_bucket, update_registry_token
+from utils.gcp_client import _gcp_project_id, _google_app_cred_str, _google_app_credentials, update_credentials_policy_registry, delete_registry_service_account, delete_bucket_service_account, get_gcp_instance_name, update_bucket_keys, update_policy_and_credentials_bucket, update_registry_token, get_provider_dns_zone_domain_name, _gcp_project_id_dns_test, _google_app_cred_str_dns_test, _google_app_credentials_dns_test
 from utils.logger import log_msg
+from utils.provider import get_provider_dns_zones
+
 
 class GcpDriver(ProviderDriver):
     def create_dns_records(self, record_name, environment, ip_address, root_dns_zone):
@@ -253,11 +256,79 @@ class GcpDriver(ProviderDriver):
         stack.destroy()
         delete_registry_service_account(service_account_email)
     
+    # The variables _gcp_project_id_dns_test, _google_app_cred_str_dns_test and _google_app_credentials_dns_test are FOR TESTING PURPOSES ONLY. They would serve just in the pre-production environment
+    # In the prod , to be changed with _gcp_project_id , _google_app_cred_str and _google_app_credentials
     def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
-        return 
+        def create_pulumi_program():
+            selected_zone = gcp.dns.get_managed_zone(name=dns_zone,project=_gcp_project_id_dns_test)
+            fq_record_name=f"{record_name}.{selected_zone.dns_name}"
+
+            record = gcp.dns.RecordSet(fq_record_name,
+                                    name=fq_record_name,
+                                    managed_zone=dns_zone,
+                                    type=record_type,
+                                    ttl=ttl,
+                                    rrdatas=[data])
+            pulumi.export("record",record)
+
+        # Name the stack by the name of the record (the fully qualified name)
+        stack_name = f"{record_name}.{get_provider_dns_zone_domain_name(dns_zone)[:-1]}"
+        stack = auto.create_or_select_stack(stack_name = stack_name,
+                                        project_name = os.getenv('PULUMI_GCP_PROJECT_NAME'),
+                                        program = create_pulumi_program)
+        
+        stack.set_config("gcp:project", auto.ConfigValue(_gcp_project_id_dns_test))
+        stack.set_config("gcp:credentials", auto.ConfigValue(_google_app_cred_str_dns_test))
+
+        stack.preview(on_output=print)
+        stack.up()
+            
+        return {"record": record_name, "zone": dns_zone, "type": record_type, "ttl": ttl, "data": data}
     
     def delete_dns_records(self, record_id, record_name, dns_zone):
-        return
+        organization="organization"
+        project_name = os.getenv('PULUMI_GCP_PROJECT_NAME')
+        stack_name = record_name
+        stack = auto.select_stack(stack_name = stack_name,
+                                project_name = project_name,
+                                program=self.delete_dns_records)
+
+        stack.set_config("gcp:project", auto.ConfigValue(_gcp_project_id_dns_test))
+        stack.set_config("gcp:credentials", auto.ConfigValue(_google_app_cred_str_dns_test))
+        stack.destroy(on_output=print)
+
+        # Delete the state of the stack
+        local_workspace=auto.LocalWorkspace()
+        fq_stack_name=auto.fully_qualified_stack_name(org=organization,project=project_name,stack=stack_name)
+        local_workspace.remove_stack(fq_stack_name)
+
+        return {"id": record_id, "record": record_name, "zone": dns_zone}
+
+
     
     def list_dns_records(self):
-        return 
+        zones =  get_provider_dns_zones("gcp") 
+        credentials = service_account.Credentials.from_service_account_info(
+            _google_app_credentials_dns_test,
+            scopes = ['https://www.googleapis.com/auth/cloud-platform'])       
+        client = dns.Client(project=_gcp_project_id_dns_test,credentials=credentials)
+        records = []
+        
+        for zone in zones:
+            zone = client.zone(zone)
+            record_sets= zone.list_resource_record_sets()
+
+            for record in record_sets:
+                if record.name.endswith('.'):
+                    record_name = record.name[:-1]
+                else: 
+                    record_name=record.name
+            
+                records.append({
+                        'id': record_sets.num_results,
+                        'zone': zone.name,
+                        'record': record_name,
+                        'type': record.record_type,
+                        'ttl': record.ttl,
+                        'data': record.rrdatas})
+        return records

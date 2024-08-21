@@ -1,20 +1,26 @@
-import pulumi
 import os
+import pulumi
 import importlib
 import base64
-import pulumi_azure_native as azure_native
-from utils.common import is_not_empty, is_true
-from pulumi_azure_native import resources, network, compute
+
+from pulumi_azure_native import network, compute
 from pulumi import automation as auto
-from utils.azure_client import get_azure_informations_by_region
+
+from azure.identity import DefaultAzureCredential
+from azure.mgmt.compute import ComputeManagementClient
+from azure.mgmt.dns import DnsManagementClient
+from azure.core.exceptions import HttpResponseError
+
 from drivers.ProviderDriver import ProviderDriver
+
+from utils.common import is_not_empty
 from utils.logger import log_msg
 from utils.dns_zones import get_dns_zone_driver, register_azure_domain
 from utils.list import unmarshall_list_array
-from azure.identity import DefaultAzureCredential
-from azure.mgmt.compute import ComputeManagementClient
-from azure.core.exceptions import HttpResponseError
+from utils.azure_client import get_azure_informations_by_region
 from utils.state import convert_instance_state
+from utils.provider import get_provider_dns_zones
+
 
 _azure_client_resource_group = os.getenv('AZURE_RESOURCE_GROUP_NAME')
 _azure_client_id = os.getenv('AZURE_CLIENT_ID')
@@ -169,6 +175,7 @@ class AzureDriver(ProviderDriver):
                 "id": virtual_machine.id,
                 "state": vm_state.split()[1]
             }
+
         except HttpResponseError as ex:
             log_msg("INFO", "[get_virtual_machine_azure] An error occurred while fetching VM {}: {}".format(instance_name, ex))
             return None
@@ -224,10 +231,107 @@ class AzureDriver(ProviderDriver):
         return
     
     def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
-        return 
+        def create_pulumi_program():
+            fq_record_name=f"{record_name}.{dns_zone}"
+            record_data = {
+                            "A": {"a_records": [{"ipv4_address": data}]},
+                            "AAAA": {"aaaa_records": [{"ipv6_address": data}]},
+                            "CNAME": {"cname_record": {"cname": data}},
+                            "MX": {"mx_records": [{"exchange": data, "preference": 10}]},
+                        }
+            dynamic_args = record_data.get(record_type, {})
+            record = network.RecordSet(fq_record_name,
+                                        relative_record_set_name=record_name,
+                                        zone_name=dns_zone,
+                                        resource_group_name=_azure_client_resource_group,
+                                        ttl=300,
+                                        record_type=record_type,
+                                        **dynamic_args)
+        
+            pulumi.export("record",record)
+
+        # Naming the stack by the name of the record (the fully qualified name)
+        stack_name = f"{record_name}.{(dns_zone)}"
+        stack = auto.create_or_select_stack(stack_name = stack_name,
+                                        project_name = os.getenv('PULUMI_AZURE_PROJECT_NAME'),
+                                        program = create_pulumi_program)
+
+        stack.set_config("azure-native:clientId", auto.ConfigValue(_azure_client_id))
+        stack.set_config("azure-native:clientSecret", auto.ConfigValue(_azure_client_secret, secret=True))
+        stack.set_config("azure-native:tenantId", auto.ConfigValue(_azure_tenant_id))
+        stack.set_config("azure-native:subscriptionId", auto.ConfigValue(_azure_subscription_id))
+
+        stack.preview(on_output=print)
+        stack.up()
+            
+        return {"record": record_name, "zone": dns_zone, "type": record_type, "ttl": ttl, "data": data} 
+    
     
     def delete_dns_records(self, record_id, record_name, dns_zone):
-        return
+        organization="organization"
+        project_name = os.getenv('PULUMI_AZURE_PROJECT_NAME')
+        stack_name = record_name[:-1]
+        stack = auto.select_stack(stack_name = stack_name,
+                                project_name = project_name,
+                                program=self.delete_dns_records)
+
+        stack.set_config("azure-native:clientId", auto.ConfigValue(_azure_client_id))
+        stack.set_config("azure-native:clientSecret", auto.ConfigValue(_azure_client_secret, secret=True))
+        stack.set_config("azure-native:tenantId", auto.ConfigValue(_azure_tenant_id))
+        stack.set_config("azure-native:subscriptionId", auto.ConfigValue(_azure_subscription_id))
+        stack.destroy(on_output=print)
+
+        # Deleting the state of the stack
+        local_workspace=auto.LocalWorkspace()
+        fq_stack_name=auto.fully_qualified_stack_name(org=organization,project=project_name,stack=stack_name)
+        local_workspace.remove_stack(fq_stack_name)
+
+        return {"id": record_id, "record": record_name, "zone": dns_zone}
     
+
     def list_dns_records(self):
-        return 
+        # Parsing record data from the raw record output
+        def parse_azure_dns_record_data(record):
+            record_type=record['type'].split('/')[-1].lower()
+            
+            if record_type=="ns":
+                data_field=f"{record_type}_records"
+            else:
+                data_field=f"{record_type}_record"
+            
+            if record_type == "ns":
+                record_data=[value["nsdname"] for value in record[data_field]]
+            elif record_type == "cname":
+                record_data=record[data_field]["cname"]
+            elif record_type == "soa":
+                record_data=record[data_field]["host"]
+            else:
+                record_type= f"could not parse {record_type} record data"
+
+            return record_data
+        
+        zones =  get_provider_dns_zones("azure") 
+
+        credentials = DefaultAzureCredential()
+        dns_client = DnsManagementClient(credentials, _azure_subscription_id)
+
+        records = []
+        
+        for zone in zones:
+            record_sets=dns_client.record_sets.list_by_dns_zone(resource_group_name=_azure_client_resource_group,zone_name=zone)
+
+            for idx,record in enumerate(record_sets,start=1):
+                record=record.as_dict()
+
+                record_type=record['type'].split('/')[-1].lower()
+                record_data=parse_azure_dns_record_data(record)
+
+                records.append({
+                        'id': idx,
+                        'zone': zone,
+                        'record': record['fqdn'],
+                        'type': record_type,
+                        'ttl': record['ttl'],
+                        'data': record_data})
+        return records
+    

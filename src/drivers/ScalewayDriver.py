@@ -1,11 +1,11 @@
 import importlib
 import os
+
 from urllib.error import HTTPError
 
-import pulumiverse_scaleway as scaleway
 import pulumi
+import pulumiverse_scaleway as scaleway
 import requests
-
 from pulumi import ResourceOptions
 from pulumi import automation as auto
 
@@ -18,12 +18,13 @@ from utils.list import unmarshall_list_array
 from utils.logger import log_msg
 
 SCW_API_URL = "https://api.scaleway.com"
+SCW_ACCESS_KEY = os.getenv('SCW_ACCESS_KEY')
+SCW_SECRET_KEY = os.getenv('SCW_SECRET_KEY')
+SCW_PROJECT_ID = os.getenv('SCW_PROJECT_ID')
 
 class ScalewayDriver(ProviderDriver):
     def create_dns_records(self, record_name, environment, ip_address, root_dns_zone):
-        sw_api_key = os.getenv('SCW_SECRET_KEY')
-        project_id = os.getenv('SCW_PROJECT_ID')
-        dnsZonesResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/domains/{root_dns_zone}/dns-zones', headers = {"X-Auth-Token": sw_api_key})
+        dnsZonesResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/domains/{root_dns_zone}/dns-zones', headers = {"X-Auth-Token": SCW_SECRET_KEY})
         dnsZones = dnsZonesResponse.json()["dns_zones"]
         availableZones = []
         for zone in dnsZones:
@@ -33,9 +34,9 @@ class ScalewayDriver(ProviderDriver):
             newDnsInfo = {
                 "domain": root_dns_zone,
                 "subdomain": environment['path'],
-                "project_id": project_id
+                "project_id": SCW_PROJECT_ID
             }
-            dnsZones = requests.post(f'{SCW_API_URL}/domain/v2beta1/dns-zones', headers = {"X-Auth-Token": sw_api_key}, json = newDnsInfo)
+            dnsZones = requests.post(f'{SCW_API_URL}/domain/v2beta1/dns-zones', headers = {"X-Auth-Token": SCW_SECRET_KEY}, json = newDnsInfo)
 
         register_scaleway_domain(record_name, environment['path'], ip_address, root_dns_zone)
         for subdomain in unmarshall_list_array(environment['subdomains']):
@@ -43,32 +44,42 @@ class ScalewayDriver(ProviderDriver):
             register_scaleway_domain(dns_record_name, environment['path'], ip_address, root_dns_zone)
             
     def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
-        sw_api_key = os.getenv('SCW_SECRET_KEY')
-        data = {
-            "changes": [{
-                "add": {
-                    "records": [
-                        {
-                            "name": record_name,
-                            "ttl": ttl,
-                            "type": record_type,
-                            "data": data,
-                            "priority": 0,
-                        }
-                    ]}
-                }]
-            }
-        requests.patch(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{dns_zone}/records', headers = {"X-Auth-Token": sw_api_key}, json = data)
+        def create_pulumi_program():
+            json = {
+                "changes": [{
+                    "add": {
+                        "records": [
+                            {
+                                "name": record_name,
+                                "ttl": ttl,
+                                "type": record_type,
+                                "data": data,
+                                "priority": 0,
+                            }
+                        ]}
+                    }]
+                }
+            requests.patch(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{dns_zone}/records', headers = {"X-Auth-Token": SCW_SECRET_KEY}, json = json)
+            
+            pulumi.export("record", record_name)
+            pulumi.export("zone", dns_zone)
+            pulumi.export("type", record_type)
+            pulumi.export("ttl", ttl)
+            pulumi.export("data", data)
+        
+        stack = auto.create_or_select_stack(stack_name = "scw-create-{}-{}".format(record_name, dns_zone),
+                                            project_name = "dns-records",
+                                            program = create_pulumi_program)
+        stack.up()
         return {"record": record_name, "zone": dns_zone, "type": record_type, "ttl": ttl, "data": data}
         
     def list_dns_records(self):
-        sw_api_key = os.getenv('SCW_SECRET_KEY')
-        dnsZonesResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/domains', headers = {"X-Auth-Token": sw_api_key})
+        dnsZonesResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/domains', headers = {"X-Auth-Token": SCW_SECRET_KEY})
         dnsZones = dnsZonesResponse.json()["domains"]
         allRecords = []
         for zone in dnsZones:
             zoneName = zone['domain']
-            zoneRecordsResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{zoneName}/records', headers = {"X-Auth-Token": sw_api_key})
+            zoneRecordsResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{zoneName}/records', headers = {"X-Auth-Token": SCW_SECRET_KEY})
             zoneRecords = zoneRecordsResponse.json()["records"]
             for record in zoneRecords:
                 allRecords.append({
@@ -82,15 +93,19 @@ class ScalewayDriver(ProviderDriver):
         return allRecords
     
     def delete_dns_records(self, id, record_name, root_dns_zone):
-        sw_api_key = os.getenv('SCW_SECRET_KEY')
-        data = {
-            "changes": [{
-                "delete": {
-                    "id": id
-                    }
-                }]
-            }
-        requests.patch(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{root_dns_zone}/records', headers = {"X-Auth-Token": sw_api_key}, json = data)   
+        def create_pulumi_program():
+            data = {
+                "changes": [{
+                    "delete": {
+                        "id": id
+                        }
+                    }]
+                }
+            requests.patch(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{root_dns_zone}/records', headers = {"X-Auth-Token": SCW_SECRET_KEY}, json = data)
+        stack = auto.create_or_select_stack(stack_name = "{}-{}".format(id, record_name),
+                                            project_name = "dns-records",
+                                            program = create_pulumi_program)
+        stack.up()
         return {"id": id, "record": record_name, "zone": root_dns_zone}
          
     def create_instance(self, instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone):
@@ -115,17 +130,14 @@ class ScalewayDriver(ProviderDriver):
                 ProviderDriver().create_dns_records(hashed_instance_name, environment, new_instance.public_ip, root_dns_zone)
             pulumi.export("public_ip", new_instance.public_ip)
 
-        scw_access_key = os.getenv('SCW_ACCESS_KEY')
-        scw_secret_key = os.getenv('SCW_SECRET_KEY')
-        scw_project_id = os.getenv('SCW_PROJECT_ID')
         cloudflare_api_token = os.getenv('CLOUDFLARE_API_TOKEN')
 
         stack = auto.create_or_select_stack(stack_name = hashed_instance_name,
                                             project_name = sanitize_project_name(environment['path']),
                                             program = create_pulumi_program)
-        stack.set_config("scaleway:access_key", auto.ConfigValue(scw_access_key))
-        stack.set_config("scaleway:secret_key", auto.ConfigValue(scw_secret_key))
-        stack.set_config("scaleway:project_id", auto.ConfigValue(scw_project_id))
+        stack.set_config("scaleway:access_key", auto.ConfigValue(SCW_ACCESS_KEY))
+        stack.set_config("scaleway:secret_key", auto.ConfigValue(SCW_SECRET_KEY))
+        stack.set_config("scaleway:project_id", auto.ConfigValue(SCW_PROJECT_ID))
         if is_not_empty(cloudflare_api_token):
             stack.set_config("cloudflare:api_token", auto.ConfigValue(cloudflare_api_token))
         up_res = stack.up()
@@ -152,17 +164,15 @@ class ScalewayDriver(ProviderDriver):
                                     opts = ResourceOptions(import_ = existing_instance.id))
             pulumi.export("ip_address", existing_instance.public_ip)
             pulumi.export("type", existing_instance.type)
-        scw_access_key = os.getenv('SCW_ACCESS_KEY')
-        scw_secret_key = os.getenv('SCW_SECRET_KEY')
-        scw_project_id = os.getenv('SCW_PROJECT_ID')
+ 
 
         stack = auto.create_or_select_stack(stack_name = hashed_instance_name,
                                             project_name = sanitize_project_name(environment['path']),
                                             program = create_pulumi_program)
 
-        stack.set_config("scaleway:access_key", auto.ConfigValue(scw_access_key))
-        stack.set_config("scaleway:secret_key", auto.ConfigValue(scw_secret_key))
-        stack.set_config("scaleway:project_id", auto.ConfigValue(scw_project_id))
+        stack.set_config("scaleway:access_key", auto.ConfigValue(SCW_ACCESS_KEY))
+        stack.set_config("scaleway:secret_key", auto.ConfigValue(SCW_SECRET_KEY))
+        stack.set_config("scaleway:project_id", auto.ConfigValue(SCW_PROJECT_ID))
         log_msg("DEBUG", "[ScalewayDriver] Refreshing instance {}".format(hashed_instance_name))
         up_res = stack.up()
 
@@ -175,16 +185,14 @@ class ScalewayDriver(ProviderDriver):
         def create_pulumi_program():
             existing_registry = scaleway.get_registry_namespace(name = hashed_registry_name, opts = None)
             pulumi.export("type", existing_registry.type)
-        scw_access_key = os.getenv('SCW_ACCESS_KEY')
-        scw_secret_key = os.getenv('SCW_SECRET_KEY')
 
         try:
             stack = auto.create_or_select_stack(stack_name = hashed_registry_name,
                                                 project_name = sanitize_project_name(user_email),
                                                 program = create_pulumi_program)
 
-            stack.set_config("scaleway:access_key", auto.ConfigValue(scw_access_key))
-            stack.set_config("scaleway:secret_key", auto.ConfigValue(scw_secret_key))
+            stack.set_config("scaleway:access_key", auto.ConfigValue(SCW_ACCESS_KEY))
+            stack.set_config("scaleway:secret_key", auto.ConfigValue(SCW_SECRET_KEY))
             log_msg("DEBUG", "[ScalewayDriver] Refreshing registry {}".format(hashed_registry_name))
             up_res = stack.up()
             return {
@@ -200,16 +208,14 @@ class ScalewayDriver(ProviderDriver):
         def create_pulumi_program():
             existing_bucket = scaleway.get_object_bucket(name = hashed_bucket_name)
             pulumi.export("type", existing_bucket.type)
-        scw_access_key = os.getenv('SCW_ACCESS_KEY')
-        scw_secret_key = os.getenv('SCW_SECRET_KEY')
 
         try:
             stack = auto.create_or_select_stack(stack_name = hashed_bucket_name,
                                                 project_name = sanitize_project_name(user_email),
                                                 program = create_pulumi_program)
 
-            stack.set_config("scaleway:access_key", auto.ConfigValue(scw_access_key))
-            stack.set_config("scaleway:secret_key", auto.ConfigValue(scw_secret_key))
+            stack.set_config("scaleway:access_key", auto.ConfigValue(SCW_ACCESS_KEY))
+            stack.set_config("scaleway:secret_key", auto.ConfigValue(SCW_SECRET_KEY))
             log_msg("DEBUG", "[ScalewayDriver] Refreshing bucket {}".format(hashed_bucket_name))
             up_res = stack.up()
             return {
@@ -244,10 +250,9 @@ class ScalewayDriver(ProviderDriver):
 
     def update_virtual_machine_status(self, region, zone, server_id, action):
         regionZone = "{}-{}".format(region, zone)
-        sw_api_key = os.getenv('SCW_SECRET_KEY')
         actionData = {'action':action}
         res = requests.post(f'{SCW_API_URL}/instance/v1/zones/{regionZone}/servers/{server_id}/action',
-                                headers = {"X-Auth-Token": sw_api_key},
+                                headers = {"X-Auth-Token": SCW_SECRET_KEY},
                                 json = actionData)
         if res.status_code == 404:
             message = f"resource {server_id} not found."
@@ -260,15 +265,12 @@ class ScalewayDriver(ProviderDriver):
                                                 name = hashed_bucket_name,
                                                 region = region)
             pulumi.export("endpoint", object_storage.endpoint)
-        scw_access_key = os.getenv('SCW_ACCESS_KEY')
-        scw_secret_key = os.getenv('SCW_SECRET_KEY')
-        scw_project_id = os.getenv('SCW_PROJECT_ID')
         stack = auto.create_or_select_stack(stack_name = hashed_bucket_name,
                                             project_name = sanitize_project_name(user_email),
                                             program = create_pulumi_program)
-        stack.set_config("scaleway:access_key", auto.ConfigValue(scw_access_key))
-        stack.set_config("scaleway:secret_key", auto.ConfigValue(scw_secret_key))
-        stack.set_config("scaleway:project_id", auto.ConfigValue(scw_project_id))
+        stack.set_config("scaleway:access_key", auto.ConfigValue(SCW_ACCESS_KEY))
+        stack.set_config("scaleway:secret_key", auto.ConfigValue(SCW_SECRET_KEY))
+        stack.set_config("scaleway:project_id", auto.ConfigValue(SCW_PROJECT_ID))
         up_res = stack.up()
 
         return {
@@ -296,15 +298,12 @@ class ScalewayDriver(ProviderDriver):
                 isPublic = False
             registry = scaleway.RegistryNamespace(hashed_name, name = hashed_name, region = region, is_public = isPublic)
             pulumi.export("endpoint", registry.endpoint)
-        scw_access_key = os.getenv('SCW_ACCESS_KEY')
-        scw_secret_key = os.getenv('SCW_SECRET_KEY')
-        scw_project_id = os.getenv('SCW_PROJECT_ID')
         stack = auto.create_or_select_stack(stack_name = hashed_name,
                                             project_name = sanitize_project_name(user_email),
                                             program = create_pulumi_program)
-        stack.set_config("scaleway:access_key", auto.ConfigValue(scw_access_key))
-        stack.set_config("scaleway:secret_key", auto.ConfigValue(scw_secret_key))
-        stack.set_config("scaleway:project_id", auto.ConfigValue(scw_project_id))
+        stack.set_config("scaleway:access_key", auto.ConfigValue(SCW_ACCESS_KEY))
+        stack.set_config("scaleway:secret_key", auto.ConfigValue(SCW_SECRET_KEY))
+        stack.set_config("scaleway:project_id", auto.ConfigValue(SCW_PROJECT_ID))
         up_res = stack.up()
 
         return {

@@ -14,15 +14,24 @@ from entities.Registry import Registry
 CACHE_ADAPTER = get_adapter('cache')
 
 def get_driver_access_key_id():
-    access_key_id = os.getenv('AWS_DRIVER_ACCESS_KEY_ID')
+    access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
     if is_empty(access_key_id):
         access_key_id = os.getenv('AWS_STRATEGY_ACCESS_KEY_ID')
     return access_key_id
 
 def get_driver_secret_access_key():
-    secret_access_key = os.getenv('AWS_DRIVER_SECRET_ACCESS_KEY')
+    secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
     if is_empty(secret_access_key):
         secret_access_key = os.getenv('AWS_STRATEGY_SECRET_ACCESS_KEY')
+    return secret_access_key
+
+# These methods are FOR TESTING PURPOSES ONLY. They would serve just in the pre-production environment
+def get_driver_access_key_id_dns_test():
+    access_key_id = os.getenv('AWS_ACCESS_KEY_ID_DNS_TEST')
+    return access_key_id
+
+def get_driver_secret_access_key_dns_test():
+    secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY_DNS_TEST')
     return secret_access_key
 
 def update_aws_registry_credentials(rg_id, region, hashed_name):
