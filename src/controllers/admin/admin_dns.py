@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from schemas.Dns import DnsDeleteSchema, DnsRecordSchema
 from schemas.User import UserSchema
 from utils.dns import import_driver
+from utils.logger import log_msg
 from utils.observability.cid import get_current_cid
 from utils.provider import exist_provider, get_provider_dns_zones
 
@@ -23,6 +24,7 @@ def admin_list_dns_zones(current_user: UserSchema, provider: str, db: Session):
             'dns_zones': get_provider_dns_zones(provider)
         } 
     except Exception as e:
+        log_msg("ERROR", "[admin_list_dns_zones] unexpected exception: {}".format(e))
         return JSONResponse(content = {
             'status': 'ko',
             'error': "{}".format(e),
