@@ -120,18 +120,13 @@ def create_user_account(payload, db):
 
 def get_user_cloud_statistics(current_user, db):
     from entities.Instance import Instance
-    from entities.Access import Access
     from entities.Project import Project
     from entities.Bucket import Bucket
     from entities.Registry import Registry
     instances = len(Instance.getActiveUserInstances(current_user.id, db))
-    instances = instances + len(Access.getUserAccessesByType(current_user.id, "instance", db))
     projects = len(Project.getUserProjects(current_user.id, db))
-    projects = projects + len(Access.getUserAccessesByType(current_user.id, "project", db))
     buckets = len(Bucket.getAllUserBuckets(current_user.id, db))
-    buckets = buckets + len(Access.getUserAccessesByType(current_user.id, "bucket", db))
     registries = len(Registry.getAllUserRegistries(current_user.id, db))
-    registries = registries + len(Access.getUserAccessesByType(current_user.id, "registry", db))
 
     return JSONResponse(content = {"projects": projects, "instances": instances, "buckets": buckets, "registries": registries}, status_code = 200)
 
