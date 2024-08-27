@@ -2,12 +2,13 @@ from fastapi import status, APIRouter
 from fastapi.responses import JSONResponse
 
 from urllib.error import HTTPError
-from utils.provider import get_provider_available_instances_config_by_region_zone, get_provider_infos, get_provider_instances_pricing_by_region_zone, get_provider_available_instances, get_provider_available_instances_by_region_zone, get_providers
+from utils.provider import get_provider_available_instances_config_by_region_zone, get_provider_infos, get_provider_instances_pricing_by_region_zone, get_provider_available_instances, get_provider_available_instances_by_region_zone, get_providers, get_dns_providers
 from utils.observability.otel import get_otel_tracer
 from utils.observability.cid import get_current_cid
 from utils.observability.traces import span_format
 from utils.observability.counter import create_counter, increment_counter
 from utils.observability.enums import Action, Method
+from utils.logger import log_msg
 
 router = APIRouter()
 
@@ -22,6 +23,23 @@ def get_all_providers():
             'status': 'ok',
             'providers': get_providers()
         }
+
+@router.get("/dns")
+def get_all_dns_providers():
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.ALL)):
+        increment_counter(_counter, Method.GET, Action.ALL)
+    try:
+        return {
+            'status': 'ok',
+            'providers': get_dns_providers()
+        }
+    except Exception as e:
+        log_msg("ERROR", "[admin_list_dns_providers] unexpected exception: {}".format(e))
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': "{}".format(e),
+            'cid': get_current_cid()
+        }, status_code = 500)
 
 @router.get("/{provider}/region")
 def get_provider_regions(provider: str):
