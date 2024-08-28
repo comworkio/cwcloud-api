@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 from utils.api_url import is_url_not_responding
 from utils.bytes_generator import generate_random_bytes
-from utils.common import exists_entry, is_disabled, is_empty, is_not_empty, safe_compare_entry, safe_contain_entry
+from utils.common import exists_entry, is_disabled, is_empty, is_not_empty, is_not_empty_key, safe_compare_entry, safe_contain_entry
 from utils.logger import log_msg
 from utils.mail import send_email
 
@@ -72,7 +72,10 @@ def check_create_labels_support():
         create_project_label('s-high', "#ff0000")
 
 def get_relevant_labels_from_issue(issue):
-   return [label for label in issue['labels'] if 'labels' in issue and label not in ['doing', 'todo', 'review']]
+   if is_not_empty_key(issue, "error"):
+       return []
+
+   return [label for label in issue['labels'] if label not in ['doing', 'todo', 'review']]
 
 def close_gitlab_issue(issue_id):
     check_gitlab_url(GITLAB_URL)
@@ -83,6 +86,10 @@ def close_gitlab_issue(issue_id):
     token = os.getenv('GIT_PRIVATE_TOKEN')
 
     issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers = {"PRIVATE-TOKEN": token}).json()
+    if is_not_empty_key(issue, "error"):
+        log_msg("WARN", "[close_gitlab_issue] There's an error when fetching the issue: error = {}".format(issue['error']))
+        return {}
+
     new_labels = get_relevant_labels_from_issue(issue)
     data = {
         "state_event": "close",
@@ -99,6 +106,10 @@ def reopen_gitlab_issue(issue_id):
     token = os.getenv('GIT_PRIVATE_TOKEN')
     check_gitlab_url(GITLAB_URL)
     issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers = {"PRIVATE-TOKEN": token}).json()
+    if is_not_empty_key(issue, "error"):
+        log_msg("WARN", "[reopen_gitlab_issue] There's an error when fetching the issue: error = {}".format(issue['error']))
+        return {}
+
     new_labels = get_relevant_labels_from_issue(issue)
     new_labels.append("todo")
     data = {
