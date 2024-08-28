@@ -61,6 +61,11 @@ def check_create_labels_support():
 
     project_labels_reponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', headers = {"PRIVATE-TOKEN": token})
     project_labels = project_labels_reponse.json()
+
+    if is_not_empty_key(project_labels, "error"):
+        log_msg("WARN", "[check_create_labels_support] There's an error when fetching the labels: error = {}".format(project_labels['error']))
+        return {}
+
     label_names = [label['name'] for label in project_labels]
     if not 'support' in label_names:
         create_project_label('support', "#00b140")
