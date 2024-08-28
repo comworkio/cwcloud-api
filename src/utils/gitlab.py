@@ -80,8 +80,9 @@ def get_relevant_labels_from_issue(issue):
 def close_gitlab_issue(issue_id):
     check_gitlab_url(GITLAB_URL)
 
-    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')):
+    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')) or is_empty(issue_id):
         return {}
+
     GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
     token = os.getenv('GIT_PRIVATE_TOKEN')
 
@@ -99,7 +100,7 @@ def close_gitlab_issue(issue_id):
     requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json = data, headers = {"PRIVATE-TOKEN": token})
 
 def reopen_gitlab_issue(issue_id):
-    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')):
+    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')) or is_empty(issue_id):
         return {}
 
     GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
