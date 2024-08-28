@@ -133,13 +133,16 @@ def get_provider_instances_pricing_by_region_zone(provider, region, zone):
         "price": os.getenv(instance['price_variable'])
     }, filtered_instances))
 
+def extract_provider_name(driver):
+    return driver.replace("Driver", "").lower()
+
 def get_provider_dns_zones(provider):
     config_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..', 'cloud_environments.yml'))
     result = []
     with open(config_path, "r") as stream:
         loaded_data = yaml.safe_load(stream)
         dns_zones = loaded_data['dns_zones']
-        result = [dns_zone['name'] for dns_zone in dns_zones if dns_zone['provider'] == provider]
+        result = [dns_zone['name'] for dns_zone in dns_zones if extract_provider_name(dns_zone['driver']) == provider]
     return result
 
 def get_dns_providers():
@@ -148,5 +151,5 @@ def get_dns_providers():
     with open(config_path, "r") as stream:
         loaded_data = yaml.safe_load(stream)
         dns_zones = loaded_data['dns_zones']
-        result = list(set([dns_zone['provider'] for dns_zone in dns_zones]))
+        result = list(set([extract_provider_name(dns_zone['driver']) for dns_zone in dns_zones]))
     return result
