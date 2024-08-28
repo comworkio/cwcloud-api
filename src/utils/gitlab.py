@@ -71,6 +71,9 @@ def check_create_labels_support():
     if not 's-high' in label_names:
         create_project_label('s-high', "#ff0000")
 
+def get_relevant_labels_from_issue(issue):
+   return [label for label in issue['labels'] if 'labels' in issue and label not in ['doing', 'todo', 'review']]
+
 def close_gitlab_issue(issue_id):
     check_gitlab_url(GITLAB_URL)
 
@@ -87,9 +90,6 @@ def close_gitlab_issue(issue_id):
     }
 
     requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json = data, headers = {"PRIVATE-TOKEN": token})
-
-def get_relevant_labels_from_issue(issue):
-   return [label for label in issue['labels'] if 'labels' in issue and label not in ['doing', 'todo', 'review']]
 
 def reopen_gitlab_issue(issue_id):
     if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')):
