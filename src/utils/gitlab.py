@@ -127,7 +127,8 @@ def reopen_gitlab_issue(issue_id):
 
 def add_gitlab_issue(ticketId, user_email, title, description, severity, product):
     if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')):
-        return {}
+        return None
+
     check_gitlab_url(GITLAB_URL)
     GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
     check_create_labels_support()
@@ -146,11 +147,11 @@ def add_gitlab_issue(ticketId, user_email, title, description, severity, product
 
     if is_not_empty_key(issue, "error"):
         log_msg("WARN", "[add_gitlab_issue] There's an error when creating an issue: error = {}".format(issue['error']))
-        return {}
+        return None
 
     if is_empty_key(issue, "iid"):
         log_msg("WARN", "[add_gitlab_issue] No iid found on the issue: issue = {}".format(issue))
-        return {}
+        return None
 
     return issue['iid']
 
