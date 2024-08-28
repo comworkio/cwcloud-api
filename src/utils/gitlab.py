@@ -80,13 +80,16 @@ def close_gitlab_issue(issue_id):
     token = os.getenv('GIT_PRIVATE_TOKEN')
 
     issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers = {"PRIVATE-TOKEN": token}).json()
-    new_labels = [label for label in issue['labels'] if label not in ['doing', 'todo', 'review']]
+    new_labels = get_relevant_labels_from_issue(issue)
     data = {
         "state_event": "close",
         "labels": new_labels
     }
 
     requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json = data, headers = {"PRIVATE-TOKEN": token})
+
+def get_relevant_labels_from_issue(issue):
+   return [label for label in issue['labels'] if 'labels' in issue and label not in ['doing', 'todo', 'review']]
 
 def reopen_gitlab_issue(issue_id):
     if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')):
@@ -96,7 +99,7 @@ def reopen_gitlab_issue(issue_id):
     token = os.getenv('GIT_PRIVATE_TOKEN')
     check_gitlab_url(GITLAB_URL)
     issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers = {"PRIVATE-TOKEN": token}).json()
-    new_labels = [label for label in issue['labels'] if label not in ['doing', 'todo', 'review']]
+    new_labels = get_relevant_labels_from_issue(issue)
     new_labels.append("todo")
     data = {
         "state_event": "reopen",
