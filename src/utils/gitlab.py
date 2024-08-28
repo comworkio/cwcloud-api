@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 from utils.api_url import is_url_not_responding
 from utils.bytes_generator import generate_random_bytes
-from utils.common import exists_entry, is_disabled, is_empty, is_not_empty, is_not_empty_key, safe_compare_entry, safe_contain_entry
+from utils.common import exists_entry, is_disabled, is_empty, is_empty_key, is_not_empty, is_not_empty_key, safe_compare_entry, safe_contain_entry
 from utils.logger import log_msg
 from utils.mail import send_email
 
@@ -142,7 +142,17 @@ def add_gitlab_issue(ticketId, user_email, title, description, severity, product
     }
 
     res = requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues', json = data, headers = {"PRIVATE-TOKEN": token})
-    return res.json()['iid']
+    issue = res.json()
+
+    if is_not_empty_key(issue, "error"):
+        log_msg("WARN", "[add_gitlab_issue] There's an error when creating an issue: error = {}".format(issue['error']))
+        return {}
+
+    if is_empty_key(issue, "iid"):
+        log_msg("WARN", "[add_gitlab_issue] No iid found on the issue: issue = {}".format(issue))
+        return {}
+
+    return issue['iid']
 
 def add_gitlab_issue_comment(issue_id, user_email, message):
     if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')):
