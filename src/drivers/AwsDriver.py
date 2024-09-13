@@ -253,7 +253,6 @@ class AwsDriver(ProviderDriver):
     
     
     def delete_dns_records(self, record_id, record_name, dns_zone):
-        organization="organization"
         project_name = os.getenv("PULUMI_AWS_PROJECT_NAME")
         stack_name = record_name
         stack = auto.select_stack(stack_name = stack_name,
@@ -270,12 +269,8 @@ class AwsDriver(ProviderDriver):
         stack.set_config("aws:region", auto.ConfigValue(value="us-east-1"))
 
         stack.destroy(on_output=print)
-
-        # Delete the state of the stack
-        local_workspace=auto.LocalWorkspace()
-        fq_stack_name=auto.fully_qualified_stack_name(org=organization,project=project_name,stack=stack_name)
-        local_workspace.remove_stack(fq_stack_name)
-
+        stack.workspace.remove_stack(stack_name)
+        
         return {"id": record_id, "record": record_name, "zone": dns_zone}
 
     def list_dns_records(self):

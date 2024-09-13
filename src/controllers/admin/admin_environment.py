@@ -6,19 +6,35 @@ from fastapi import UploadFile
 from fastapi.responses import JSONResponse
 
 from entities.Environment import Environment
-from utils.common import is_empty, is_not_numeric, safe_get_entry
+from utils.common import is_empty, is_not_numeric, safe_get_entry, is_not_empty_key, is_not_empty
 from utils.encoder import AlchemyEncoder
 from utils.file import quiet_remove
 from utils.gitlab import get_helm_charts, get_infra_playbook_roles
 from utils.list import marshall_list_string, unmarshall_list_array
 from utils.observability.cid import get_current_cid
+from utils.logger import log_msg
 
 
 def admin_get_roles(current_user):
-    rolesJson = get_infra_playbook_roles()
+    error_response, infra_playbook_roles = get_infra_playbook_roles()
     roles = []
-    for roleJson in rolesJson:
-        roles.append(roleJson["name"])
+
+    if is_not_empty(error_response):
+        return error_response
+
+    if not isinstance(infra_playbook_roles, list):
+        log_msg("DEBUG", "[admin_get_roles] Unexpected role format in data, infra_playbook_roles={}".format(infra_playbook_roles))
+        return JSONResponse(content={
+            "status": "ko",
+            "message": "Unexpected role format in data",
+            "i18n_code": "unexpected_role_format",
+            "cid": get_current_cid()
+        }, status_code=500)
+
+    for role in infra_playbook_roles:
+        if is_not_empty_key(role, "name"):
+            roles.append(role["name"])
+
     return JSONResponse(content = {"roles": roles}, status_code = 200)
 
 def admin_get_environment(environment_id, db):
@@ -337,7 +353,21 @@ def admin_update_k8s_environment(environment_id, env_data, db):
     }, status_code = 200)
 
 def get_charts():
-    return JSONResponse(content = get_helm_charts(), status_code = 200)
+    error_response, charts = get_helm_charts()
+    
+    if is_not_empty(error_response):
+        return error_response
+    
+    if not isinstance(charts, list):
+        log_msg("DEBUG", "[get_charts] Unexpected chart format in data, charts={}".format(charts))
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message': 'Unexpected chart format in data',
+            'i18n_code': 'unexpected_chart_format',
+            'cid': get_current_cid()
+        }, status_code = 500)
+    
+    return JSONResponse(content = charts, status_code = 200)
 
 def verify_env_args(args:Optional[list[str]] = None):
     if(args is None):

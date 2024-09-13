@@ -251,10 +251,10 @@ class AzureDriver(ProviderDriver):
             pulumi.export("record",record)
 
         # Naming the stack by the name of the record (the fully qualified name)
-        stack_name = f"{record_name}.{(dns_zone)}"
+        stack_name = f"{record_name}.{dns_zone}"
         stack = auto.create_or_select_stack(stack_name = stack_name,
-                                        project_name = os.getenv('PULUMI_AZURE_PROJECT_NAME'),
-                                        program = create_pulumi_program)
+                                            project_name = os.getenv('PULUMI_AZURE_PROJECT_NAME'),
+                                            program = create_pulumi_program)
 
         stack.set_config("azure-native:clientId", auto.ConfigValue(_azure_client_id))
         stack.set_config("azure-native:clientSecret", auto.ConfigValue(_azure_client_secret, secret=True))
@@ -268,7 +268,6 @@ class AzureDriver(ProviderDriver):
     
     
     def delete_dns_records(self, record_id, record_name, dns_zone):
-        organization="organization"
         project_name = os.getenv('PULUMI_AZURE_PROJECT_NAME')
         stack_name = record_name[:-1]
         stack = auto.select_stack(stack_name = stack_name,
@@ -282,10 +281,7 @@ class AzureDriver(ProviderDriver):
         stack.destroy(on_output=print)
 
         # Deleting the state of the stack
-        local_workspace=auto.LocalWorkspace()
-        fq_stack_name=auto.fully_qualified_stack_name(org=organization,project=project_name,stack=stack_name)
-        local_workspace.remove_stack(fq_stack_name)
-
+        stack.workspace.remove_stack(stack_name)
         return {"id": record_id, "record": record_name, "zone": dns_zone}
     
 

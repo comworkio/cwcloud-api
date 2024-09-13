@@ -4,6 +4,7 @@ import random
 import gitlab
 import requests
 import yaml
+from fastapi.responses import JSONResponse
 
 from datetime import datetime, timedelta
 from urllib.error import HTTPError
@@ -11,7 +12,7 @@ from urllib.parse import urlparse
 
 from utils.api_url import is_url_not_responding
 from utils.bytes_generator import generate_random_bytes
-from utils.common import exists_entry, is_disabled, is_empty, is_empty_key, is_not_empty, is_not_empty_key, safe_compare_entry, safe_contain_entry
+from utils.common import exists_entry, is_disabled, is_empty, is_empty_key, is_not_empty, is_not_empty_key, safe_compare_entry, safe_contain_entry, is_response_ok
 from utils.logger import log_msg
 from utils.mail import send_email
 
@@ -422,12 +423,24 @@ def get_infra_playbook_roles():
     check_gitlab_url(GITLAB_URL)
     playbook_project_id = os.getenv('PLAYBOOK_REPO_PROJECTID')
     token = os.getenv('GIT_PRIVATE_TOKEN')
+    gitlab_connexion_error = JSONResponse(content={
+        "status": "ko",
+        "message": "can not get roles from gitlab",
+        "i18n_code": "can_not_get_roles"
+    }, status_code=400)
+        
     if is_disabled(playbook_project_id) or is_disabled(token):
-        return {}
+        return gitlab_connexion_error, []
 
     rolesResponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{playbook_project_id}/repository/tree?path=roles&per_page=200&ref=main', headers = {"PRIVATE-TOKEN": token})
-    rolesJson = rolesResponse.json()
-    return rolesJson
+    if not is_response_ok(rolesResponse.status_code):
+        log_msg("DEBUG", "[get_infra_playbook_roles] can not get roles from gitlab with url = {}, status = {}".format(GITLAB_URL, rolesResponse.status_code))
+        return gitlab_connexion_error, []
+    try:
+        roles = rolesResponse.json()
+        return None, roles
+    except ValueError:
+        return gitlab_connexion_error, []
 
 def get_project_runners(project_id, gitlab_host, access_token):
     check_gitlab_url(gitlab_host)
@@ -579,20 +592,32 @@ def remove_folder_from_gitlab(project_id, folder_path, commit_message, access_to
         log_msg("WARN", "[delete_gitlab_folder] error = {}".format(e))
         
 def get_helm_charts():
+    check_gitlab_url(GITLAB_URL)
     charts_project_id = os.getenv('GIT_HELMCHARTS_REPO_ID')
     git_charts_url = os.getenv('GIT_HELMCHARTS_REPO_URL')
     token = os.getenv('GIT_PRIVATE_TOKEN')
+    gitlab_connexion_error = JSONResponse(content={
+        "status": "ko",
+        "message": "can not get helm charts from gitlab",
+        "i18n_code": "can_not_get_helm_charts"
+    }, status_code=400)
     if is_disabled(charts_project_id) or is_disabled(token):
-        return {}
-    parsed_url = urlparse(f'https://{git_charts_url}')
+        return gitlab_connexion_error, []
+    parsed_url = urlparse(f'{git_charts_url}')
     host = f"{parsed_url.scheme}://{parsed_url.netloc}"
-    check_gitlab_url(host)
-
     charts_response = requests.get(
         f'{host}/api/v4/projects/{charts_project_id}/repository/tree?path=charts&per_page=200&ref=main', 
         headers={"PRIVATE-TOKEN": token}
     )
-    return charts_response.json()
+    if not is_response_ok(charts_response.status_code):
+        log_msg("DEBUG", "[get_helm_charts] can not get helm charts from gitlab with url = {}, status = {}".format(host, charts_response.status_code))
+        return gitlab_connexion_error, []
+    try:
+        charts = charts_response.json()
+        return None, charts
+    except ValueError:
+        return gitlab_connexion_error, []
+
 
 def push_selected_chart(charts:list[str], gitlab_connection: gitlab.Gitlab, git_repo_id: str):
     fetchedProject = gitlab_connection.projects.get(git_repo_id)

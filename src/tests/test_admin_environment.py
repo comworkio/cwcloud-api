@@ -17,9 +17,10 @@ class TestAdminEnvironnement(TestCase):
         super(TestAdminEnvironnement, self).__init__(*args, **kwargs)
 
     @patch('controllers.admin.admin_environment.get_infra_playbook_roles', side_effect = None)
-    def test_admin_get_roles(self,get_infra_playbook_roles):
+    def test_admin_get_roles(self, get_infra_playbook_roles):
         # Given  
         from controllers.admin.admin_environment import admin_get_roles
+        get_infra_playbook_roles.return_value = None, []
 
         # When
         result = admin_get_roles(test_current_user)
