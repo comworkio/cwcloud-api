@@ -17,35 +17,24 @@ ENV PYTHONUNBUFFERED=1 \
     INVOKE_SYNC_WAIT_TIME=1 \
     MAX_RETRY_INVOKE_SYNC=100 \
     LOOP_WAIT_TIME=10 \
-    UVICORN_WORKERS=10
+    UVICORN_WORKERS=10 \
+    API_MAX_RESULTS=100
 
 WORKDIR /app
 
 RUN apt update && \
     apt upgrade -y && \
     apt install -y wkhtmltopdf && \
-    apt-get install -y git
+    apt-get install -y git && \
+    curl -fsSL https://get.pulumi.com | sh
 
-RUN curl -fsSL https://get.pulumi.com | sh
 ENV PATH="/root/.pulumi/bin:${PATH}"
-ENV API_MAX_RESULTS=100
-
-ARG PULUMI_OVH_VERSION=0.0.4
-
-RUN pulumi plugin install resource ovh v${PULUMI_OVH_VERSION} --server https://pulumi-ovh.s3.fr-par.scw.cloud/v${PULUMI_OVH_VERSION}/
 
 COPY ./requirements.txt /app/requirements.txt
 
 RUN find . -name '*.pyc' -type f -delete && \
     pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
-    curl -fsSL https://gitlab.comwork.io/oss/lbrlabs/-/raw/main/lbrlabs_ovh.tgz -o lbrlabs_ovh.tgz && \
-    tar -xvzf lbrlabs_ovh.tgz && \
-    curl -fsSL https://gitlab.comwork.io/oss/lbrlabs/-/raw/main/lbrlabs_pulumi_ovh.tgz -o lbrlabs_pulumi_ovh.tgz && \
-    tar -xvzf lbrlabs_pulumi_ovh.tgz && \
-    curl https://gitlab.comwork.io/oss/lbrlabs/-/raw/main/lbrlabs_pulumi_ovh-${PULUMI_OVH_VERSION}.dist-info.tgz -o lbrlabs_pulumi_ovh-${PULUMI_OVH_VERSION}.dist-info.tgz && \
-    tar -xvzf lbrlabs_pulumi_ovh-${PULUMI_OVH_VERSION}.dist-info.tgz && \
-    mv lbrlabs_* /usr/local/lib/python3.9/site-packages/ && \
     rm -rf *.tgz && \
     apt clean -y
 

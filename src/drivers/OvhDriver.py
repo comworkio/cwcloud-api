@@ -1,7 +1,7 @@
 import os
 import importlib
 import pulumi
-import lbrlabs_pulumi_ovh as ovh
+import pulumi_ovh as ovh
 
 from pulumi_openstack import compute
 from openstack import connection

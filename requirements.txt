@@ -4,6 +4,7 @@ pulumi_azure_native
 pulumi-openstack==3.9.0
 pulumi-aws>=5.0.0, <6.0.0
 pulumi-gcp==7.35.0
+pulumi-ovh==0.49.0
 azure-mgmt-compute==30.6.0
 azure-mgmt-dns==8.1.0
 azure-identity==1.15.0

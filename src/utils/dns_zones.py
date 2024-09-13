@@ -1,7 +1,7 @@
 import os
 import yaml
 
-import lbrlabs_pulumi_ovh as ovh
+import pulumi_ovh as ovh
 import pulumiverse_scaleway as scaleway
 import pulumi_aws as aws
 import pulumi_azure_native as azure_native
@@ -40,7 +40,7 @@ def register_ovh_domain(record_name, environment, instance_ip, root_dns_zone):
     dns_zone = "{}.{}".format(environment, root_dns_zone)
     sub_domain = "{}.{}".format(record_name, environment)
     log_msg("INFO", "[register_domain][ovh] register domain {}.{}".format(record_name, dns_zone))
-    ovh.DomainZoneRecord(sub_domain,
+    ovh.domain.ZoneRecord(sub_domain,
         fieldtype = "A",
         subdomain = sub_domain,
         target = instance_ip,
