@@ -42,11 +42,22 @@ def admin_delete_user_2fa(current_user, userId, db):
             'i18n_code': 'user_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
-    from entities.Mfa import Mfa
+        
+    from entities.Mfa import Mfa        
+    mfa_methods = Mfa.getUserMfaMethods(user.id, db)
+    if not mfa_methods:
+        return JSONResponse(content = {
+            'status': 'ko',
+            'message' : 'user has no 2fa methods', 
+            'i18n_code': 'user_no_2fa_methods',
+            'cid': get_current_cid()
+        }, status_code = 404)
+
     Mfa.deleteUserMethods(userId, db)
     return JSONResponse(content = {
         'status': 'ok',
         'message': '2fa successfully deleted',
+        'i18n_code': '2fa_deleted'
     }, status_code = 200)
 
 def admin_update_user(current_user, userId, payload, db):

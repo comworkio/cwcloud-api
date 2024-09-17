@@ -134,7 +134,7 @@ class TestAdminUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"2fa successfully deleted"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"2fa successfully deleted","i18n_code":"2fa_deleted"}')
   
     @patch('entities.User.User.getActiveAutoPaymentUsers', side_effect = lambda x: [])
     def test_admin_get_autopayment_users(self, getActiveAutoPaymentUsers):

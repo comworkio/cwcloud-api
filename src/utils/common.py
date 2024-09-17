@@ -144,3 +144,6 @@ def object_as_dict(obj):
     return {c.key: getattr(obj, c.key)
             for c in sqlalchemy.inspect(obj).mapper.column_attrs}
 
+def get_env_int(var_name, default):
+    value = os.getenv(var_name)
+    return int(value) if value else default
