@@ -144,7 +144,7 @@ class OvhDriver(ProviderDriver):
         mainRegion = ''.join([i for i in region if not i.isdigit()])
         service_name = os.getenv('OVH_SERVICENAME')
         def create_pulumi_program():
-            user = ovh.CloudProjectUser(hashed_bucket_name, service_name = service_name, description = hashed_bucket_name, role_name = "objectstore_operator")
+            user = ovh.cloudproject.User(hashed_bucket_name, service_name = service_name, description = hashed_bucket_name, role_name = "objectstore_operator")
             pulumi.export("user_id", user.id)
 
         stack = auto.create_or_select_stack(stack_name = hashed_bucket_name,
