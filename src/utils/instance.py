@@ -100,7 +100,7 @@ def create_instance(provider, ami_image, instance_id, user_email, instance_name,
     ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))
     ProviderDriver = getattr(ProviderDriverModule, get_driver(provider))
     log_msg("DEBUG", "[create_instance] creating instance hashed_instance_name = {}".format(hashed_instance_name))
-    result = ProviderDriver().create_instance(instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone)
+    result = ProviderDriver().create_instance(hashed_instance_name, environment, instance_region, instance_zone, instance_type, ami_image, generate_dns, root_dns_zone)
     log_msg("DEBUG", "[create_instance] driver result = {}".format(result))
     if "ip" in result:
         Instance.updateInstanceIp(instance_id, result['ip'], db)
@@ -109,7 +109,7 @@ def create_instance(provider, ami_image, instance_id, user_email, instance_name,
 def refresh_instance(provider, instance_id, hashed_instance_name, environment, instance_region, instance_zone, db):
     ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))
     ProviderDriver = getattr(ProviderDriverModule, get_driver(provider))
-    result = ProviderDriver().refresh_instance(instance_id, hashed_instance_name, environment, instance_region, instance_zone)
+    result = ProviderDriver().refresh_instance(hashed_instance_name, environment, instance_region, instance_zone)
     if "type" in result and "ip" in result:
         Instance.updateTypeAndIp(instance_id, result['type'], result['ip'], db)
 

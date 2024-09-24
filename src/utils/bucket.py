@@ -52,14 +52,14 @@ def update_credentials(provider, bucket, db):
 def refresh_bucket(user_email, provider, bucket_id, hashed_bucket_name, db):
     ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))
     ProviderDriver = getattr(ProviderDriverModule, get_driver(provider))
-    result = ProviderDriver().refresh_bucket(user_email, bucket_id, hashed_bucket_name)
+    result = ProviderDriver().refresh_bucket(user_email, hashed_bucket_name)
     if "type" in result:
         Bucket.updateType(bucket_id, result['type'], db)
 
 def create_bucket(provider, user_email, bucket_id, hashed_bucket_name, region, bucket_type, db):
     ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))
     ProviderDriver = getattr(ProviderDriverModule, get_driver(provider))
-    result = ProviderDriver().create_bucket(user_email, bucket_id, hashed_bucket_name, region, bucket_type)
+    result = ProviderDriver().create_bucket(user_email, hashed_bucket_name, region, bucket_type)
     log_msg("DEBUG", "[create_bucket] driver result = {}".format(result))
     Bucket.update(bucket_id, result['endpoint'], result['user_id'] if "user_id" in result else None, result['access_key'], result['secret_key'], "active", db)
 

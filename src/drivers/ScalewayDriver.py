@@ -1,13 +1,12 @@
-import importlib
 import os
-
-from urllib.error import HTTPError
-
+import importlib
+import requests
 import pulumi
 import pulumiverse_scaleway as scaleway
-import requests
+
 from pulumi import ResourceOptions
 from pulumi import automation as auto
+from urllib.error import HTTPError
 
 from drivers.ProviderDriver import ProviderDriver
 from utils.common import is_not_empty, is_true
@@ -56,9 +55,10 @@ class ScalewayDriver(ProviderDriver):
                                 "data": data,
                                 "priority": 0,
                             }
-                        ]}
-                    }]
-                }
+                        ]
+                    }
+                }]
+            }
             requests.patch(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{dns_zone}/records', headers = {"X-Auth-Token": SCW_SECRET_KEY}, json = json)
             
             pulumi.export("record", record_name)
@@ -108,7 +108,7 @@ class ScalewayDriver(ProviderDriver):
         stack.up()
         return {"id": id, "record": record_name, "zone": root_dns_zone}
          
-    def create_instance(self, instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone):
+    def create_instance(self, hashed_instance_name, environment, instance_region, instance_zone, instance_type, ami_image, generate_dns, root_dns_zone):
         def create_pulumi_program():
             region_zone = "{}-{}".format(instance_region, instance_zone)
             instance_ip = scaleway.InstanceIp("publicIp", zone = region_zone)
@@ -146,7 +146,7 @@ class ScalewayDriver(ProviderDriver):
             "ip": up_res.outputs.get("public_ip").value
         }
 
-    def refresh_instance(self, instance_id, hashed_instance_name, environment, instance_region, instance_zone):
+    def refresh_instance(self, hashed_instance_name, environment, instance_region, instance_zone):
         def create_pulumi_program():
             region_zone = "{}-{}".format(instance_region, instance_zone)
             existing_instance = scaleway.get_instance_server(hashed_instance_name)
@@ -181,7 +181,7 @@ class ScalewayDriver(ProviderDriver):
             "ip": up_res.outputs.get("type").value
         }
 
-    def refresh_registry(self, user_email, registry_id, hashed_registry_name):
+    def refresh_registry(self, user_email, hashed_registry_name):
         def create_pulumi_program():
             existing_registry = scaleway.get_registry_namespace(name = hashed_registry_name, opts = None)
             pulumi.export("type", existing_registry.type)
@@ -204,7 +204,7 @@ class ScalewayDriver(ProviderDriver):
                 "error": "{}".format(e)
             }
 
-    def refresh_bucket(self, user_email, bucket_id, hashed_bucket_name):
+    def refresh_bucket(self, user_email, hashed_bucket_name):
         def create_pulumi_program():
             existing_bucket = scaleway.get_object_bucket(name = hashed_bucket_name)
             pulumi.export("type", existing_bucket.type)
@@ -241,8 +241,7 @@ class ScalewayDriver(ProviderDriver):
     def get_virtual_machine(self, region, zone, instance_name):
         region_zone = "{}-{}".format(region, zone)
         sw_api_key = os.getenv('SCW_SECRET_KEY')
-        res = requests.get(f'{SCW_API_URL}/instance/v1/zones/{region_zone}/servers?name={instance_name}',
-                                headers = {"X-Auth-Token": sw_api_key})
+        res = requests.get(f'{SCW_API_URL}/instance/v1/zones/{region_zone}/servers?name={instance_name}', headers = {"X-Auth-Token": sw_api_key})
         servers = res.json()['servers']
         if len(servers)>0:
             return servers[0]
@@ -258,7 +257,7 @@ class ScalewayDriver(ProviderDriver):
             message = f"resource {server_id} not found."
             raise HTTPError("instance_not_found", res.status_code, message, hdrs = {"i18n_code": "instance_not_found"}, fp = None)
 
-    def create_bucket(self, user_email, bucket_id, hashed_bucket_name, region, bucket_type):
+    def create_bucket(self, user_email, hashed_bucket_name, region, bucket_type):
         def create_pulumi_program():
             object_storage = scaleway.ObjectBucket(resource_name = hashed_bucket_name,
                                                 acl = bucket_type,
@@ -291,7 +290,7 @@ class ScalewayDriver(ProviderDriver):
         stack = auto.select_stack(hashed_bucket_name, sanitize_project_name(user_email), program = self.delete_bucket)
         stack.destroy()
 
-    def create_registry(self, user_email, registry_id, hashed_name, region, type):
+    def create_registry(self, user_email, hashed_name, region, type):
         def create_pulumi_program():
             isPublic = True
             if type == 'private':

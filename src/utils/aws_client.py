@@ -25,15 +25,6 @@ def get_driver_secret_access_key():
         secret_access_key = os.getenv('AWS_STRATEGY_SECRET_ACCESS_KEY')
     return secret_access_key
 
-# These methods are FOR TESTING PURPOSES ONLY. They would serve just in the pre-production environment
-def get_driver_access_key_id_dns_test():
-    access_key_id = os.getenv('AWS_ACCESS_KEY_ID_DNS_TEST')
-    return access_key_id
-
-def get_driver_secret_access_key_dns_test():
-    secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY_DNS_TEST')
-    return secret_access_key
-
 def update_aws_registry_credentials(rg_id, region, hashed_name):
     delete_old_reg_keys(rg_id, region, hashed_name)
     user_name = f'user-{hashed_name}'
@@ -204,7 +195,7 @@ def delete_aws_user_registry(hashed_name, region, registry_id):
     my_config = Config(region_name = region, signature_version = 'v4', retries = { 'max_attempts': 10, 'mode': 'standard'})
     sts_client = boto3.client('sts', config = my_config, aws_access_key_id = get_driver_access_key_id(), aws_secret_access_key = get_driver_secret_access_key())
     account_id = sts_client.get_caller_identity()['Account']
-    registry_name = CACHE_ADAPTER().get(f'aws_registry_name_{registry_id}')
+    registry_name = CACHE_ADAPTER().get(f'aws_registry_{hashed_name}')
     user = f'user-{hashed_name}'
     iam = boto3.client('iam', aws_access_key_id = access_key_id, aws_secret_access_key = secret_access_key)
     iam.detach_user_policy(UserName = user, PolicyArn = f"arn: aws:iam::{account_id}:policy/{registry_name}")
@@ -227,7 +218,7 @@ def delete_aws_user_bucket(region, bucket_id, hashed_bucket_name):
     my_config = Config(region_name = region, signature_version = 'v4', retries = { 'max_attempts': 10, 'mode': 'standard'})
     sts_client = boto3.client('sts', config = my_config, aws_access_key_id = get_driver_access_key_id(), aws_secret_access_key = get_driver_secret_access_key())
     account_id = sts_client.get_caller_identity()['Account']
-    bucket_name = CACHE_ADAPTER().get(f'aws_bucket_name_{bucket_id}')
+    bucket_name = CACHE_ADAPTER().get(f'aws_bucket_{hashed_bucket_name}')
     user = f'user-{hashed_bucket_name}'
     iam = boto3.client('iam', aws_access_key_id = access_key_id, aws_secret_access_key = secret_access_key)
     iam.detach_user_policy(UserName = user, PolicyArn = f"arn: aws:iam::{account_id}:policy/{bucket_name}" )

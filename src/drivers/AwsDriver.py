@@ -28,7 +28,7 @@ class AwsDriver(ProviderDriver):
             dns_record_name = "{}.{}".format(subdomain, record_name)
             register_aws_domain(dns_record_name, environment['path'], ip_address, root_dns_zone)
 
-    def create_instance(self, instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone):
+    def create_instance(self, hashed_instance_name, environment, instance_region, instance_zone, instance_type, ami_image, generate_dns, root_dns_zone):
         def create_pulumi_program():
             aws_sg_id = get_specific_config('aws', 'sg', instance_region, instance_zone)
             aws_subnet_id = get_specific_config('aws', 'subnet', instance_region, instance_zone)
@@ -73,7 +73,7 @@ class AwsDriver(ProviderDriver):
             "ip": up_res.outputs.get("public_ip").value
         }
 
-    def refresh_instance(self, instance_id, hashed_instance_name, environment, instance_region, instance_zone):
+    def refresh_instance(self, hashed_instance_name, environment, instance_region, instance_zone):
         return {}
 
     def get_server_state(self, server):
@@ -123,7 +123,7 @@ class AwsDriver(ProviderDriver):
         elif action == "poweron":
             client.start_instances(InstanceIds = [server_id])
 
-    def create_bucket(self, user_email, bucket_id, hashed_bucket_name, region, bucket_type):
+    def create_bucket(self, user_email, hashed_bucket_name, region, bucket_type):
         def create_pulumi_program():
             aws.s3.Bucket(resource_name = hashed_bucket_name, acl = bucket_type if bucket_type == "private" else None, hosted_zone_id = region, tags = {"Name": hashed_bucket_name})
         aws_driver_access_key_id = get_driver_access_key_id()
@@ -143,7 +143,7 @@ class AwsDriver(ProviderDriver):
         aws_bucket_name = get_aws_bucket_name(hashed_bucket_name, region)
         bucket_endpoint = f'{aws_bucket_name}.s3.{region}.amazonaws.com/'
         (access_key, secret_key) = create_aws_bucket(hashed_bucket_name, region = region)
-        CACHE_ADAPTER().put(f'aws_bucket_name_{bucket_id}', aws_bucket_name, 24)
+        CACHE_ADAPTER().put(f'aws_bucket_{hashed_bucket_name}', aws_bucket_name, 24)
 
         return {
             "endpoint": bucket_endpoint,
@@ -166,7 +166,7 @@ class AwsDriver(ProviderDriver):
         stack.destroy()
         delete_aws_user_bucket(bucket.region, bucket.id, hashed_bucket_name)
 
-    def create_registry(self, user_email, registry_id, hashed_name, region, type):
+    def create_registry(self, user_email, hashed_name, region, type):
         def create_pulumi_program():
             aws_driver_access_key_id = get_driver_access_key_id()
             aws_driver_secret_access_key = get_driver_secret_access_key()
@@ -185,7 +185,7 @@ class AwsDriver(ProviderDriver):
         up_res = stack.up()
         (access_key, secret_key) = create_aws_registry(hashed_name, region)
         rg_name = get_aws_registry_name(hashed_name, region)
-        CACHE_ADAPTER().put(f'aws_registry_name_{registry_id}', rg_name, 24)
+        CACHE_ADAPTER().put(f'aws_registry_{hashed_name}', rg_name, 24)
 
         return {
             "endpoint": up_res.outputs.get("endpoint").value,
@@ -208,19 +208,18 @@ class AwsDriver(ProviderDriver):
         stack.destroy()
         delete_aws_user_registry(hashed_name, registry.region, registry.id)
 
-    def refresh_registry(self, user_email, registry_id, hashed_registry_name):
-        log_msg("INFO", "[AwsDriver][refresh_registry] registry_id = {}, user_email = {}, hashed_registry_name = {}".format(registry_id, user_email, hashed_registry_name))
+    def refresh_registry(self, user_email, hashed_registry_name):
+        log_msg("INFO", "[AwsDriver][refresh_registry] user_email = {}, hashed_registry_name = {}".format(user_email, hashed_registry_name))
         return {}
 
-    def refresh_bucket(self, user_email, bucket_id, hashed_bucket_name):
-        log_msg("INFO", "[AwsDriver][refresh_bucket] bucket_id = {}, user_email = {}, hashed_bucket_name = {}".format(bucket_id, user_email, hashed_bucket_name))
+    def refresh_bucket(self, user_email, hashed_bucket_name):
+        log_msg("INFO", "[AwsDriver][refresh_bucket] user_email = {}, hashed_bucket_name = {}".format(user_email, hashed_bucket_name))
         return {}
 
     def cloud_init_script(self):
         return"cloud-init.yml"
-    
 
-    def create_custom_dns_record(self,record_name, dns_zone, record_type, ttl, data):
+    def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
         def create_pulumi_program():            
             selected_zone = aws.route53.get_zone(name=dns_zone,private_zone=False)
             # Name the stack by the name of the record (the fully qualified name)
@@ -233,10 +232,8 @@ class AwsDriver(ProviderDriver):
                 records=[data])
             pulumi.export("record",record)
         
-        # These aws credentials are just for testing purposes (testing the DNS feature). They are not the comwork property
-        # In the prod, the called methods should be get_driver_access_key_id and get_driver_secret_access_key
-        aws_driver_access_key_id = get_driver_access_key_id_dns_test()
-        aws_driver_secret_access_key = get_driver_secret_access_key_dns_test()
+        aws_driver_access_key_id = get_driver_access_key_id()
+        aws_driver_secret_access_key = get_driver_secret_access_key()
 
         stack_name = f"{record_name}.{dns_zone}"
         stack = auto.create_stack(stack_name = stack_name,
@@ -259,10 +256,8 @@ class AwsDriver(ProviderDriver):
                                 project_name = project_name,
                                 program=self.delete_dns_records)
 
-        # These aws credentials are just for testing purposes (testing the DNS feature). They are not the comwork property 
-        # In the prod, the called methods should be get_driver_access_key_id and get_driver_secret_access_key
-        aws_driver_access_key_id = get_driver_access_key_id_dns_test()
-        aws_driver_secret_access_key = get_driver_secret_access_key_dns_test()
+        aws_driver_access_key_id = get_driver_access_key_id()
+        aws_driver_secret_access_key = get_driver_secret_access_key()
 
         stack.set_config("aws:accessKey", auto.ConfigValue(aws_driver_access_key_id))
         stack.set_config("aws:secretKey", auto.ConfigValue(aws_driver_secret_access_key))
@@ -274,10 +269,8 @@ class AwsDriver(ProviderDriver):
         return {"id": record_id, "record": record_name, "zone": dns_zone}
 
     def list_dns_records(self):
-        # These aws credentials are just for testing purposes (testing the DNS feature). They are not the comwork property 
-        # In the prod, the called methods should be get_driver_access_key_id and get_driver_secret_access_key
-        aws_driver_access_key_id = get_driver_access_key_id_dns_test()
-        aws_driver_secret_access_key = get_driver_secret_access_key_dns_test()
+        aws_driver_access_key_id = get_driver_access_key_id()
+        aws_driver_secret_access_key = get_driver_secret_access_key()
 
         my_config = Config(
                     signature_version = 'v4',

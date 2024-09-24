@@ -50,7 +50,7 @@ def delete_registry(provider, registry, user_email, retry = 0):
 def create_registry(provider, user_email, registry_id, hashed_name, region, type, db):
     ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))
     ProviderDriver = getattr(ProviderDriverModule, get_driver(provider))
-    result = ProviderDriver().create_registry(user_email, registry_id, hashed_name, region, type)
+    result = ProviderDriver().create_registry(user_email, hashed_name, region, type)
     log_msg("DEBUG", "[create_registry] driver result = {}".format(result))
     if not "secret_key" in result:
         Registry.updateSingleCred(registry_id, result['endpoint'], result['access_key'], result['status'], db)
@@ -60,6 +60,6 @@ def create_registry(provider, user_email, registry_id, hashed_name, region, type
 def refresh_registry(user_email, provider, registry_id, hashed_registry_name, db):
     ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))
     ProviderDriver = getattr(ProviderDriverModule, get_driver(provider))
-    result = ProviderDriver().refresh_registry(user_email, registry_id, hashed_registry_name)
+    result = ProviderDriver().refresh_registry(user_email, hashed_registry_name)
     if "type" in result:
         Registry.updateType(registry_id, result['type'], db)

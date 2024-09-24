@@ -15,11 +15,6 @@ _gcp_project_id = os.getenv('GCP_PROJECT_ID')
 _google_app_cred_str = unbase64(os.getenv('GCP_APPLICATION_CREDENTIALS'))
 _google_app_credentials = json.loads(_google_app_cred_str) if is_enabled(_google_app_cred_str) else _google_app_cred_str
 
-# These variables are FOR TESTING PURPOSES ONLY. They would serve just in the pre-production environment
-_gcp_project_id_dns_test = os.getenv('GCP_PROJECT_ID_DNS_TEST')
-_google_app_cred_str_dns_test = unbase64(os.getenv('GCP_APPLICATION_CREDENTIALS_DNS_TEST'))
-_google_app_credentials_dns_test = json.loads(_google_app_cred_str_dns_test) if is_enabled(_google_app_cred_str_dns_test) else _google_app_cred_str_dns_test
-
 def generate_access_token(service_account_email):
     credentials = service_account.Credentials.from_service_account_info(_google_app_credentials)
     service = googleapiclient.discovery.build("iam", "v1", credentials = credentials)
@@ -230,15 +225,12 @@ def delete_old_bucket_keys(access_id):
     hmac_key.update()
     hmac_key.delete()
 
-# Get the domain name for a given DNS zone  
-# The variables _gcp_project_id_dns_test, and _google_app_credentials_dns_test are FOR TESTING PURPOSES ONLY. They would serve just in the pre-production environment
-# In the prod , to be changed with _gcp_project_id , _google_app_credentials
-
 def get_provider_dns_zone_domain_name(dns_zone_name):
     credentials = service_account.Credentials.from_service_account_info(
-            _google_app_credentials_dns_test,
+            _google_app_credentials,
             scopes = ['https://www.googleapis.com/auth/cloud-platform'])  
-    client = dns.Client(project=_gcp_project_id_dns_test,credentials=credentials)
+
+    client = dns.Client(project=_gcp_project_id, credentials=credentials)
     dns_zone = client.zone(name=dns_zone_name)
     dns_zone.reload()
     return dns_zone.dns_name

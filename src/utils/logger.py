@@ -37,7 +37,10 @@ def slack_message(log_level, message, is_public):
 
     if is_enabled(token):
         data = { "attachments": [{ "color": get_color_level(log_level), "text": message, "title": log_level }], "username": _username, "channel": os.environ['SLACK_CHANNEL'], "icon_emoji": os.environ['SLACK_EMOJI'] }
-        requests.post(SLACK_WEBHOOK_TPL.format(token), json = data)
+        try:
+            requests.post(SLACK_WEBHOOK_TPL.format(token), json = data)
+        except Exception as e:
+            logging.warning("[slack_message] unexpected exception: {}".format(e))
 
 def discord_message(log_level, message, is_public):
     token = _discord_token
@@ -48,7 +51,10 @@ def discord_message(log_level, message, is_public):
 
     if is_enabled(token):
         data = { "attachments": [{ "color": get_color_level(log_level), "text": message, "title": log_level }], "username": _username }
-        requests.post(DISCORD_WEBHOOK_TPL.format(token), json = data)
+        try:
+            requests.post(DISCORD_WEBHOOK_TPL.format(token), json = data)
+        except Exception as e:
+            logging.warning("[discord_message] unexpected exception: {}".format(e))
 
 def is_level_partof(level, levels):
     return any(log == "{}".format(level).lower() for log in levels)

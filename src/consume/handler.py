@@ -7,7 +7,6 @@ from jinja2 import Environment, FileSystemLoader, BaseLoader
 from adapters.AdapterConfig import get_adapter
 from utils.command import get_script_output
 from utils.common import get_src_path, is_not_empty, is_empty_key, is_not_empty_key
-from utils.faas.iot import send_payload_in_realtime
 from utils.observability.otel import get_otel_tracer
 from utils.security import is_forbidden
 from utils.file import quiet_remove

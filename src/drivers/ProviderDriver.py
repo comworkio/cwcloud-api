@@ -4,25 +4,25 @@ class ProviderDriver(ABC):
     @abstractmethod
     def create_dns_records(self, record_name, environment, ip_address, root_dns_zone):
         pass
-    
+
     @abstractmethod
     def list_dns_records(self):
         pass
-    
+
     @abstractmethod
     def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
         pass
-    
+
     @abstractmethod
     def delete_dns_records(self, id, record_name, root_dns_zone):
         pass
 
     @abstractmethod
-    def create_instance(self, instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone):
+    def create_instance(self, hashed_instance_name, environment, instance_region, instance_zone, instance_type, ami_image, generate_dns, root_dns_zone):
         pass
 
     @abstractmethod
-    def refresh_instance(self, instance_id, hashed_instance_name, environment, instance_region, instance_zone):
+    def refresh_instance(self, hashed_instance_name, environment, instance_region, instance_zone):
         pass
 
     @abstractmethod
@@ -38,11 +38,11 @@ class ProviderDriver(ABC):
         pass
 
     @abstractmethod
-    def create_bucket(self, user_email, bucket_id, hashed_bucket_name, region, bucket_type):
+    def create_bucket(self, user_email, hashed_bucket_name, region, bucket_type):
         pass
 
     @abstractmethod
-    def refresh_bucket(self, user_email, bucket_id, hashed_bucket_name):
+    def refresh_bucket(self, user_email, hashed_bucket_name):
         pass
 
     @abstractmethod
@@ -54,11 +54,11 @@ class ProviderDriver(ABC):
         pass
 
     @abstractmethod
-    def create_registry(self, user_email, registry_id, hashed_name, region, type):
+    def create_registry(self, user_email, hashed_name, region, type):
         pass
 
     @abstractmethod
-    def refresh_registry(self, user_email, registry_id, hashed_registry_name):
+    def refresh_registry(self, user_email, hashed_registry_name):
         pass
 
     @abstractmethod

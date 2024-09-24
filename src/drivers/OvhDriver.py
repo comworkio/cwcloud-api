@@ -42,7 +42,7 @@ class OvhDriver(ProviderDriver):
             dns_record_name = "{}.{}".format(subdomain, record_name)
             register_ovh_domain(dns_record_name, environment['path'], ip_address, root_dns_zone)
 
-    def refresh_instance(self, instance_id, hashed_instance_name, environment, instance_region, instance_zone):
+    def refresh_instance(self, hashed_instance_name, environment, instance_region, instance_zone):
         target_vm = self.get_virtual_machine(instance_region, instance_zone, hashed_instance_name)
         log_msg("DEBUG", "[refresh_instance] target_vm[id] = {}".format(target_vm["id"]))
         def create_pulumi_program():
@@ -62,7 +62,7 @@ class OvhDriver(ProviderDriver):
             "type": up_res.outputs.get("type").value
         }
 
-    def refresh_registry(self, user_email, registry_id, hashed_registry_name):
+    def refresh_registry(self, user_email, hashed_registry_name):
         def create_pulumi_program():
             registry = compute.get_flavor(name = hashed_registry_name)
             pulumi.export("type", registry.flavor_name)
@@ -78,22 +78,22 @@ class OvhDriver(ProviderDriver):
             "type": new_type
         }
 
-    def refresh_bucket(self, user_email, bucket_id, hashed_bucket_name):
+    def refresh_bucket(self, user_email, hashed_bucket_name):
         return {}
 
-    def create_instance(self, instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone):
+    def create_instance(self, hashed_instance_name, environment, instance_region, instance_zone, instance_type, ami_image, generate_dns, root_dns_zone):
         def create_pulumi_program():
             con = get_openstack_connection(instance_region)
             ext_network = con.network.find_network("Ext-Net")
             new_instance = compute.Instance(hashed_instance_name,
-                                    region = instance_region,
-                                    availability_zone = instance_zone,
-                                    flavor_name = instance_type,
-                                    image_id = ami_image,
-                                    name = hashed_instance_name,
-                                    networks = [ _inputs.InstanceNetworkArgs(name = ext_network["name"], uuid = ext_network["id"])],
-                                    user_data = (lambda path: open(path).read())(self.cloud_init_script())
-                                )
+                region = instance_region,
+                availability_zone = instance_zone,
+                flavor_name = instance_type,
+                image_id = ami_image,
+                name = hashed_instance_name,
+                networks = [ _inputs.InstanceNetworkArgs(name = ext_network["name"], uuid = ext_network["id"])],
+                user_data = (lambda path: open(path).read())(self.cloud_init_script())
+            )
 
             if generate_dns == "true":
                 dns_driver = get_dns_zone_driver(root_dns_zone)
@@ -140,7 +140,7 @@ class OvhDriver(ProviderDriver):
         elif action == "poweron":
             con.compute.start_server(server_id)
 
-    def create_bucket(self, user_email, bucket_id, hashed_bucket_name, region, bucket_type):
+    def create_bucket(self, user_email, hashed_bucket_name, region, bucket_type):
         mainRegion = ''.join([i for i in region if not i.isdigit()])
         service_name = os.getenv('OVH_SERVICENAME')
         def create_pulumi_program():
@@ -176,7 +176,7 @@ class OvhDriver(ProviderDriver):
         mainRegion = ''.join([i for i in bucket.region if not i.isdigit()])
         delete_ovh_bucket(hashed_bucket_name, mainRegion.upper(), bucket.bucket_user_id)
 
-    def create_registry(self, user_email, registry_id, hashed_name, region, type):
+    def create_registry(self, user_email, hashed_name, region, type):
         mainRegion = ''.join([i for i in region if not i.isdigit()])
         service_name = os.getenv('OVH_SERVICENAME')
         def create_pulumi_program():

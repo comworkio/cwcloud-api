@@ -21,7 +21,6 @@ from utils.azure_client import get_azure_informations_by_region
 from utils.state import convert_instance_state
 from utils.provider import get_provider_dns_zones
 
-
 _azure_client_resource_group = os.getenv('AZURE_RESOURCE_GROUP_NAME')
 _azure_client_id = os.getenv('AZURE_CLIENT_ID')
 _azure_client_secret = os.getenv('AZURE_CLIENT_SECRET')
@@ -29,7 +28,7 @@ _azure_tenant_id = os.getenv('AZURE_TENANT_ID')
 _azure_subscription_id = os.getenv('AZURE_SUBSCRIPTION_ID')
 
 class AzureDriver(ProviderDriver):
-    def create_instance(self, instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone):
+    def create_instance(self, hashed_instance_name, environment, instance_region, instance_zone, instance_type, ami_image, generate_dns, root_dns_zone):
         def create_pulumi_program():
             az_infos = get_azure_informations_by_region(instance_region)
             if az_infos is None:
@@ -130,8 +129,10 @@ class AzureDriver(ProviderDriver):
         stack.set_config("azure-native:tenantId", auto.ConfigValue(_azure_tenant_id))
         stack.set_config("azure-native:subscriptionId", auto.ConfigValue(_azure_subscription_id))
         stack.set_config("azure-native:location", auto.ConfigValue(instance_region))
+
         if is_not_empty(cloudflare_api_token):
             stack.set_config("cloudflare:apiToken", auto.ConfigValue(cloudflare_api_token, secret=True))         
+
         up_res = stack.up()
         return {
             "ip": up_res.outputs.get("publicIpAddress").value
@@ -146,7 +147,7 @@ class AzureDriver(ProviderDriver):
             dns_record_name = "{}.{}".format(subdomain, record_name)
             register_azure_domain(dns_record_name, environment['path'], ip_address, root_dns_zone)
 
-    def refresh_instance(self, instance_id, hashed_instance_name, environment, instance_region, instance_zone):
+    def refresh_instance(self, hashed_instance_name, environment, instance_region, instance_zone):
         return
 
     def get_server_state(self, server):
@@ -206,7 +207,7 @@ class AzureDriver(ProviderDriver):
         except Exception as ex:
             log_msg("INFO", "[update_virtual_machine_status] An unexpected error occurred:  {}".format(ex))   
                  
-    def create_bucket(self, user_email, bucket_id, hashed_bucket_name, region, bucket_type):
+    def create_bucket(self, user_email, hashed_bucket_name, region, bucket_type):
         return
 
     def update_bucket_credentials(self, bucket, user_email):
@@ -215,7 +216,7 @@ class AzureDriver(ProviderDriver):
     def delete_bucket(self, bucket, user_email):
         return
 
-    def create_registry(self, user_email, registry_id, hashed_name, region, type):
+    def create_registry(self, user_email, hashed_name, region, type):
         return
 
     def update_registry_credentials(self, registry, user_email):
@@ -224,10 +225,10 @@ class AzureDriver(ProviderDriver):
     def delete_registry(self, registry, user_email):
         return
 
-    def refresh_registry(self, user_email, registry_id, hashed_registry_name):
+    def refresh_registry(self, user_email, hashed_registry_name):
         return {}
 
-    def refresh_bucket(self, user_email, bucket_id, hashed_bucket_name):
+    def refresh_bucket(self, user_email, hashed_bucket_name):
         return
     
     def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):

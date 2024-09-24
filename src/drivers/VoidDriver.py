@@ -6,8 +6,8 @@ class VoidDriver(ProviderDriver):
         log_msg("INFO", "[VoidDriver][create_dns_records] record_name = {}, environment = {}, ip_address = {}, root_dns_zone = {}".format(record_name, environment, ip_address, root_dns_zone))
         return
 
-    def create_instance(self, instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone):
-        log_msg("INFO", "[VoidDriver][create_instance] instance_id = {}, ami_image = {}, hashed_instance_name = {}, environment = {}, instance_region = {}, instance_type = {}, generate_dns = {}, root_dns_zone = {}".format(instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone))
+    def create_instance(self, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, ami_image, root_dns_zone):
+        log_msg("INFO", "[VoidDriver][create_instance] hashed_instance_name = {}, environment = {}, instance_region = {}, instance_type = {}, ami_image = {}, generate_dns = {}, root_dns_zone = {}".format(hashed_instance_name, environment, instance_region, instance_zone, instance_type, ami_image, generate_dns, root_dns_zone))
         return {}
     
     def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
@@ -38,8 +38,8 @@ class VoidDriver(ProviderDriver):
         log_msg("INFO", "[VoidDriver][update_virtual_machine_status] region = {}, zone = {}, server_id = {}, action = {}".format(region, zone, server_id, action))
         return
 
-    def create_bucket(self, user_email, bucket_id, hashed_bucket_name, region, bucket_type):
-        log_msg("INFO", "[VoidDriver][create_bucket] user_email = {}, bucket_id = {}, hashed_bucket_name = {}, region = {}, bucket_type = {}".format(user_email, bucket_id, hashed_bucket_name, region, bucket_type))
+    def create_bucket(self, user_email, hashed_bucket_name, region, bucket_type):
+        log_msg("INFO", "[VoidDriver][create_bucket] user_email = {}, hashed_bucket_name = {}, region = {}, bucket_type = {}".format(user_email, hashed_bucket_name, region, bucket_type))
         return {
             "endpoint": "https://unkown.bucket.comwork.io",
             "access_key": None,
@@ -58,8 +58,8 @@ class VoidDriver(ProviderDriver):
         log_msg("INFO", "[VoidDriver][delete_bucket] bucket = {}, user_email = {}".format(bucket, user_email))
         return
 
-    def create_registry(self, user_email, registry_id, hashed_name, region, type):
-        log_msg("INFO", "[VoidDriver][create_registry] user_email = {}, registry_id = {}, hashed_name = {}, region = {}, type = {}".format(user_email, registry_id, hashed_name, region, type))
+    def create_registry(self, user_email, hashed_name, region, type):
+        log_msg("INFO", "[VoidDriver][create_registry] user_email = {}, hashed_name = {}, region = {}, type = {}".format(user_email, hashed_name, region, type))
         return {
             "endpoint": "https://unkown.registry.comwork.io",
             "access_key": None,
@@ -78,12 +78,12 @@ class VoidDriver(ProviderDriver):
         log_msg("INFO", "[VoidDriver][delete_registry] registry = {}, user_email = {}".format(registry, user_email))
         return
 
-    def refresh_registry(self, user_email, registry_id, hashed_registry_name):
-        log_msg("INFO", "[VoidDriver][refresh_registry] registry_id = {}, user_email = {}, hashed_registry_name = {}".format(registry_id, user_email, hashed_registry_name))
+    def refresh_registry(self, user_email, hashed_registry_name):
+        log_msg("INFO", "[VoidDriver][refresh_registry] user_email = {}, hashed_registry_name = {}".format(user_email, hashed_registry_name))
         return {}
 
-    def refresh_bucket(self, user_email, bucket_id, hashed_bucket_name):
-        log_msg("INFO", "[VoidDriver][refresh_bucket] bucket_id = {}, user_email = {}, hashed_bucket_name = {}".format(bucket_id, user_email, hashed_bucket_name))
+    def refresh_bucket(self, user_email, hashed_bucket_name):
+        log_msg("INFO", "[VoidDriver][refresh_bucket] user_email = {}, hashed_bucket_name = {}".format(user_email, hashed_bucket_name))
         return {}
 
     def cloud_init_script(self):

@@ -27,7 +27,7 @@ class GcpDriver(ProviderDriver):
     def create_dns_records(self, record_name, environment, ip_address, root_dns_zone):
         return
 
-    def create_instance(self, instance_id, ami_image, hashed_instance_name, environment, instance_region, instance_zone, instance_type, generate_dns, root_dns_zone):
+    def create_instance(self, hashed_instance_name, environment, instance_region, instance_zone, instance_type, ami_image, generate_dns, root_dns_zone):
         def create_pulumi_program():
             ip_address = gcp.compute.Address(
                 "external-ip",
@@ -104,10 +104,10 @@ class GcpDriver(ProviderDriver):
     def cloud_init_script(self):
         return "cloud-init.sh"
 
-    def refresh_instance(self, instance_id, hashed_instance_name, environment, instance_region, instance_zone):
+    def refresh_instance(self, hashed_instance_name, environment, instance_region, instance_zone):
         return {}
 
-    def create_bucket(self, user_email, bucket_id, hashed_bucket_name, region, bucket_type):
+    def create_bucket(self, user_email, hashed_bucket_name, region, bucket_type):
         def create_pulumi_program():
             bucket = gcp.storage.Bucket(
                 resource_name = hashed_bucket_name,
@@ -138,7 +138,7 @@ class GcpDriver(ProviderDriver):
             "status": "active"
         }
 
-    def create_registry(self, user_email, registry_id, hashed_name, region, type):
+    def create_registry(self, user_email, hashed_name, region, type):
         def create_pulumi_program():
             gcp.artifactregistry.Repository(
                 resource_name = hashed_name,
@@ -218,8 +218,8 @@ class GcpDriver(ProviderDriver):
         elif action == "poweron":
             client.start(project = _gcp_project_id, zone = availibility_zone, instance = i_name)
 
-    def refresh_bucket(self, user_email, bucket_id, hashed_bucket_name):
-        log_msg("INFO", "[gcpDriver][refresh_bucket] bucket_id = {}, user_email = {}, hashed_bucket_name = {}".format(bucket_id, user_email, hashed_bucket_name))
+    def refresh_bucket(self, user_email, hashed_bucket_name):
+        log_msg("INFO", "[gcpDriver][refresh_bucket] user_email = {}, hashed_bucket_name = {}".format(user_email, hashed_bucket_name))
         return {}
 
     def update_bucket_credentials(self, bucket):
@@ -238,8 +238,8 @@ class GcpDriver(ProviderDriver):
         stack.destroy()
         delete_bucket_service_account(service_account_email)
 
-    def refresh_registry(self, user_email, registry_id, hashed_registry_name):
-        log_msg("INFO", "[gcpDriver][refresh_registry] registry_id = {}, user_email = {}, hashed_registry_name = {}".format(registry_id, user_email, hashed_registry_name))
+    def refresh_registry(self, user_email, hashed_registry_name):
+        log_msg("INFO", "[GcpDriver][refresh_registry] user_email = {}, hashed_registry_name = {}".format(user_email, hashed_registry_name))
         return {}
 
     def update_registry_credentials(self, registry):
@@ -255,9 +255,7 @@ class GcpDriver(ProviderDriver):
         stack = auto.select_stack(hashed_name, sanitize_project_name(user_email), program = self.delete_registry)
         stack.destroy()
         delete_registry_service_account(service_account_email)
-    
-    # The variables _gcp_project_id_dns_test, _google_app_cred_str_dns_test and _google_app_credentials_dns_test are FOR TESTING PURPOSES ONLY. They would serve just in the pre-production environment
-    # In the prod , to be changed with _gcp_project_id , _google_app_cred_str and _google_app_credentials
+
     def create_custom_dns_record(self, record_name, dns_zone, record_type, ttl, data):
         def create_pulumi_program():
             selected_zone = gcp.dns.get_managed_zone(name=dns_zone,project=_gcp_project_id_dns_test)
@@ -301,8 +299,6 @@ class GcpDriver(ProviderDriver):
 
         return {"id": record_id, "record": record_name, "zone": dns_zone}
 
-
-    
     def list_dns_records(self):
         zones =  get_provider_dns_zones("gcp") 
         credentials = service_account.Credentials.from_service_account_info(
