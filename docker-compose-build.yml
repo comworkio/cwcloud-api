@@ -1,4 +1,4 @@
-version: '3.3'
+version: '3.8'
 services:
   comwork_cloud_api:
     restart: always
@@ -45,4 +45,13 @@ services:
       target: linter
     env_file:
       - .env
-
+  comwork_cloud_bandit:
+    image: cwcloud-bandit:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: code_scanner
+    volumes:
+      - .:/app
+    env_file:
+      - .env

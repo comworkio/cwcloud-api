@@ -55,9 +55,9 @@ docker exec -it comwork_cloud_db psql -U cloud cloud -c "INSERT INTO public.api_
 ### Test the API
 
 ```shell
-$ curl localhost:5002/v1/health
+$ curl localhost:8000/v1/health
 {"alive":true, "ip":"172.21.0.1","status":"ok"}
-$ curl localhost:5002/v1/manifest
+$ curl localhost:8000/v1/manifest
 {"sha": "unknown yet", "tag": "unknown yet"}
 ```
 
@@ -84,6 +84,16 @@ For our project, we're using `ruff` the fastest python linter. Here's how to run
 ```shell
 docker compose -f docker-compose-build.yml up --build --abort-on-container-exit comwork_cloud_linter
 ```
+
+## Security Scan
+
+For our project, we're using `bandit`, a tool designed to find common security issues in Python code. Here's how to run it locally:
+
+```shell
+docker compose -f docker-compose-build.yml up --build --abort-on-container-exit comwork_cloud_bandit
+```
+
+We're also using `trivy` in our CICD pipelines which is scanning the CVE inside the installed packages on docker containers.
 
 ## Documentation
 
@@ -113,12 +123,3 @@ And can also send the metrics and some traces through OTLP/Grpc. Here's example 
 
 If you're running locally with docker compose, you can access to Jaegger UI here: http://localhost:16686
 
-## How to update VERSION file
-In case you are going to contribute to this project (a new feature, a fix etc...) you need to update the VERSION file where you will find the current version of the project.  
-Currently, we are following the `Semantic versioning` which uses a three-part number system: MAJOR.MINOR.PATCH, and follows these rules:
-
-- **MAJOR version**: Incremented when you make incompatible API changes. This indicates that the changes may break backward compatibility with previous versions. Users may need to make modifications to their code to adapt to the new version.
-
-- **MINOR version**: Incremented when you add functionality in a backward-compatible manner. This means new features are introduced, but the existing functionality remains unchanged and compatible with previous versions.
-
-- **PATCH version**: Incremented when you make backward-compatible bug fixes. This implies that the changes fix bugs without affecting the existing functionality or adding new features.

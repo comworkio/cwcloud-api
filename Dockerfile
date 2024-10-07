@@ -1,8 +1,10 @@
 ARG PYTHON_VERSION=3.9.16
 ARG FLYWAYDB_VERSION=9.20-alpine
 
+# Base image
 FROM python:${PYTHON_VERSION} as api
 
+# Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
     MANIFEST_FILE_PATH=manifest.json \
@@ -18,18 +20,21 @@ ENV PYTHONUNBUFFERED=1 \
     MAX_RETRY_INVOKE_SYNC=100 \
     LOOP_WAIT_TIME=10 \
     UVICORN_WORKERS=10 \
-    API_MAX_RESULTS=100
+    API_MAX_RESULTS=100 \
+    PATH="/root/.pulumi/bin:${PATH}"
 
 WORKDIR /app
 
-RUN apt update && \
-    apt upgrade -y && \
-    apt install -y wkhtmltopdf && \
-    apt-get install -y git && \
-    curl -fsSL https://get.pulumi.com | sh
+# Install system dependencies
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    wkhtmltopdf \
+    git \
+    curl -fsSL https://get.pulumi.com | sh && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-ENV PATH="/root/.pulumi/bin:${PATH}"
-
+# Install Python dependencies
 COPY ./requirements.txt /app/requirements.txt
 
 RUN find . -name '*.pyc' -type f -delete && \
@@ -38,39 +43,54 @@ RUN find . -name '*.pyc' -type f -delete && \
     rm -rf *.tgz && \
     apt clean -y
 
+# API image
 COPY . /app/
 
 EXPOSE 5000
 
 CMD ["python", "src/app.py"]
 
+# Scheduler image
 FROM api as scheduler
-
 
 CMD ["python", "src/scheduler.py"]
 
+# Consumer image
 FROM api as consumer
 
 RUN mkdir -p /functions && \
-    apt update -y && \
-    apt install -y ca-certificates curl golang-go jq gnupg && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates curl golang-go jq gnupg && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" >> /etc/apt/sources.list.d/nodesource.list && \
-    apt update -y && \
-    apt install -y nodejs && \
-    apt clean -y
+    apt-get update && \
+    apt-get install -y --no-install-recommends nodejs && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 CMD ["python", "src/consumer.py"]
 
+# Unit tests image
 FROM api AS unit_tests
 
 WORKDIR /app/src
 
 CMD ["python", "-m", "unittest", "discover", "-s", "./tests", "-p", "test_*.py", "-v"]
 
+# Linter image
 FROM api AS linter
 
 WORKDIR /app/src
 
 CMD ["ruff", "check", "--fix", "."]
+
+# Scan
+FROM api AS code_scanner
+
+WORKDIR /app/src
+
+RUN pip install bandit
+
+CMD ["bandit", "-r", ".", "-f", "screen"]

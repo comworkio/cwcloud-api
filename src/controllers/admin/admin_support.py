@@ -228,7 +228,7 @@ def update_reply_support_ticket(current_user, ticket_id, reply_id, payload, db):
             }, status_code = 403)
 
         SupportTicketLog.updateTicketLog(reply_id, payload.message, db)
-        update_message = "\n__User:___{}\n__Updated message:__\n{}".format(current_user.email, payload.message)
+        update_message = "_(updated message)_ {}".format(payload.message)
         add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, update_message)
         log_msg("INFO", "[Support] User {} has updated support ticket reply #{}".format(current_user.email, reply.id))
         return JSONResponse(content = {
@@ -323,7 +323,7 @@ def update_support_ticket(current_user, ticket_id, payload, db):
             }, status_code = 400)
 
         SupportTicket.updateTicket(ticket.id, payload, db)
-        update_message = "\n__User:___{}\n__Updated description:__\n{}".format(current_user.email, payload.message)
+        update_message = "_(updated description)_ {}".format(current_user.email, payload.message)
         add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, update_message)
         log_msg("INFO", "[Support] User {} has updated support ticket #{}".format(current_user.email, ticket.id))
         return JSONResponse(content = {
