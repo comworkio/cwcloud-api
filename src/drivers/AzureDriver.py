@@ -18,6 +18,7 @@ from utils.logger import log_msg
 from utils.dns_zones import get_dns_zone_driver, register_azure_domain
 from utils.list import unmarshall_list_array
 from utils.azure_client import get_azure_informations_by_region
+from utils.security import random_password
 from utils.state import convert_instance_state
 from utils.provider import get_provider_dns_zones
 
@@ -26,6 +27,10 @@ _azure_client_id = os.getenv('AZURE_CLIENT_ID')
 _azure_client_secret = os.getenv('AZURE_CLIENT_SECRET')
 _azure_tenant_id = os.getenv('AZURE_TENANT_ID')
 _azure_subscription_id = os.getenv('AZURE_SUBSCRIPTION_ID')
+_azure_instance_default_username = "cloud"
+
+# it'll be change by ansible with cloud-init
+_azure_instance_default_password = random_password(24)
 
 class AzureDriver(ProviderDriver):
     def create_instance(self, hashed_instance_name, environment, instance_region, instance_zone, instance_type, ami_image, generate_dns, root_dns_zone):
@@ -92,8 +97,8 @@ class AzureDriver(ProviderDriver):
                 ),
                 os_profile=compute.OSProfileArgs(
                     computer_name=hashed_instance_name,
-                    admin_username="devops",
-                    admin_password="Cloud-456",
+                    admin_username=_azure_instance_default_username,
+                    admin_password=_azure_instance_default_password,
                     linux_configuration=compute.LinuxConfigurationArgs(
                         disable_password_authentication=False
                     )
