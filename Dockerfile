@@ -27,9 +27,7 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends \
-    wkhtmltopdf \
-    git \
+    apt-get install -y --no-install-recommends wkhtmltopdf git && \
     curl -fsSL https://get.pulumi.com | sh && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
