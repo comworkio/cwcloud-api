@@ -17,7 +17,7 @@ from utils.common import AUTOESCAPE_EXTENSIONS
 access_token = os.getenv('GIT_PRIVATE_TOKEN')
 git_username = os.getenv('GIT_USERNAME')
 repo_dir = os.getenv('LOCAL_CLONE_CHARTS_URL')
-charts_url = os.getenv('GIT_HELMCHARTS_REPO_URL')
+charts_url = os.getenv('GIT_HELMCHARTS_REPO_URL', '')
 
 git_url = f'https://{git_username}:{access_token}@{charts_url.replace("https://", "")}'
 
