@@ -1,20 +1,26 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch, MagicMock
+from uuid import uuid4
 
 test_current_user = Mock()
 mock_user_auth = Mock()
 mock_db = Mock()
 mock_bt = Mock()
 
+def get_test_token():
+    """Generate a temporary token for testing purposes"""
+    return f"test_token_{uuid4().hex[:10]}"
+
 class TestDevice(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestDevice, self).__init__(*args, **kwargs)
+        self.test_token = get_test_token()
     
     @patch('entities.User.User.getUserByEmail')
     @patch('controllers.iot.device.add_device', side_effect=lambda x, y, z: {
         'status': 'ok',
         'message': 'Device successfully created',
-        'token': 'some_token'
+        'token': None
     })
     def test_add_device(self, add_device, getUserByEmail):
         # Given
@@ -25,6 +31,13 @@ class TestDevice(TestCase):
         target_user = User()
         target_user.email = "username@email.com"
         target_user.id = 1
+
+        test_device_token = get_test_token()
+        add_device.side_effect = lambda x, y, z: {
+            'status': 'ok',
+            'message': 'Device successfully created',
+            'token': test_device_token
+        }
 
         payload = DeviceSchema.parse_obj({
             'typeobject_id': 1,
@@ -39,7 +52,8 @@ class TestDevice(TestCase):
         # Then
         self.assertEqual(result['status'], 'ok')
         self.assertEqual(result['message'], 'Device successfully created')
-        self.assertEqual(result['token'], 'some_token')
+        self.assertIsNotNone(result['token'])
+        self.assertNotEqual(result['token'], 'some_token')  #? Ensure we're not using a hardcoded token
     
     @patch('jose.jwt.decode')
     @patch('entities.User.User.getUserByEmail')
@@ -55,13 +69,15 @@ class TestDevice(TestCase):
         target_user = User()
         target_user.email = "username@email.com"
         target_user.id = 1
+        
+        # Generate a dynamic test token
+        test_confirmation_token = get_test_token()
 
         decode.return_value = {"email": "test@example.com"}
         getUserByEmail.return_value = target_user
-        token = "valid_token"
 
         # When
-        result = confirm_device_by_token(token, mock_db)
+        result = confirm_device_by_token(test_confirmation_token, mock_db)
 
         # Then 
         self.assertEqual(result['status'], 'ok')

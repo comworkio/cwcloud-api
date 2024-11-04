@@ -29,8 +29,7 @@ _counter = create_counter("keys_api", "Keys API counter")
 def create_api_key(current_user: Annotated[UserSchema, Depends(get_current_active_user)], payload: ApiKeysSchema, db: Session = Depends(get_db)):
     with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.POST)):
         increment_counter(_counter, Method.POST)
-        name = payload.name
-        if is_empty(name):
+        if is_empty(payload.name):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'please provide a name for the api key',
@@ -38,27 +37,26 @@ def create_api_key(current_user: Annotated[UserSchema, Depends(get_current_activ
                 'cid': get_current_cid()
             }, status_code = 400)
 
-        found = True
-        generated_access_key = ""
-        while found:
-            generated_access_key = generate_apikey_access_key()
-            from entities.Apikeys import ApiKeys
-            users_with_access_key = ApiKeys.getApiKeysByAccessKey(generated_access_key, db)
-            if len(users_with_access_key) == 0:
-                found = False
-        generated_secret_key = ""
-        found = True
-        while found:
-            generated_secret_key = generate_apikey_secret_key()
-            from entities.Apikeys import ApiKeys
-            users_with_secret_key = ApiKeys.getApiKeysBySecretKey(generated_access_key, db)
-            if len(users_with_secret_key) == 0:
-                found = False
+        #? Generate unique access key
+        while True:
+            access_key = generate_apikey_access_key()
+            existing_keys = ApiKeys.getApiKeysByAccessKey(access_key, db)
+            if not existing_keys:
+                break
+
+        #? Generate unique secret key
+        while True:
+            secret_key = generate_apikey_secret_key()
+            existing_keys = ApiKeys.getApiKeysBySecretKey(secret_key, db)
+            if not existing_keys:
+                break
+
         api_key = ApiKeys(**payload.dict())
-        api_key.access_key = generated_access_key
-        api_key.secret_key = generated_secret_key
+        api_key.access_key = access_key
+        api_key.secret_key = secret_key
         api_key.user_id = current_user.id
         api_key.save(db)
+
         api_key_json = json.loads(json.dumps(api_key, cls = AlchemyEncoder))
         api_key_json["id"] = api_key.id
         return JSONResponse(content = api_key_json, status_code = 201)

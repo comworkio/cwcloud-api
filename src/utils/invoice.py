@@ -7,10 +7,10 @@ from decimal import Decimal
 
 from pathlib import Path
 from datetime import datetime
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from utils.bucket import upload_to_invoices_bucket
-from utils.common import is_empty, is_not_empty, is_true
+from utils.common import is_empty, is_not_empty, is_true, AUTOESCAPE_EXTENSIONS
 
 from entities.Invoice import Invoice
 
@@ -18,7 +18,7 @@ def generate_invoice_pdf(invoice_ref, client, consumptions, subscriptions, from_
     invoice_date = str(datetime.now()).split(" ")[0]
 
     file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader = file_loader)
+    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
 
     template = env.get_template("invoice.j2")
     company_name = "Particulier"
@@ -94,7 +94,7 @@ def generate_invoice_pdf(invoice_ref, client, consumptions, subscriptions, from_
 
 def generate_receipt_pdf(invoice_ref, invoice_date, client, total_ht, total_ttc, amount_cart, amount_voucher, voucher_code, with_voucher):
     file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader = file_loader)
+    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
 
     template = env.get_template("receipt.j2")
     company_name = "Particulier"

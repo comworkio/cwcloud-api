@@ -3,11 +3,11 @@ import os
 from urllib.error import HTTPError
 from datetime import datetime
 from pathlib import Path
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from adapters.AdapterConfig import get_adapter, get_default_adapter
 
-from utils.common import is_empty, is_not_empty, is_true
+from utils.common import is_empty, is_not_empty, is_true, AUTOESCAPE_EXTENSIONS
 from utils.logger import log_msg
 from utils.bucket import upload_to_invoices_bucket
 
@@ -37,14 +37,14 @@ def send_email_with_chosen_template(receiver_email, activateLink, subject, templ
 def send_confirmation_email(receiver_email, activateLink, subject):
     log_msg("INFO", "[send_confirmation_email] activateLink = {}".format(activateLink))
     file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader = file_loader)
+    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
     template = env.get_template('confirmation_mail.j2')
     return send_email_with_chosen_template(receiver_email, activateLink, subject, template)
 
 def send_device_confirmation_email(receiver_email, activateLink, subject):
     log_msg("INFO", "[send_device_confirmation_email] activateLink = {}".format(activateLink))
     file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader = file_loader)
+    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
     template = env.get_template('/iot/device_confirmation_mail.j2')
     return send_email_with_chosen_template(receiver_email, activateLink, subject, template)
 
@@ -54,7 +54,7 @@ def send_user_and_device_confirmation_email(receiver_email, generated_password, 
         return {}
 
     file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader = file_loader)
+    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
     template = env.get_template('/iot/user_and_device_confirmation_mail.j2')
     content = template.render(
         email = receiver_email,
@@ -76,7 +76,7 @@ def send_user_confirmation_email_without_activation_link(receiver_email, generat
         return {}
 
     file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader = file_loader)
+    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
     template = env.get_template('/confirmation_mail_without_activation_link.j2')
     content = template.render(
         password = generated_password,
@@ -96,7 +96,7 @@ def send_forget_password_email(receiver_email, activateLink, subject):
         return {}
 
     file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader = file_loader)
+    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
     template = env.get_template('forget_password_mail.j2')
     content = template.render(
         activateLink = activateLink,
@@ -115,7 +115,7 @@ def send_templated_email(email):
         return {}
 
     file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader = file_loader)
+    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
     template = env.get_template('email.j2')
     content = template.render(
         body = email['content'],
@@ -138,7 +138,7 @@ def send_contact_email(from_email, receiver_email, body, subject):
         return {}
 
     file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader = file_loader)
+    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
     template = env.get_template('email.j2')
     content = template.render(
         body = body,
@@ -172,7 +172,7 @@ def send_relaunch_email(email, total_to_pay, invoice_ref):
         message += "<p>You'll have to proceed to the payment manually following <a href = \"{}\">this procedure</a>.</p>".format(billing_url)
 
     file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader = file_loader)
+    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
     template = env.get_template('email.j2')
     content = template.render(body = message, currentYear = current_year)
 
@@ -195,7 +195,7 @@ def send_invoice_email(email, file_name, encoded_file, send, edition = False, da
         message = "<p> Your previous invoice has been edited. Please find the PDF document attached at the bottom of this email. <p>"
 
     file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader = file_loader)
+    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
     template = env.get_template('email.j2')
     content = template.render(body = message, currentYear = current_year)
 

@@ -5,6 +5,8 @@ import os
 from passlib.context import CryptContext
 import sqlalchemy
 
+AUTOESCAPE_EXTENSIONS = ['html', 'xml']
+
 pwd_context = CryptContext(schemes = ["bcrypt"], deprecated = "auto")
 
 _src_path = "/app/src"
@@ -147,3 +149,7 @@ def object_as_dict(obj):
 def get_env_int(var_name, default):
     value = os.getenv(var_name)
     return int(value) if value else default
+
+_allowed_chars_metric_pattern = re.compile(r'[^a-zA-Z0-9]')
+def sanitize_metric_name(name: str):
+    return re.sub(_allowed_chars_metric_pattern, '_', name)

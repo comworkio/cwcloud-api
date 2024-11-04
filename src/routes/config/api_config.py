@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Annotated
 from sqlalchemy.orm import Session
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from fastapi import Depends, APIRouter
 from fastapi.responses import JSONResponse, FileResponse
@@ -17,6 +17,7 @@ from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
 from utils.observability.counter import create_counter, increment_counter
 from utils.observability.enums import Action, Method
+from utils.common import AUTOESCAPE_EXTENSIONS
 
 router = APIRouter()
 
@@ -38,7 +39,7 @@ def download_config_file(current_user: Annotated[UserSchema, Depends(get_current
         first_provider_region = get_provider_infos(first_provider, "regions")[0]["name"]
 
         file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[2]) + '/templates')
-        env = Environment(loader = file_loader)
+        env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
         template = env.get_template("config_file.j2")
         config_content = template.render(
             endpoint=get_api_url(),

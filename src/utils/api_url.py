@@ -1,6 +1,9 @@
 import os
 from utils.common import is_empty
-import urllib.request
+import requests
+from urllib.parse import urlparse
+
+timeout_value = int(os.getenv("TIMEOUT", "60"))
 
 def get_api_url():
     api_url = os.getenv('API_URL')
@@ -17,10 +20,14 @@ def get_api_url():
     return api_url
 
 def is_url_responding(url):
+    parsed_url = urlparse(url)
+    if parsed_url.scheme not in ['http', 'https']:
+        return False
+
     try:
-        with urllib.request.urlopen(url):
-            return True
-    except urllib.error.URLError:
+        response = requests.head(url, timeout=timeout_value)
+        return response.status_code < 400
+    except requests.RequestException:
         return False
 
 def is_url_not_responding(url):

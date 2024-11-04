@@ -1,16 +1,20 @@
+import os
 import json
 import yaml
 import requests
 from entities.Project import Project
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
 from base64 import b64encode
 from kubernetes import client, config, dynamic
 from constants.k8s_constants import FLUX_FILE_URL
 from utils.encoder import AlchemyEncoder
+from utils.common import AUTOESCAPE_EXTENSIONS
+
+timeout_value = int(os.getenv("TIMEOUT", "60"))
 
 def install_flux(config_file: bytes):
-    flux_yaml_file = yaml.safe_load_all(requests.get(FLUX_FILE_URL).content)
+    flux_yaml_file = yaml.safe_load_all(requests.get(FLUX_FILE_URL, timeout=timeout_value).content)
     config_file = yaml.safe_load(config_file)
     
     config.load_kube_config_from_dict(config_file)
@@ -50,7 +54,7 @@ def set_git_config(config_file:bytes, name:str, namespace:str, project:Project):
     )
 
     file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[2]) + '/templates/kubernetes/fluxgit')
-    env = Environment(loader = file_loader)
+    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
     template = env.get_template('fluxgit.yaml.j2')
 
     output = template.render(

@@ -1,5 +1,5 @@
 import re
-import random
+import secrets 
 import math
 from datetime import datetime, timedelta
 from utils.jwt import jwt_encode
@@ -42,18 +42,20 @@ def check_password(password):
 
 def random_password(length):
     lower_chars = "abcdefghijklmnopqrstuvwxyz"
-    random_first_part = [random.choice(lower_chars) for i in range(math.ceil(length/3))]
-
     upper_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    random_second_part = [random.choice(upper_chars) for i in range(math.ceil(length/3))]
-
     numbers = "1234567890"
-    random_third_part = [random.choice(numbers) for i in range(math.ceil(length/3))]
-
     specials = "$!%+-, "
-    random_fourth_part = [random.choice(specials) for i in range(1)]
+    
+    random_first_part = ''.join(secrets.choice(lower_chars) for _ in range(math.ceil(length/3)))
+    random_second_part = ''.join(secrets.choice(upper_chars) for _ in range(math.ceil(length/3)))
+    random_third_part = ''.join(secrets.choice(numbers) for _ in range(math.ceil(length/3)))
+    random_fourth_part = secrets.choice(specials)
+    
+    password = f"{random_first_part}{random_second_part}{random_third_part}{random_fourth_part}"
+    password_list = list(password)
+    secrets.SystemRandom().shuffle(password_list)
 
-    return "{}{}{}{}".format("".join(random_first_part), "".join(random_second_part), "".join(random_third_part), "".join(random_fourth_part))
+    return ''.join(password_list)
 
 def is_email_valid(email):
     if is_empty(email):
@@ -69,7 +71,7 @@ def is_ref_invoice_valid(ref):
     if is_empty(ref):
         return False
 
-    pattern = r"^\d{5, }$"
+    pattern = r"^\d{5,}$"
     return re.match(pattern, ref) is not None
 
 def is_not_ref_invoice_valid(ref):

@@ -1,11 +1,58 @@
 import json
-
 from unittest import TestCase
 from unittest.mock import Mock, patch
-
 from fastapi.responses import JSONResponse
-
 from entities.User import User
+import os
+import secrets
+import string
+
+class TestConstants:
+    TEST_EMAIL = "test@example.com"
+    
+    @staticmethod
+    def generate_secure_password():
+        """Generate a secure password that meets validation requirements"""
+        # Ensure password has required character types
+        uppercase = ''.join(secrets.choice(string.ascii_uppercase) for _ in range(2))
+        lowercase = ''.join(secrets.choice(string.ascii_lowercase) for _ in range(2))
+        digits = ''.join(secrets.choice(string.digits) for _ in range(2))
+        special = ''.join(secrets.choice('!@#$%^&*') for _ in range(2))
+        
+        # Combine all parts and add some random chars to make it longer
+        all_chars = uppercase + lowercase + digits + special
+        extra = ''.join(secrets.choice(string.ascii_letters + string.digits + '!@#$%^&*') for _ in range(4))
+        
+        # Shuffle the combined password
+        password_list = list(all_chars + extra)
+        secrets.SystemRandom().shuffle(password_list)
+        return ''.join(password_list)
+    
+    @staticmethod
+    def generate_test_token():
+        """Generate a secure token that meets validation requirements"""
+        # Generate a 32-character hex token
+        return secrets.token_hex(32)
+
+    # Use static values for tests but generate them securely
+    TEST_PASSWORD = os.getenv('TEST_PASSWORD', 'Test@Password123!')  # Fallback that meets requirements
+    TEST_HASHED_PASSWORD = os.getenv('TEST_HASHED_PASSWORD', 'hashed_' + secrets.token_hex(16))
+    MASKED_PASSWORD = "*" * 16
+    
+    # Generate tokens that meet your validation requirements
+    TEST_TOKEN = os.getenv('TEST_TOKEN', generate_test_token.__func__())
+    TEST_VALID_TOKEN = os.getenv('TEST_VALID_TOKEN', generate_test_token.__func__())
+    
+    @classmethod
+    def get_mock_user_data(cls):
+        return {
+            'email': 'MASKED_EMAIL@example.com',
+            'password': cls.MASKED_PASSWORD,
+            'registration_number': 'TEST123',
+            'address': 'Test Address',
+            'company_name': 'Test Company',
+            'contact_info': '12345678'
+        }
 
 test_current_user = Mock()
 test_current_user.id = 1
@@ -13,6 +60,10 @@ mock_db = Mock()
 mock_bt = Mock()
 
 class TestUser(TestCase):
+    def setUp(self):
+        self.constants = TestConstants()
+        self.mock_user_data = self.constants.get_mock_user_data()
+    
     def __init__(self, *args, **kwargs):
         super(TestUser, self).__init__(*args, **kwargs)
 
@@ -23,12 +74,17 @@ class TestUser(TestCase):
     @patch('entities.User.User.save')
     def test_user_signup(self, save_user, send_confirmation_email, create_gitlab_user, create_customer, getUserByEmail):
         getUserByEmail.return_value = None
-        # Given
         from controllers.user import create_user_account
         from schemas.User import UserRegisterSchema
+        
+        # Given
         payload = UserRegisterSchema(
-            email = "test@gmail.com",
-            password = "passWord123$"
+            email = self.constants.TEST_EMAIL,
+            password = self.constants.TEST_PASSWORD,  # Using the secure password that meets requirements
+            registration_number = self.mock_user_data['registration_number'],
+            address = self.mock_user_data['address'],
+            company_name = self.mock_user_data['company_name'],
+            contact_info = self.mock_user_data['contact_info']
         )
 
         # When
@@ -140,14 +196,16 @@ class TestUser(TestCase):
         from controllers.user import user_reset_password
         from schemas.User import UserLoginSchema
         from entities.User import User
+        
         payload = UserLoginSchema(
-            email = "example@example.com",
-            password = "NewPassword123!"
-            )
+            email = self.constants.TEST_EMAIL,
+            password = self.constants.TEST_PASSWORD  # Using the secure password that meets requirements
+        )
+
         user = User()
         user.id = 1
-        user.email = "XXXXXXXXXXXXXXXXXXX"
-        user.password = "XXXXXXXXXXXXXXXXXXXX"
+        user.email = self.mock_user_data['email']
+        user.password = self.constants.TEST_HASHED_PASSWORD
         getUserByEmail.return_value = user
 
         # When
@@ -157,7 +215,7 @@ class TestUser(TestCase):
         # Then
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
-        self.assertIsInstance(result, JSONResponse)  
+        self.assertIsInstance(result, JSONResponse)
         self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully updated","i18n_code":"user_updated"}')
      
     @patch('jose.jwt.decode')
@@ -168,12 +226,13 @@ class TestUser(TestCase):
         # Given
         from controllers.user import verify_user_token
         from entities.User import User
-        token = "test"
-        decode.return_value = {"email": "test@example.com"}
+
+        token = self.constants.TEST_TOKEN
+        decode.return_value = {"email": self.constants.TEST_EMAIL}
         user = User()
         user.id = 1
-        user.email = "test@example.com"
-        getUserByEmail.return_value = User(email="test@example.com")
+        user.email = self.constants.TEST_EMAIL
+        getUserByEmail.return_value = User(email=self.constants.TEST_EMAIL)
 
         # When
         result = verify_user_token(token , mock_db)
@@ -224,7 +283,7 @@ class TestUser(TestCase):
         from entities.User import User
         decode.return_value = {"email": "test@example.com"}
         getUserByEmail.return_value = User(confirmed=False, id=1)
-        token = "valid_token"
+        token = self.constants.TEST_VALID_TOKEN
 
         # When
         result = confirm_user_account(token, mock_db)
@@ -271,8 +330,9 @@ class TestUser(TestCase):
         # Given
         from controllers.user import get_payment_methods
         from entities.User import User
+
         user = User(id=1)
-        user.email = "Test@gmail.com"
+        user.email = self.constants.TEST_EMAIL
         user.is_admin = True
         user.st_customer_id = "1"
         user.confirmed = True
@@ -295,24 +355,26 @@ class TestUser(TestCase):
         from controllers.user import update_user_informations
         from schemas.User import UserRegisterSchema
         from entities.User import User
+
         user = User()
         user.id = 1
-        user.email = "test@gmail.com"
-        user.password = "$2a$11$78TFYLecDcq8Mw08k1C8A.vpFdt4T0GC3cz2V.PX0z8W3t9TzCm3m"
-        user.registration_number = "123456"
-        user.address = "Mutuelle ville"
-        user.company_name = "Comwork"
-        user.contact_info = "20564398"
+        user.email = self.constants.TEST_EMAIL
+        user.password = self.constants.TEST_HASHED_PASSWORD
+        user.registration_number = self.mock_user_data['registration_number']
+        user.address = self.mock_user_data['address']
+        user.company_name = self.mock_user_data['company_name']
+        user.contact_info = self.mock_user_data['contact_info']
         getUserById.return_value = user
-        payload = UserRegisterSchema(
-            email = "test@gmail.com",
-            password = "cloud456",
-            registration_number = "123456",
-            address= "Mutuelle ville",
-            company_name = "Comwork",
-            contact_info = "20564398"    
-        )
         updateUser.return_value = user
+
+        payload = UserRegisterSchema(
+            email = self.constants.TEST_EMAIL,
+            password = self.constants.TEST_PASSWORD,
+            registration_number = self.mock_user_data['registration_number'],
+            address = self.mock_user_data['address'],
+            company_name = self.mock_user_data['company_name'],
+            contact_info = self.mock_user_data['contact_info']
+        )
 
         # When
         result = update_user_informations(test_current_user,payload, mock_db)
@@ -332,9 +394,10 @@ class TestUser(TestCase):
         from controllers.user import add_payment_method
         from schemas.User import UserPaymentMethodSchema
         from entities.User import User
+
         retrievePaymentMethod.return_value = True
         payload = UserPaymentMethodSchema(
-             payment_method = "credit_card"
+            payment_method = "credit_card"
         )
         getUserById.return_value = User(id=1, st_payment_method_id="some_id")
         attachPaymentMethodWithUser.return_value = True
@@ -380,6 +443,7 @@ class TestUser(TestCase):
         # Given
         from controllers.user import remove_payment_method
         from entities.User import User
+
         payment_method = 'some_id'
         user = User(id=1)
         getUserById.return_value= user

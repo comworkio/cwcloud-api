@@ -3,7 +3,7 @@ import importlib
 import json
 
 from urllib.error import HTTPError
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pulumi import automation as auto
 from datetime import datetime
 from time import sleep
@@ -23,7 +23,7 @@ from utils.provider import get_driver
 from utils.list import unmarshall_list_array
 from utils.mail import send_create_instance_email
 from utils.logger import log_msg
-from utils.common import is_disabled, is_empty, is_false, is_not_empty
+from utils.common import is_disabled, is_empty, is_false, is_not_empty, AUTOESCAPE_EXTENSIONS
 from utils.constants import MAX_RETRY, WAIT_TIME
 from utils.observability.cid import get_current_cid
 
@@ -185,7 +185,7 @@ def setup_ansible(user_email, gitlab_project, user_project, instance_name, hashe
     clean_up_ansible_config_files()
 
 def config_cloud_init(instance_id, instance_name, user_project, gitlab_project_name, gitlab_project_url, debug, centralized, provider):
-    env = Environment(loader = FileSystemLoader('./'), trim_blocks = True, lstrip_blocks = True)
+    env = Environment(loader=FileSystemLoader('./'), trim_blocks=True, lstrip_blocks=True, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
     dynamic_repo = inject_git_credentials_to_url(gitlab_project_url, user_project['git_username'], user_project['access_token'])
 
     ProviderDriverModule = importlib.import_module('drivers.{}'.format(get_driver(provider)))

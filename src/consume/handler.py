@@ -2,11 +2,11 @@ import os
 import re
 import requests
 
-from jinja2 import Environment, FileSystemLoader, BaseLoader
+from jinja2 import Environment, FileSystemLoader, BaseLoader, select_autoescape
 
 from adapters.AdapterConfig import get_adapter
 from utils.command import get_script_output
-from utils.common import get_src_path, is_not_empty, is_empty_key, is_not_empty_key
+from utils.common import get_src_path, is_not_empty, is_empty_key, is_not_empty_key, AUTOESCAPE_EXTENSIONS
 from utils.observability.otel import get_otel_tracer
 from utils.security import is_forbidden
 from utils.file import quiet_remove
@@ -21,7 +21,7 @@ _api_endpoint = "{}/v1/faas".format(os.environ['FAAS_API_URL'])
 _functions_file_path = "/functions"
 _consume_src_path = "{}/consume".format(get_src_path())
 _templates_path = "{}/templates/faas/main".format(get_src_path())
-_env = Environment(loader=FileSystemLoader(_templates_path))
+_env = Environment(loader=FileSystemLoader(_templates_path), autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
 
 pubsub_adapter = get_adapter("pubsub")
 
@@ -29,11 +29,12 @@ _api_token = os.getenv('FAAS_API_TOKEN')
 _headers = { "X-Auth-Token": _api_token } if is_not_empty(_api_token) else None
 _span_prefix = "faas-consumer"
 _counter = create_counter("consumer", "consumer counter")
+timeout_value = int(os.getenv("TIMEOUT", "60"))
 
 def update_invocation(invocation_id, payload):
   invocation_url = "{}/invocation/{}".format(_api_endpoint, invocation_id)
   log_msg("DEBUG", "[consume][update_invocation] update invocation with : {}, invocation_url = {}".format(payload, invocation_url))
-  r_update_payload = requests.put(invocation_url, json = payload, headers = _headers)
+  r_update_payload = requests.put(invocation_url, json=payload, headers=_headers, timeout=timeout_value)
   if r_update_payload.status_code != 200:
     log_msg("ERROR", "[consume][update_invocation] bad response from the API: code = {}, body = {}".format(r_update_payload.status_code, r_update_payload.content))
 
@@ -70,7 +71,7 @@ async def handle(msg):
     function_id = payload['content']['function_id']
     function_url = "{}/function/{}".format(_api_endpoint, function_id)
     log_msg("DEBUG", "[consume][handle] getting function_url = {}".format(function_url))
-    r_serverless_function = requests.get(function_url, headers = _headers)
+    r_serverless_function = requests.get(function_url, headers =_headers, timeout=timeout_value)
     if r_serverless_function.status_code != 200:
       error_invocation(invocation_id, payload, "the function {} is not found".format(function_id))
       return
@@ -129,7 +130,7 @@ async def handle(msg):
         if "env" not in serverless_function['content']:
           serverless_function['content']['env'] = {}
 
-        env = Environment(loader=BaseLoader())
+        env = Environment(loader=BaseLoader(), autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
         template = env.from_string(main_content)
         if is_user_authenticated(payload):
           log_msg("DEBUG", "[consume][handle] user is authenticated, user_auth_key = {}, user_auth_value = {}".format(payload['content']['user_auth']['header_key'], payload['content']['user_auth']['header_value']))

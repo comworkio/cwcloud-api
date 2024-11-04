@@ -18,6 +18,7 @@ from utils.kubernetes.deployment_env import push_charts
 from utils.kubernetes.k8s_management import (delete_custom_resource,
                                              set_git_config)
 from utils.list import unmarshall_list_array
+from utils.logger import log_msg
 from utils.observability.cid import get_current_cid
 
 GROUP = "helm.toolkit.fluxcd.io"
@@ -207,7 +208,7 @@ def delete_deployment(current_user:UserSchema,deployment_id:int, db):
             v1 = client.CoreV1Api()
             v1.delete_namespace(f'{deployment.name}-{deployment.hash}')
         except Exception as e:
-            pass
+            log_msg("ERROR", f"[Kubernetes][delete_deployment] Error deleting namespace: {str(e)}")
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'deployment deleted'

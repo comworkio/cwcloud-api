@@ -1,13 +1,20 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
-
+from uuid import uuid4
 from fastapi.responses import JSONResponse
 
 test_current_user = Mock()
 mock_db = Mock()
+
+def get_test_token():
+    """Generate a temporary token for testing purposes"""
+    return f"test_{uuid4().hex[:10]}"
+
 class TestAdminProject(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestAdminProject, self).__init__(*args, **kwargs)
+        self.test_token = get_test_token()
+
     @patch('entities.Project.Project.getAllProjects', side_effect = lambda x: [])
     @patch('entities.Instance.Instance.getAllInstances', side_effect = lambda x: [])
     def test_get_admin_projects(self, getAllProjects, getAllInstances):
@@ -38,7 +45,7 @@ class TestAdminProject(TestCase):
         new_project.user_id = 1
         new_project.gitlab_url = "https://gitlab.comwork.io"
         new_project.gitlab_username = "amirghedira"
-        new_project.gitlab_token = "TOKEN"
+        new_project.gitlab_token = self.test_token
         new_project.gitlab_project_id = "1"
         new_project.type = "vm"
         getProjectById.return_value = new_project
@@ -51,7 +58,7 @@ class TestAdminProject(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null,"playbooks":[]}')
+        self.assertEqual(result.body.decode(), f'{{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"{self.test_token}","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null,"playbooks":[]}}')
 
     @patch('entities.User.User.getUserByEmail')
     @patch('entities.Project.Project.save')
@@ -78,7 +85,7 @@ class TestAdminProject(TestCase):
         new_project.user_id = 1
         new_project.gitlab_url = "https://gitlab.comwork.io"
         new_project.gitlab_username = "amirghedira"
-        new_project.gitlab_token = "TOKEN"
+        new_project.gitlab_token = self.test_token
         new_project.gitlab_project_id = "1"
         new_project.type = "vm"
         create_gitlab_project_mock.return_value = new_project
@@ -97,7 +104,7 @@ class TestAdminProject(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 201)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(),'{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}')
+        self.assertEqual(result.body.decode(), f'{{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"{self.test_token}","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}}')
 
     @patch('controllers.admin.admin_project.delete_gitlab_project', side_effect = lambda x, y, z : "" )
     @patch('entities.Project.Project.deleteOne')
@@ -115,7 +122,7 @@ class TestAdminProject(TestCase):
         project.user_id = 1
         project.gitlab_url = "https://gitlab.comwork.io"
         project.gitlab_username = "amirghedira"
-        project.gitlab_token = "TOKEN"
+        project.gitlab_token = self.test_token
         project.gitlab_project_id = "1"
         getProjectById.return_value = project
 

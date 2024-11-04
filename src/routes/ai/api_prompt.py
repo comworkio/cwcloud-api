@@ -23,6 +23,7 @@ from utils.observability.enums import Method
 CWAI_API_URL = os.getenv("CWAI_API_URL")
 CWAI_API_USERNAME = os.getenv("CWAI_API_USERNAME")
 CWAI_API_PASSWORD = os.getenv("CWAI_API_PASSWORD")
+timeout_value = int(os.getenv("TIMEOUT", "60"))
 
 router = APIRouter()
 
@@ -38,7 +39,7 @@ def create_prompt(current_user: Annotated[UserSchema, Depends(get_current_active
         auth = HTTPBasicAuth(CWAI_API_USERNAME, CWAI_API_PASSWORD) if is_not_empty(CWAI_API_USERNAME) and is_not_empty(CWAI_API_PASSWORD) else None
         payload = prompt.dict()
         del payload['model']
-        result = requests.post(endpoint, auth = auth, json = payload)
+        result = requests.post(endpoint, auth=auth, json=payload, timeout=timeout_value)
         log_msg("DEBUG", "[cwai][prompt] user = {}, response code = {}".format(current_user.email, result.status_code))
         if is_response_ok(result.status_code):
             return JSONResponse(content = result.json(), status_code = result.status_code)

@@ -336,4 +336,3 @@ class AzureDriver(ProviderDriver):
                         'ttl': record['ttl'],
                         'data': record_data})
         return records
-    

@@ -1,11 +1,13 @@
 from enum import Enum
 from prometheus_client import Counter
 
+from utils.common import sanitize_metric_name
 from utils.observability.cid import get_current_cid
 from utils.observability.enums import Action, Method, is_unknown
 from utils.observability.otel import get_otel_meter
 
 def create_counter(name, description):
+    name = sanitize_metric_name(name)
     return {
         'otel': get_otel_meter().create_counter(
                     name = name,

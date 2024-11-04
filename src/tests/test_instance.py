@@ -1,15 +1,22 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
-
+from uuid import uuid4
 from fastapi.responses import JSONResponse
 
 test_current_user = Mock()
 mock_db = Mock()
 mock_bt = Mock()
 
+def get_test_token():
+    """Generate a temporary token for testing purposes"""
+    return f"test_{uuid4().hex[:10]}"
+
 class TestInstance(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestInstance, self).__init__(*args, **kwargs)
+        self.test_token = get_test_token()
+        self.test_access_token = get_test_token()
+
     @patch('entities.Access.Access.getUserAccessesByType', side_effect = lambda x, y, z: [])
     @patch('entities.Instance.Instance.findInstancesByRegion', side_effect = lambda x, y, z, w: [])
     @patch('entities.Instance.Instance.getActiveUserInstancesPerRegion', side_effect = lambda x, y, z, w: [])
@@ -34,6 +41,7 @@ class TestInstance(TestCase):
         from entities.Instance import Instance
         from entities.Environment import Environment
         from entities.Project import Project
+
         instance_id = 1
         instance = Instance()
         instance.hash = "aabbcc"
@@ -44,7 +52,7 @@ class TestInstance(TestCase):
         instance.region = "fr-par"
         instance.zone = "comwork.cloud"
         instance.status = "active"
-        instance.ip_address = "0.0.0.0"
+        instance.ip_address = "127.0.0.1"
         instance.id = instance_id
         instance.is_protected = False
 
@@ -66,17 +74,15 @@ class TestInstance(TestCase):
         project.user_id = 1
         project.gitlab_url = "https://gitlab.comwork.io"
         project.gitlab_username = "amirghedira"
-        project.gitlab_token = "TOKEN"
+        project.gitlab_token = self.test_token
         project.gitlab_project_id = "1"
         project.type = "vm"
         project.id = 1
 
         instance.environment = environment
-        instance.project = project
-
         instance.environment_id = environment.id
+        instance.project = project
         instance.project_id = project.id
-
         findUserInstance.return_value = instance
 
         # When
@@ -87,7 +93,7 @@ class TestInstance(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":1,"hash":"aabbcc","id":1,"ip_address":"0.0.0.0","is_protected":false,"modification_date":null,"name":"test-instance","project_id":1,"provider":"scaleway","region":"fr-par","root_dns_zone":null,"status":"active","type":"DEV1-S","user":null,"user_id":1,"zone":"comwork.cloud","environment":"test_environment","path":"environemnt_path","project":{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}}')
+        self.assertEqual(result.body.decode(), f'{{"consumptions":[],"created_at":null,"environment_id":1,"hash":"aabbcc","id":1,"ip_address":"127.0.0.1","is_protected":false,"modification_date":null,"name":"test-instance","project_id":1,"provider":"scaleway","region":"fr-par","root_dns_zone":null,"status":"active","type":"DEV1-S","user":null,"user_id":1,"zone":"comwork.cloud","environment":"test_environment","path":"environemnt_path","project":{{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"{self.test_token}","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}}}}')
     
     @patch('utils.dynamic_name.generate_hashed_name', side_effect = lambda p: ("aabbcc", p, "test-aabbcc"))
     @patch('entities.User.User.getUserById')
@@ -106,23 +112,35 @@ class TestInstance(TestCase):
         from entities.Project import Project
         from entities.User import User
         from schemas.Instance import InstanceProvisionSchema
+
         target_user = User()
         target_user.email = "username@gmail.com"
         target_user.id = 1
         target_user.enabled_features = {}
-        target_user.enabled_features['billable'] = True
+        target_user.enabled_features = {'billable': True}
         getUserById.return_value = target_user
-        get_gitlab_project.return_value = {"id": 1, "name": "test_project", "gitlab_url": "https://gitlab.comwork.io/dynamic/test_project", "userid": "1", "gitlab_host": "https://gitlab.comwork.io", "access_token": "testingTOKEN", "namespace_id": "1"}
+
+        get_gitlab_project.return_value = {
+            "id": 1,
+            "name": "test_project",
+            "gitlab_url": "https://gitlab.comwork.io/dynamic/test_project",
+            "userid": "1",
+            "gitlab_host": "https://gitlab.comwork.io",
+            "access_token": "testingTOKEN",
+            "namespace_id": "1"
+        }
+
         project = Project()
         project.name = "test_project"
         project.url = "https://gitlab.comwork.io/dynamic/test_project"
         project.user_id = 1
         project.gitlab_url = "https://gitlab.comwork.io"
         project.gitlab_username = "amirghedira"
-        project.gitlab_token = "TOKEN"
+        project.gitlab_token = self.test_token
         project.gitlab_project_id = "1"
         project.id = 1
         get_user_project_by_id.return_value = project
+
         environment = Environment()
         environment.name = "code"
         environment.path = "code"
@@ -135,6 +153,7 @@ class TestInstance(TestCase):
         environment.subdomains = "comwork.cloud"
         environment.id = 1
         getByPath.return_value = environment
+
         instance_id = 1
         hash, name = ("aabbcc", "test-aabbcc")
         generate_hashed_name.return_value = hash, name
@@ -193,16 +212,26 @@ class TestInstance(TestCase):
         target_user.email = "username@email.com"
         target_user.id = 1
         target_user.enabled_features = {}
-        target_user.enabled_features['billable'] = True
+        target_user.enabled_features = {'billable': True}
         getUserById.return_value = target_user
-        get_gitlab_project.return_value = {"id": 1, "name": "test_project", "gitlab_url": "https://gitlab.comwork.io/dynamic/test_project", "userid": "1", "gitlab_host": "https://gitlab.comwork.io", "access_token": "testingTOKEN", "namespace_id": "1"}
+
+        get_gitlab_project.return_value = {
+            "id": 1,
+            "name": "test_project",
+            "gitlab_url": "https://gitlab.comwork.io/dynamic/test_project",
+            "userid": "1",
+            "gitlab_host": "https://gitlab.comwork.io",
+            "access_token": "testingTOKEN",
+            "namespace_id": "1"
+        }
+
         project = Project()
         project.name = "test_project"
         project.url = "https://gitlab.comwork.io/dynamic/test_project"
         project.user_id = 1
         project.gitlab_url = "https://gitlab.comwork.io"
         project.gitlab_username = "amirghedira"
-        project.gitlab_token = "TOKEN"
+        project.gitlab_token = self.test_token
         project.gitlab_project_id = "1"
         project.id = 1
         get_user_project_by_id.return_value = project
@@ -235,6 +264,7 @@ class TestInstance(TestCase):
         old_instance.is_protected = False
         reregister_instance.return_value = old_instance
         findUserInstanceByName.return_value = old_instance
+
         getById.return_value = environment
 
         payload = InstanceAttachSchema(

@@ -262,7 +262,7 @@ def add_object_to_cluster(current_user:UserSchema, values_file:UploadFile, objec
     }, status_code = 200)
 
 def get_chart_values(kind):
-    host = f'https://{GIT_HELMCHARTS_REPO_URL.split("/")[0]}'
+    host = f'{GIT_HELMCHARTS_REPO_URL.replace("https://","").split("/")[0]}'
     f = read_file_from_gitlab(CHARTS_PJ_ID,f'objects-management-values/{kind}.yaml','main', ACCESS_TOKEN, host)
     return PlainTextResponse(content = f, status_code = 200)
 

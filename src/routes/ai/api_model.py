@@ -24,6 +24,7 @@ router = APIRouter()
 CWAI_API_URL = os.getenv("CWAI_API_URL")
 CWAI_API_USERNAME = os.getenv("CWAI_API_USERNAME")
 CWAI_API_PASSWORD = os.getenv("CWAI_API_PASSWORD")
+timeout_value = int(os.getenv("TIMEOUT", "60"))
 
 _span_prefix = "ai-models"
 _counter = create_counter("ai_model_api", "CW AI Model API counter")
@@ -34,6 +35,6 @@ def get_model(current_user: Annotated[UserSchema, Depends(get_current_active_use
         increment_counter(_counter, Method.GET)
         endpoint = "{}/v1/models".format(CWAI_API_URL)
         auth = HTTPBasicAuth(CWAI_API_USERNAME, CWAI_API_PASSWORD) if is_not_empty(CWAI_API_USERNAME) and is_not_empty(CWAI_API_PASSWORD) else None
-        result = requests.get(endpoint, auth = auth)
+        result = requests.get(endpoint, auth=auth, timeout=timeout_value)
         log_msg("DEBUG", "[cwai][models] user = {}, response code = {}".format(current_user.email, result.status_code))
         return JSONResponse(content = result.json(), status_code = result.status_code)

@@ -1,8 +1,7 @@
+import os
 from unittest import TestCase
 from unittest.mock import Mock, patch
-
 from fastapi.responses import JSONResponse
-
 from entities.User  import User
 
 test_current_user = Mock()
@@ -10,6 +9,11 @@ mock_db = Mock()
 mock_bt = Mock()
 
 class TestAdminUser(TestCase):
+    def setUp(self):
+        """Set up test fixtures before each test method"""
+        self.test_password = os.getenv('TEST_USER_PASSWORD', 'dummy_password_for_tests')
+    
+    
     def __init__(self, *args, **kwargs):
         super(TestAdminUser, self).__init__(*args, **kwargs)
     
@@ -21,8 +25,16 @@ class TestAdminUser(TestCase):
         from entities.User import User
         no_per_page  = 10
         page = 1
-        get_paginated_list.return_value = [User(id=1, email='Test@gmail.com', password='cloud456', confirmed=True, is_admin=True, st_customer_id='1')]
-        getAllUsers.return_value = User(id=1, email='Test@gmail.com', password='cloud456', confirmed=True, is_admin=True, st_customer_id='1')
+        test_user = User(
+            id=1, 
+            email='Test@gmail.com', 
+            password=self.test_password, 
+            confirmed=True, 
+            is_admin=True, 
+            st_customer_id='1'
+        )
+        get_paginated_list.return_value = [test_user]
+        getAllUsers.return_value = test_user
 
         # When
         result = admin_get_users(test_current_user, no_per_page, page, mock_db)

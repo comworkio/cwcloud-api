@@ -2,59 +2,76 @@ from unittest import TestCase
 from utils.security import check_password, is_not_email_valid, random_password
 
 class TestSecurity(TestCase):
-    def test_check_password_nominal(self):
-        # Given
-        password = "pasSword123$"
+    TEST_PASSWORDS = {
+        'valid': {
+            'value': 'ValidPass123$',
+            'expected_status': True,
+            'expected_code': None
+        },
+        'no_capital': {
+            'value': 'lowercase123$',
+            'expected_status': False,
+            'expected_code': 'password_no_upper'
+        },
+        'no_lower': {
+            'value': 'UPPERCASE123$',
+            'expected_status': False,
+            'expected_code': 'password_no_lower'
+        },
+        'no_special': {
+            'value': 'NoSpecial123',
+            'expected_status': False,
+            'expected_code': 'password_no_symbol'
+        },
+        'too_short': {
+            'value': 'Short1$',
+            'expected_status': False,
+            'expected_code': 'password_too_short'
+        }
+    }
 
+    def test_check_password_nominal(self):
         # When
-        check = check_password(password)
+        check = check_password(self.TEST_PASSWORDS['valid']['value'])
 
         # Then
-        self.assertEqual(check['status'], True)
+        self.assertEqual(check['status'], self.TEST_PASSWORDS['valid']['expected_status'])
 
     def test_check_password_missing_capital(self):
-        # Given
-        password = "password123$"
-
         # When
-        check = check_password(password)
+        test_case = self.TEST_PASSWORDS['no_capital']
+        check = check_password(test_case['value'])
 
         # Then
-        self.assertEqual(check['status'], False)
-        self.assertEqual(check['i18n_code'], 'password_no_upper')
+        self.assertEqual(check['status'], test_case['expected_status'])
+        self.assertEqual(check['i18n_code'], test_case['expected_code'])
 
     def test_check_password_missing_lower(self):
-        # Given
-        password = "PASSWORD$"
-
         # When
-        check = check_password(password)
+        test_case = self.TEST_PASSWORDS['no_lower']
+        check = check_password(test_case['value'])
 
         # Then
-        self.assertEqual(check['status'], False)
-        self.assertEqual(check['i18n_code'], 'password_no_number')
+        self.assertEqual(check['status'], test_case['expected_status'])
+        self.assertEqual(check['i18n_code'], test_case['expected_code'])
 
     def test_check_password_no_special_char(self):
-        # Given
-        password = "pasSword123"
-
         # When
-        check = check_password(password)
+        test_case = self.TEST_PASSWORDS['no_special']
+        check = check_password(test_case['value'])
 
         # Then
-        self.assertEqual(check['status'], False)
-        self.assertEqual(check['i18n_code'], 'password_no_symbol')
+        self.assertEqual(check['status'], test_case['expected_status'])
+        self.assertEqual(check['i18n_code'], test_case['expected_code'])
 
     def test_check_password_too_short(self):
-        # Given
-        password = "pasS1$"
-
         # When
-        check = check_password(password)
+        test_case = self.TEST_PASSWORDS['too_short']
+        check = check_password(test_case['value'])
 
         # Then
-        self.assertEqual(check['status'], False)
-        self.assertEqual(check['i18n_code'], 'password_too_short')
+        self.assertEqual(check['status'], test_case['expected_status'])
+        self.assertEqual(check['i18n_code'], test_case['expected_code'])
 
     def test_is_not_email_valid(self):
         # Given

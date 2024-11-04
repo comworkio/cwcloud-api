@@ -7,18 +7,19 @@ import gitlab
 import yaml
 from fastapi.responses import JSONResponse
 from git import Repo
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 from schemas.Kubernetes import ExternalChart
 from utils.gitlab import push_files_to_repository
 from utils.observability.cid import get_current_cid
+from utils.common import AUTOESCAPE_EXTENSIONS
 
 access_token = os.getenv('GIT_PRIVATE_TOKEN')
 git_username = os.getenv('GIT_USERNAME')
 repo_dir = os.getenv('LOCAL_CLONE_CHARTS_URL')
 charts_url = os.getenv('GIT_HELMCHARTS_REPO_URL')
 
-git_url = f'https://{git_username}:{access_token}@{charts_url}'
+git_url = f'https://{git_username}:{access_token}@{charts_url.replace("https://", "")}'
 
 def push_charts(
     project_id,
@@ -39,7 +40,7 @@ def push_charts(
     file_loader = FileSystemLoader(
         str(Path(__file__).resolve().parents[2]) + "/templates/kubernetes/app"
     )
-    env = Environment(loader=file_loader)
+    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
     template = env.get_template("Chart.yaml.j2")
     doc_template = Template(readme)
     value_template = Template(values)

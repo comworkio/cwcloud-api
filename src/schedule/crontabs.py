@@ -21,17 +21,23 @@ _api_admin_endpoint = "{}/v1/admin/faas".format(os.environ['FAAS_API_URL'])
 _api_token = os.getenv('FAAS_API_TOKEN')
 _headers = { "X-Auth-Token": _api_token } if is_not_empty(_api_token) else None
 _max_results = int(os.environ['API_MAX_RESULTS'])
+timeout_value = int(os.getenv("TIMEOUT", "60"))
 
 def invoke_function(trigger):
     invocation_endpoint = "{}/invocation".format(_api_endpoint)
     log_msg("DEBUG", "[scheduler][invoke_function] invoke trigger: {}, invocation_endpoint = {}".format(trigger, invocation_endpoint))
-    requests.post(invocation_endpoint, json = {
-        'content': {
-            'invoker_id': trigger['owner']['id'],
-            'function_id': trigger['content']['function_id'],
-            'args': trigger['content']['args']
-        }
-    }, headers = _headers)
+    requests.post(
+        invocation_endpoint,
+        json={
+            'content': {
+                'invoker_id': trigger['owner']['id'],
+                'function_id': trigger['content']['function_id'],
+                'args': trigger['content']['args']
+            }
+        }, 
+        headers=_headers,
+        timeout=timeout_value
+    )
 
 def handle_trigger(trigger):
     if is_empty_key(trigger, 'content') or any(is_empty_key(trigger['content'], k) for k in ['name', 'function_id']):
@@ -66,7 +72,7 @@ def init_triggered_functions():
     while True:
         trigger_endpoint = "{}/triggers".format(_api_admin_endpoint)
         log_msg("DEBUG", "[scheduler][init_triggered_functions] trigger_endpoint = {}".format(trigger_endpoint))
-        r_triggers = requests.get("{}?start_index={}&max_results={}".format(trigger_endpoint, start_index, _max_results), headers = _headers)
+        r_triggers = requests.get("{}?start_index={}&max_results={}".format(trigger_endpoint, start_index, _max_results), headers=_headers, timeout=timeout_value)
         if r_triggers.status_code != 200:
             log_msg("ERROR", "[scheduler][init_triggered_functions] triggers api respond an error, r.code = {}, r.body = {}".format(r_triggers.status_code, r_triggers))    
             return

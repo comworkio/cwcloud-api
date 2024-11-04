@@ -15,7 +15,6 @@ from utils.jwt import jwt_decode
 
 def add_device(current_user, payload, db):
     try:
-        token = ""
         is_admin = get_admin_status(current_user)
         email = payload.username
         if is_not_email_valid(email):

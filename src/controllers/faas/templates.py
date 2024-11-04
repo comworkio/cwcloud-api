@@ -1,11 +1,11 @@
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from utils.common import get_src_path
+from utils.common import get_src_path, AUTOESCAPE_EXTENSIONS
 from schemas.faas.Template import FunctionTemplate
 from utils.faas.functions import get_ext_from_language, is_not_supported_language
 from utils.observability.cid import get_current_cid
 
-_env = Environment(loader=FileSystemLoader("{}/templates/faas/handle".format(get_src_path())))
+_env = Environment(loader=FileSystemLoader("{}/templates/faas/handle".format(get_src_path())), autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
 
 def generate_template(payload: FunctionTemplate):
     if is_not_supported_language(payload.language):

@@ -1,13 +1,19 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
-
+from uuid import uuid4
 from fastapi.responses import JSONResponse
 
 test_current_user = Mock()
 mock_db = Mock()
+
+def get_test_token():
+    """Generate a temporary token for testing purposes"""
+    return f"test_{uuid4().hex[:10]}"
+
 class TestProject(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestProject, self).__init__(*args, **kwargs)
+        self.test_token = get_test_token()
         
     @patch('entities.Access.Access.getUserAccessesByType', side_effect = lambda x, y, z: [])
     @patch('entities.Project.Project.findProjects', side_effect = lambda x, y: [])
@@ -38,9 +44,11 @@ class TestProject(TestCase):
         from controllers.project import add_project
         from entities.Project import Project
         from schemas.Project import ProjectSchema
+
         target_user = User()
         target_user.email = "username@email.com"
         target_user.id = 1
+
         project_id = 1
         project_name = "test_project"
         new_project = Project()
@@ -50,7 +58,7 @@ class TestProject(TestCase):
         new_project.user_id = target_user.id
         new_project.gitlab_url = "https://gitlab.comwork.io"
         new_project.gitlab_username = "amirghedira"
-        new_project.gitlab_token = "TOKEN"
+        new_project.gitlab_token = self.test_token
         new_project.gitlab_project_id = "1"
         new_project.type = "vm"
         create_gitlab_project_mock.return_value = new_project
@@ -68,7 +76,7 @@ class TestProject(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 201)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}')
+        self.assertEqual(result.body.decode(), f'{{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"{self.test_token}","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}}')
 
     @patch('entities.Project.Project.getUserProject')
     @patch('utils.gitlab.get_gitlab_project_tree', side_effect = lambda x, y, z: [])
@@ -87,10 +95,11 @@ class TestProject(TestCase):
         project.user_id = 1
         project.gitlab_url = "https://gitlab.comwork.io"
         project.gitlab_username = "amirghedira"
-        project.gitlab_token = "TOKEN"
+        project.gitlab_token = self.test_token
         project.gitlab_project_id = "1"
         project.type = "vm"
         getUserProject.return_value = project
+
         userId = 1
         enabled_features = {
             "daasapi": True,
@@ -107,7 +116,7 @@ class TestProject(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"TOKEN","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null,"playbooks":[]}')
+        self.assertEqual(result.body.decode(), f'{{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"{self.test_token}","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"instances":[],"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null,"playbooks":[]}}')
 
     @patch('controllers.project.delete_gitlab_project', side_effect = lambda x, y, z : "" )
     @patch('entities.Project.Project.deleteOne', side_effect = lambda x, y : "" )
@@ -128,9 +137,10 @@ class TestProject(TestCase):
         project.user_id = 1
         project.gitlab_url = "https://gitlab.comwork.io"
         project.gitlab_username = "amirghedira"
-        project.gitlab_token = "TOKEN"
+        project.gitlab_token = self.test_token
         project.gitlab_project_id = "1"
         getUserProject.return_value = project
+
         userId = 1
         enabled_features = {
             "daasapi": True,

@@ -21,7 +21,8 @@ ENV PYTHONUNBUFFERED=1 \
     LOOP_WAIT_TIME=10 \
     UVICORN_WORKERS=10 \
     API_MAX_RESULTS=100 \
-    PATH="/root/.pulumi/bin:${PATH}"
+    PATH="/root/.pulumi/bin:${PATH}" \
+    TIMEOUT=60
 
 WORKDIR /app
 
