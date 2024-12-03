@@ -1,9 +1,11 @@
 import os
-from datetime import datetime
-from entities.Monitor import Monitor
+
 from fastapi.responses import JSONResponse
 from fastapi import HTTPException
-from utils.common import is_not_http_status_code
+
+from datetime import datetime
+from entities.Monitor import Monitor
+from utils.common import is_false, is_not_http_status_code
 from utils.observability.cid import get_current_cid
 from utils.dynamic_name import generate_hashed_name
 
@@ -25,9 +27,9 @@ def get_monitor(current_user, monitor_id, db):
 
 def add_monitor(current_user, payload, db):
     try:
-        max_monitors = int(os.getenv('MONITORS_MAX_NUMBER', 10))
+        max_monitors = int(os.getenv('MONITORS_MAX_NUMBER', 50))
         current_monitors = Monitor.getUserMonitors(current_user.id, db)
-        if len(current_monitors) > max_monitors:
+        if is_false(current_user.is_admin) and len(current_monitors) >= max_monitors:
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'User has reached the maximum number of monitors',
@@ -83,6 +85,10 @@ def update_monitor(current_user, monitor_id, payload, db):
             'i18n_code': 'invalid_http_status_code',
             'cid': get_current_cid()
         }, status_code = 400)
+
+    if monitor.name != payload.name:
+        _, hashed_monitor_name = generate_hashed_name(payload.name)
+        payload.name = hashed_monitor_name
 
     Monitor.updateInfo(payload, monitor_id, db)
 
