@@ -44,7 +44,6 @@ def check_permissions(current_user, project, db):
 
 def transfer_project(current_user, payload, projectId, db):
     try:
-        email = payload.email
         if not is_numeric(projectId):
             return JSONResponse(content = {
                 'status': 'ko',
@@ -52,6 +51,7 @@ def transfer_project(current_user, payload, projectId, db):
                 'i18n_code': 'invalid_payment_method_id',
                 'cid': get_current_cid()
             }, status_code = 400)
+
         project = Project.getUserProject(projectId, current_user.id, db)
         if not project:
             return JSONResponse(content = {
@@ -60,8 +60,9 @@ def transfer_project(current_user, payload, projectId, db):
                 'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         from entities.User import User
-        user = User.getUserByEmail(email, db)
+        user = User.getUserByEmail(payload.email, db)
         if not user:
             return JSONResponse(content = {
                 'status': 'ko',
@@ -79,6 +80,7 @@ def transfer_project(current_user, payload, projectId, db):
         Instance.updateProjectInstancesOwner(project.id, user.id, db)
         projectsInstances = Instance.getAllActiveInstancesByProject(project.id, db)
         projectInstancesIds = [instance.id for instance in projectsInstances]
+
         from entities.Consumption import Consumption
         Consumption.updateConsumptionInstanceOwner(projectInstancesIds, user.id, db)
         Access.updateObjectsAccessesOwner("instance", projectInstancesIds, user.id, db)
@@ -86,7 +88,9 @@ def transfer_project(current_user, payload, projectId, db):
 
         return JSONResponse(content = {
             'status': 'ok',
-            'message': 'successfully transfered project'
+            'message': 'successfully transfered project',
+            'i18n_code': 'project_transfered',
+            'cid': get_current_cid()
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -113,10 +117,21 @@ def add_project(current_user, payload, db):
                 'i18n_code': 'project_name_missing',
                 'cid': get_current_cid()
             }, status_code = 400)
+
         project_type = payload.type
         if is_empty(project_type):
             project_type = "vm"
-        project = create_gitlab_project(project_name, current_user.id, current_user.email, payload.host, payload.git_username, payload.token, payload.namespace, project_type, db)
+        project = create_gitlab_project(
+            project_name,
+            current_user.id,
+            current_user.email,
+            payload.host,
+            payload.git_username,
+            payload.token,
+            payload.namespace,
+            project_type,
+            db
+        )
         projectJson = json.loads(json.dumps(project, cls = AlchemyEncoder))
         return JSONResponse(content = projectJson, status_code = 201)
     except HTTPError as e:
@@ -137,6 +152,7 @@ def get_projects(current_user, type, db):
     projectsJson = json.loads(json.dumps(projects, cls = AlchemyEncoder))
     user_instances = Instance.getActiveUserInstances(current_user.id, db)
     user_instancesJson = json.loads(json.dumps(user_instances, cls = AlchemyEncoder))
+
     for project in projectsJson:
         deployment = Deployment.getFirstByProject(project["id"], db)
         project["environment"] = None
@@ -146,7 +162,12 @@ def get_projects(current_user, type, db):
                 "id": environemnt.id,
                 "name": environemnt.name,
             }
-    populatedProjects = [{**project, "instances": [instance for instance in user_instancesJson if instance["project_id"] == project["id"] ]} for project in projectsJson]
+    populatedProjects = [
+        {
+            **project,
+            "instances": [instance for instance in user_instancesJson if instance["project_id"] == project["id"] ]
+        } for project in projectsJson
+    ]
     
     return JSONResponse(content = populatedProjects, status_code = 200)
 
@@ -159,9 +180,9 @@ def get_project(current_user, projectId, db):
                 'i18n_code': 'invalid_payment_method_id',
                 'cid': get_current_cid()
             }, status_code = 400)
+
         project = Project.getUserProject(projectId, current_user.id, db)
         if not project:
-            
             access = Access.getUserAccessToObject(current_user.id, "project", projectId, db)
             if not access:
                 return JSONResponse(content = {
@@ -185,6 +206,7 @@ def get_project(current_user, projectId, db):
             deployments = Deployment.getAllByProject(project.id, db)
             deploymentsJson = json.loads(json.dumps(deployments, cls = AlchemyEncoder))
             project_response = {**projectJson, "deployments": deploymentsJson}
+
         return JSONResponse(content = project_response, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -203,6 +225,7 @@ def delete_project(current_user, projectId, db):
                 'i18n_code': 'invalid_payment_method_id',
                 'cid': get_current_cid()
             }, status_code = 400)
+
         project = Project.getUserProject(projectId, current_user.id, db)
         if not project:
             return JSONResponse(content = {
@@ -211,6 +234,7 @@ def delete_project(current_user, projectId, db):
                 'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         project_instances = Instance.getAllActiveInstancesByProject(projectId, db)
         if len(project_instances) > 0:
             return JSONResponse(content = {
@@ -219,9 +243,11 @@ def delete_project(current_user, projectId, db):
                 'i18n_code': 'project_hold_active_instances',
                 'cid': get_current_cid()
             }, status_code = 400)
+
         check_permissions(current_user, project, db)
         delete_gitlab_project(projectId, project.gitlab_host, project.access_token)
         Project.deleteOne(projectId, db)
+
         return JSONResponse(content = {
             'status' : 'ok',
             'message' : 'project successfully deleted', 
@@ -245,12 +271,14 @@ def get_project_by_name(current_user, project_name, db):
                 'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         check_permissions(current_user, project, db)
         playbooks = get_gitlab_project_playbooks(project.id, project.gitlab_host, project.access_token)
         projectJson = json.loads(json.dumps(project, cls = AlchemyEncoder))
         instancesJson = json.loads(json.dumps(project.instances, cls = AlchemyEncoder))
         filteredInstances = [instance for instance in instancesJson if not instance[ 'status'] == "deleted"]
         project_response = {**projectJson, "playbooks": playbooks, "instances": filteredInstances}
+
         return JSONResponse(content = project_response, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -270,6 +298,7 @@ def delete_project_by_name(current_user, project_name, db):
                 'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         project_instances = Instance.getAllActiveInstancesByProject(project.id, db)
         if len(project_instances) > 0:
             return JSONResponse(content = {
@@ -278,9 +307,11 @@ def delete_project_by_name(current_user, project_name, db):
                 'i18n_code': 'project_hold_active_instances',
                 'cid': get_current_cid()
             }, status_code = 400)
+
         check_permissions(current_user, project, db)
         delete_gitlab_project(project.id, project.gitlab_host, project.access_token)
         Project.deleteOne(project.id, db)
+
         return JSONResponse(content = {
              'status' : 'ok',
             'message' : 'project successfully deleted', 
@@ -304,12 +335,14 @@ def get_project_by_url(current_user, project_url, db):
                 'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         check_permissions(current_user, project, db)
         playbooks = get_gitlab_project_playbooks(project.id, project.gitlab_host, project.access_token)
         projectJson = json.loads(json.dumps(project, cls = AlchemyEncoder))
         instancesJson = json.loads(json.dumps(project.instances, cls = AlchemyEncoder))
         filteredInstances = [instance for instance in instancesJson if not instance[ 'status'] == 'deleted']
         project_response = {**projectJson, "playbooks": playbooks, "instances": filteredInstances}
+
         return JSONResponse(content = project_response, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -329,6 +362,7 @@ def delete_project_by_url(current_user, project_url, db):
                 'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         project_instances = Instance.getAllActiveInstancesByProject(project.id, db)
         if len(project_instances) > 0:
             return JSONResponse(content = {
@@ -337,9 +371,11 @@ def delete_project_by_url(current_user, project_url, db):
                 'i18n_code': 'project_hold_active_instances',
                 'cid': get_current_cid()
             }, status_code = 400)
+
         check_permissions(current_user, project, db)
         delete_gitlab_project(project.id, project.gitlab_host, project.access_token)
         Project.deleteOne(project.id, db)
+
         return JSONResponse(content = {
             'status' : 'ok',
             'message' : 'project successfully deleted', 

@@ -46,7 +46,6 @@ def admin_transfer_project (project_id, payload, db):
         attach_default_gitlab_project_to_user(project.id, user.email)
         detach_user_gitlab_project(project.id, original_project_user)
 
-        from entities.Instance import Instance
         Instance.updateProjectInstancesOwner(project.id, user.id, db)
         projectsInstances = Instance.getAllActiveInstancesByProject(project.id, db)
         projectInstancesIds = [instance.id for instance in projectsInstances]
@@ -89,6 +88,7 @@ def admin_add_project(payload, db):
                 'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         if is_empty(project_type):
             project_type = 'vm'
         project = create_gitlab_project(project_name, target_user.id, target_user.email, host, git_username, token, namespace, project_type, db)
@@ -103,11 +103,9 @@ def admin_add_project(payload, db):
         }, status_code = e.code)
 
 def admin_get_projects(db):
-    from entities.Project import Project
     projects = Project.getAllProjects(db)
     projectsJson = json.loads(json.dumps(projects, cls = AlchemyEncoder))
 
-    from entities.Instance import Instance
     user_instances = Instance.getAllInstances(db)
     user_instancesJson = json.loads(json.dumps(user_instances, cls = AlchemyEncoder))
     populatedInstancesProjects = [{**project, "instances": [instance for instance in user_instancesJson if instance["project_id"] == project["id"] ]} for project in projectsJson]
@@ -163,6 +161,7 @@ def admin_remove_project(project_id, db):
                 'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         project_instances = Instance.getAllActiveInstancesByProject(project_id, db)
         if len(project_instances) > 0:
             return JSONResponse(content = {
@@ -171,6 +170,7 @@ def admin_remove_project(project_id, db):
                 'i18n_code': 'project_hold_active_instances',
                 'cid': get_current_cid()
             }, status_code = 400)
+
         delete_gitlab_project(project_id, project.gitlab_host, project.access_token)
         Project.deleteOne(project_id, db)
         return JSONResponse(content = {
@@ -196,6 +196,7 @@ def admin_get_project_by_name(project_name, db):
                 'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         playbooks = get_gitlab_project_playbooks(project.id, project.gitlab_host, project.access_token)
         projectJson = json.loads(json.dumps(project, cls = AlchemyEncoder))
         instancesJson = json.loads(json.dumps(project.instances, cls = AlchemyEncoder))
@@ -220,6 +221,7 @@ def admin_remove_project_by_name(project_name, db):
                 'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         project_instances = Instance.getAllActiveInstancesByProject(project.id, db)
         if len(project_instances) > 0:
             return JSONResponse(content = {
@@ -228,6 +230,7 @@ def admin_remove_project_by_name(project_name, db):
                 'i18n_code': 'project_hold_active_instances',
                 'cid': get_current_cid()
             }, status_code = 400)
+
         delete_gitlab_project(project.id, project.gitlab_host, project.access_token)
         Project.deleteOne(project.id, db)
         return JSONResponse(content = {
@@ -253,6 +256,7 @@ def admin_get_project_by_url(project_url, db):
                 'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         playbooks = get_gitlab_project_playbooks(project.id, project.gitlab_host, project.access_token)
         projectJson = json.loads(json.dumps(project, cls = AlchemyEncoder))
         instancesJson = json.loads(json.dumps(project.instances, cls = AlchemyEncoder))
@@ -277,6 +281,7 @@ def admin_remove_project_by_url(project_url, db):
                 'i18n_code': 'project_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         project_instances = Instance.getAllActiveInstancesByProject(project.id, db)
         if len(project_instances) > 0:
             return JSONResponse(content = {
@@ -285,6 +290,7 @@ def admin_remove_project_by_url(project_url, db):
                 'i18n_code': 'project_hold_active_instances',
                 'cid': get_current_cid()
             }, status_code = 400)
+
         delete_gitlab_project(project.id, project.gitlab_host, project.access_token)
         Project.deleteOne(project.id, db)
         return JSONResponse(content = {

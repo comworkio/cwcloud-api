@@ -104,6 +104,7 @@ def admin_remove_user(current_user, userId, db):
         }, status_code = 404)
 
     ApiKeys.deleteUserAllApiKeys(user.id, db)
+
     first_admin_user = User.getFirstAdminUser(db)
     if first_admin_user:
         FunctionEntity.transferAllFunctionsOwnership(userId, first_admin_user.id, db)
@@ -111,6 +112,7 @@ def admin_remove_user(current_user, userId, db):
         InvocationEntity.transferAllInvocationsOwnership(userId, first_admin_user.id, db)
         Device.transferAllDevicesOwnership(user.email, first_admin_user.email, db)
     User.deleteUserById(user.id, db)
+
     return JSONResponse(content = {
         'status': 'ok',
         'message' : 'user successfully deleted', 
@@ -143,13 +145,11 @@ def admin_update_user_confirmation(current_user, userId, db):
     }, status_code = 200)
 
 def admin_get_autopayment_users(current_user, db):
-    from entities.User import User
     users = User.getActiveAutoPaymentUsers(db)
     usersJson = json.loads(json.dumps(users, cls = AlchemyEncoder))
     return JSONResponse(content = {"result": usersJson}, status_code = 200)
 
 def admin_get_billable_users(current_user, db):
-    from entities.User import User
     users = User.getActiveBillableUsers(db)
     usersJson = json.loads(json.dumps(users, cls = AlchemyEncoder))
     return JSONResponse(content = {"result": usersJson}, status_code = 200)
@@ -219,7 +219,9 @@ def admin_add_user(current_user, payload, db):
         payload.st_customer_id = customer['id']
         new_user = User(**payload.dict())
         new_user.save(db)
+
         create_gitlab_user(email)
+
         if is_flag_enabled(payload.enabled_features, 'disable_emails'):
             return JSONResponse(content = {
                 'status': 'ok', 
@@ -237,6 +239,7 @@ def admin_add_user(current_user, payload, db):
         activation_link = '{}/confirmation/{}'.format(os.getenv("DOMAIN"), token)
         log_msg("INFO", f"[api_admin_user_register] User {email} has joined comwork cloud")
         send_confirmation_email(new_user.email, activation_link, subject)
+
         return JSONResponse(content = {
             'status': 'ok', 
             'message': 'user successfully created', 
@@ -260,6 +263,7 @@ def admin_get_users(current_user, no_per_page, page, db):
         users_per_page = int(no_per_page)
         pages = get_paginated_list(users, "/user", _page, users_per_page)
         return JSONResponse(content = {"result": pages}, status_code = 200)
+
     return JSONResponse(content = {"result": users}, status_code = 200)
 
 def admin_get_user(current_user, userId, db):

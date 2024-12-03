@@ -15,7 +15,6 @@ from utils.mail import send_reply_to_customer_email
 from utils.observability.cid import get_current_cid
 
 def get_support_tickets(current_user, db):
-    from entities.SupportTicket import SupportTicket
     supportTickets = SupportTicket.getAllSupportTickets(db)
     supportTicketsJson = json.loads(json.dumps(supportTickets, cls = AlchemyEncoder))
     return JSONResponse(content = supportTicketsJson, status_code = 200)
@@ -35,6 +34,7 @@ def add_support_ticket(current_user, payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'severity needs to be low, medium or high',
+                'i18n_code': 'invalid_severity',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -71,20 +71,20 @@ def get_support_ticket(current_user, ticket_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid ticket id', 
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_ticket_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
-    from entities.SupportTicket import SupportTicket
     supportTicket = SupportTicket.getSupportTicket(ticket_id, db)
     if not supportTicket:
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'ticket not found',
+            'i18n_code': 'ticket_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
 
-    from entities.SupportTicketLog import SupportTicketLog
+    
     ticket_replies = SupportTicketLog.getTicketLogs(ticket_id, db)
     attachments = [{
         "id": attachment.id,
@@ -113,11 +113,10 @@ def delete_support_ticket(current_user, ticket_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid ticket id', 
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_ticket_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
-    from entities.SupportTicket import SupportTicket
     supportTicket = SupportTicket.getSupportTicket(ticket_id, db)
     if not supportTicket:
         return JSONResponse(content = {
@@ -125,13 +124,15 @@ def delete_support_ticket(current_user, ticket_id, db):
             'error': 'ticket not found',
             'cid': get_current_cid()
         }, status_code = 404)
+
     close_gitlab_issue(supportTicket.gitlab_issue_id)
     SupportTicket.deleteOne(ticket_id, db)
-    from entities.SupportTicketLog import SupportTicketLog
     SupportTicketLog.deleteTicketReplies(ticket_id, db)
+
     return JSONResponse(content = {
         'status': 'ok',
-        'message': 'ticket successfully deleted'
+        'message': 'ticket successfully deleted',
+        'i18n_code': 'ticket_deleted_successfully'
     }, status_code = 200)
 
 def reply_support_ticket(current_user, ticket_id, payload, db):
@@ -146,8 +147,6 @@ def reply_support_ticket(current_user, ticket_id, payload, db):
                 'cid': get_current_cid()
             }, status_code = 400)
 
-        from entities.SupportTicket import SupportTicket
-        from entities.SupportTicketLog import SupportTicketLog
         ticket = SupportTicket.getSupportTicket(ticket_id, db)
         if not ticket:
             return JSONResponse(content = {
@@ -161,7 +160,9 @@ def reply_support_ticket(current_user, ticket_id, payload, db):
         else:
             if ticket.status == 'closed':
                 reopen_gitlab_issue(ticket.gitlab_issue_id)
+
         SupportTicket.updateTicketStatus(ticket.id, status, db)
+
         if is_not_empty(message):
             new_reply = SupportTicketLog()
             new_reply.user_id = current_user.id
@@ -180,9 +181,11 @@ def reply_support_ticket(current_user, ticket_id, payload, db):
             customer_email = User.getUserById(ticket.user_id, db).email
             send_reply_to_customer_email(customer_email, ticket.subject, new_reply.message)
             return JSONResponse(content = {"reply": supportTicketReply}, status_code = 200)
+
         return JSONResponse(content = {
             'status': 'ok',
-            'message': 'successfully updated ticket status'
+            'message': 'successfully updated ticket status',
+            'i18n_code': 'ticket_status_updated_successfully'
         }, status_code = 200)
     except HTTPError as e:
         return JSONResponse(content = {
@@ -198,7 +201,7 @@ def update_reply_support_ticket(current_user, ticket_id, reply_id, payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid ticket id or reply id',
-                'i18n_code': 'invalid_payment_method_id',
+                'i18n_code': 'invalid_ticket_reply_id',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -207,6 +210,7 @@ def update_reply_support_ticket(current_user, ticket_id, reply_id, payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'ticket not found',
+                'i18n_code': 'ticket_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -231,6 +235,7 @@ def update_reply_support_ticket(current_user, ticket_id, reply_id, payload, db):
         update_message = "_(updated message)_ {}".format(payload.message)
         add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, update_message)
         log_msg("INFO", "[Support] User {} has updated support ticket reply #{}".format(current_user.email, reply.id))
+
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'Support ticket reply updated successfully.',
@@ -251,7 +256,7 @@ def delete_reply_support_ticket(current_user, ticket_id, reply_id, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid ticket id or reply id',
-                'i18n_code': 'invalid_payment_method_id',
+                'i18n_code': 'invalid_ticket_reply_id',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -260,6 +265,7 @@ def delete_reply_support_ticket(current_user, ticket_id, reply_id, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'ticket not found',
+                'i18n_code': 'ticket_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -268,6 +274,7 @@ def delete_reply_support_ticket(current_user, ticket_id, reply_id, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'reply not found',
+                'i18n_code': 'reply_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -283,6 +290,7 @@ def delete_reply_support_ticket(current_user, ticket_id, reply_id, db):
         add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, deleted_message)
         log_msg("INFO", "[Support] User {} has deleted support ticket reply #{}".format(current_user.email, reply.id))
         SupportTicketLog.deleteTicketLog(reply_id, db)
+
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'Support ticket reply deleted successfully.',
@@ -303,7 +311,7 @@ def update_support_ticket(current_user, ticket_id, payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid ticket id',
-                'i18n_code': 'invalid_payment_method_id',
+                'i18n_code': 'invalid_ticket_id',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -323,9 +331,10 @@ def update_support_ticket(current_user, ticket_id, payload, db):
             }, status_code = 400)
 
         SupportTicket.updateTicket(ticket.id, payload, db)
-        update_message = "_(updated description)_ {}".format(current_user.email, payload.message)
+        update_message = "_(updated description)_ {}: {}".format(current_user.email, payload.message)
         add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, update_message)
         log_msg("INFO", "[Support] User {} has updated support ticket #{}".format(current_user.email, ticket.id))
+
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'Support ticket updated successfully.',
@@ -360,6 +369,7 @@ def delete_file_from_ticket_by_id(current_user, ticket_id, attachment_id, db):
 
     SupportTicketAttachment.deleteAttachmentById(attachment.id, db)
     delete_from_attachment_bucket(attachment.name, attachment.storage_key)
+
     return JSONResponse(content={
         'status': 'ok',
         'message': 'file successfully deleted',

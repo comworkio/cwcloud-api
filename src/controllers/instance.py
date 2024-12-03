@@ -54,7 +54,13 @@ def get_instance(current_user, provider, region, instance_id, db):
 
     dumpedInstance = json.loads(json.dumps(userInstance, cls = AlchemyEncoder))
     dumpedProject = json.loads(json.dumps(userInstance.project, cls = AlchemyEncoder))
-    instanceJson = {**dumpedInstance, "environment": userInstance.environment.name, "path": userInstance.environment.path, "project": {**dumpedProject}}
+    instanceJson = {
+        **dumpedInstance,
+        "environment": userInstance.environment.name,
+        "path": userInstance.environment.path,
+        "project": {**dumpedProject}
+    }
+
     return JSONResponse(content = instanceJson, status_code = 200)
 
 def remove_instance(current_user, provider, region, instance_id, db, bt: BackgroundTasks):
@@ -90,6 +96,7 @@ def remove_instance(current_user, provider, region, instance_id, db, bt: Backgro
             'i18n_code': 'can_not_remove_protected_instance',
             'cid': get_current_cid()
         }, status_code = 400)
+
     result_remove = generic_remove_instance(user_instance, db, bt)
     if is_false(result_remove['status']):
         return JSONResponse(content = {
@@ -143,7 +150,7 @@ def update_instance(current_user, payload, provider, region, instance_id, db):
     target_server_id = server["id"]
     possible_actions = ["poweroff", "poweron", "reboot"]
     if is_not_empty(action):
-        if not action in possible_actions:
+        if action not in possible_actions:
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'action doesnt exist',
@@ -368,6 +375,7 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
             'i18n_code': 'project_has_no_playbooks',
             'cid': get_current_cid()
         }, status_code = 400)
+
     if is_empty(instance_name):
         return JSONResponse(content = {
             'status': 'ko',
@@ -375,7 +383,7 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
             'i18n_code': 'select_playbook',
             'cid': get_current_cid()
         }, status_code = 400)
-    if not instance_name in [name.split("playbook-")[1] for name in project_playbooks]:
+    if instance_name not in [name.split("playbook-")[1] for name in project_playbooks]:
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'playbook not found',
@@ -453,7 +461,12 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
         )
 
         dumpedInstance = json.loads(json.dumps(userInstance, cls = AlchemyEncoder))
-        new_instance_json = {**dumpedInstance, "environment": userInstance.environment.name, "path": userInstance.environment.path, "gitlab_project": userInstance.project.url}
+        new_instance_json = {
+            **dumpedInstance,
+            "environment": userInstance.environment.name,
+            "path": userInstance.environment.path,
+            "gitlab_project": userInstance.project.url
+        }
         return JSONResponse(content = new_instance_json, status_code = 200)
     except auto.StackAlreadyExistsError:
         return JSONResponse(content = {
@@ -704,8 +717,8 @@ def get_instances(current_user, provider, region, db):
         }, status_code = 404)
 
     from entities.Instance import Instance
-    userRegionInstances = Instance.getActiveUserInstancesPerRegion(current_user.id, provider, region, db)
     from entities.Access import Access
+    userRegionInstances = Instance.getActiveUserInstancesPerRegion(current_user.id, provider, region, db)
     other_instances_access = Access.getUserAccessesByType(current_user.id, "instance", db)
     other_instances_ids = [access.object_id for access in other_instances_access]
     other_instances = Instance.findInstancesByRegion(other_instances_ids, provider, region, db)

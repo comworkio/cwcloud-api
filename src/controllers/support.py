@@ -15,7 +15,6 @@ from utils.common import is_not_numeric
 from utils.encoder import AlchemyEncoder
 from utils.gitlab import add_gitlab_issue, add_gitlab_issue_comment
 from utils.observability.cid import get_current_cid
-from utils.observability.cid import get_current_cid
 
 def get_support_tickets(current_user, db):
     supportTickets = SupportTicket.getUserSupportTickets(current_user.id, db)
@@ -89,7 +88,9 @@ def add_support_ticket(current_user, payload, db):
         ticket.save(db)
         supportTicketJson = json.loads(json.dumps(ticket, cls = AlchemyEncoder))
         supportTicketJson["id"] = ticket.id
+
         return JSONResponse(content = supportTicketJson, status_code = 201)
+
     except HTTPError as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -122,6 +123,7 @@ def reply_support_ticket(current_user, payload, ticket_id, db):
         new_reply.creation_date = datetime.now().isoformat()
         new_reply.change_date = datetime.now().isoformat()
         new_reply.save(db)
+
         add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, payload.message)
         supportTicketReplyJson = json.loads(json.dumps(new_reply, cls = AlchemyEncoder))
         userJson = json.loads(json.dumps(new_reply.user, cls = AlchemyEncoder))
@@ -129,7 +131,9 @@ def reply_support_ticket(current_user, payload, ticket_id, db):
         SupportTicket.updateTicketStatus(ticket.id, "await agent", db)
         SupportTicket.updateTicketTime(ticket.id, db)
         log_msg("INFO", "[Support] User {} has replied to support ticket # {}".format(current_user.email, ticket.id))
+
         return JSONResponse(content = supportTicketReply, status_code = 200)
+
     except HTTPError as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -174,14 +178,16 @@ def update_reply_support_ticket(current_user, ticket_id, reply_id, payload, db):
             }, status_code = 403)
 
         SupportTicketLog.updateTicketLog(reply_id, payload.message, db)
-        update_message = "_(updated message)_ {}".format(current_user.email, payload.message)
+        update_message = "_(updated message)_ {}: {}".format(current_user.email, payload.message)
         add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, update_message)
         log_msg("INFO", "[Support] User {} has updated support ticket reply #{}".format(current_user.email, reply.id))
+
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'Support ticket reply updated successfully.',
             'i18n_code': 'support_ticket_updated_successfully'
         }, status_code = 200)
+
     except Exception as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -229,11 +235,13 @@ def delete_reply_support_ticket(current_user, ticket_id, reply_id, db):
         add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, deleted_message)
         log_msg("INFO", "[Support] User {} has deleted support ticket reply #{}".format(current_user.email, reply.id))
         SupportTicketLog.deleteTicketLog(reply_id, db)
+
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'Support ticket reply deleted successfully.',
             'i18n_code': 'support_ticket_reply_deleted_successfully'
         }, status_code = 200)
+
     except Exception as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -266,6 +274,7 @@ def auto_close_tickets(current_user, db):
             'status': 'ok',
             'message': 'Auto-closed inactive tickets successfully.'
         }, status_code=200)
+
     except Exception as e:
         return JSONResponse(content={
             'status': 'ko', 
@@ -300,14 +309,16 @@ def update_support_ticket(current_user, ticket_id, payload, db):
             }, status_code = 400)
 
         SupportTicket.updateTicket(ticket.id, payload, db)
-        update_message = "_(updated description)_ {}".format(current_user.email, payload.message)
+        update_message = "_(updated description)_ {}: {}".format(current_user.email, payload.message)
         add_gitlab_issue_comment(ticket.gitlab_issue_id, current_user.email, update_message)
         log_msg("INFO", "[Support] User {} has updated support ticket #{}".format(current_user.email, ticket.id))
+
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'Support ticket updated successfully.',
             'i18n_code': 'support_ticket_updated_successfully'
         }, status_code = 200)
+
     except Exception as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -429,6 +440,7 @@ def delete_file_from_ticket_by_id(current_user: User, ticket_id, attachment_id, 
 
     SupportTicketAttachment.deleteAttachmentById(attachment.id, db)
     delete_from_attachment_bucket(attachment.name, attachment.storage_key)
+
     return JSONResponse(content={
         'status': 'ok',
         'message': 'file successfully deleted',

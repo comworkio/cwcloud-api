@@ -1,6 +1,5 @@
 import base64
 import re
-import time
 import os
 from passlib.context import CryptContext
 import sqlalchemy
@@ -50,7 +49,7 @@ def is_empty (var):
     return not is_not_empty(var)
 
 def is_empty_key(vdict, key):
-    return is_empty(vdict) or not key in vdict or is_empty(vdict[key])
+    return is_empty(vdict) or key not in vdict or is_empty(vdict[key])
 
 def is_not_empty_key(vdict, key):
     return not is_empty_key(vdict, key)
@@ -153,3 +152,31 @@ def get_env_int(var_name, default):
 _allowed_chars_metric_pattern = re.compile(r'[^a-zA-Z0-9]')
 def sanitize_metric_name(name: str):
     return re.sub(_allowed_chars_metric_pattern, '_', name)
+
+def get_or_else(vdict, key, default):
+    return default if is_empty_key(vdict, key) else vdict[key]
+
+def sanitize_header_name(name: str) -> str:
+    return '-'.join(word.capitalize() for word in name.split('-'))
+
+def is_http_status_code(status_code: str) -> bool:
+    if not isinstance(status_code, str):
+        return False
+    if '*' in status_code:
+        if len(status_code) != 3 or status_code.count('*') != 1:
+            return False
+
+        pattern = status_code.replace('*', '0')
+        try:
+            first_digit = int(pattern[0])
+            return 1 <= first_digit <= 5
+        except ValueError:
+            return False
+    try:
+        status = int(status_code)
+        return 100 <= status <= 599
+    except ValueError:
+        return False
+
+def is_not_http_status_code(status_code: str) -> bool:
+    return not is_http_status_code(status_code)

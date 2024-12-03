@@ -1,8 +1,7 @@
 from sqlalchemy import Column, ForeignKey, String, Integer
-from datetime import datetime
 
 from database.postgres_db import Base
-from entities.SupportTicket import SupportTicket
+from entities.SupportTicket import SupportTicket  # noqa: F401
 
 class SupportTicketAttachment(Base):
     __tablename__ = "support_ticket_attachment"

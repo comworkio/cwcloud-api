@@ -26,29 +26,9 @@ class Cluster(Base):
         return cluster
 
     @staticmethod
-    def findOneByUser(id, user_id, db):
-        cluster = db.query(Cluster).join(KubeConfigFile).filter(Cluster.id == id, KubeConfigFile.owner_id == user_id).first()
-        return cluster
-
-    @staticmethod
-    def findByUser(user_id, db):
-        clusters = db.query(Cluster).join(KubeConfigFile).filter(KubeConfigFile.owner_id == user_id).all()
-        return clusters
-
-    @staticmethod
     def findByKubeConfigFile(file_id, db):
         clusters = db.query(Cluster).filter(Cluster.kubeconfig_file_id == file_id).all()
         return clusters
-
-    @staticmethod
-    def findByKubeConfigFileAndUserId(file_id, user_id, db):
-        clusters = db.query(Cluster).join(KubeConfigFile).filter(Cluster.kubeconfig_file_id == file_id, KubeConfigFile.owner_id == user_id).all()
-        return clusters
-
-    @staticmethod
-    def findByConfigFileAndClustedId(id, file_id, db):
-        cluster = db.query(Cluster).filter(Cluster.kubeconfig_file_id == file_id, Cluster.id == id).first()
-        return cluster
 
     @staticmethod
     def getKuberConfigFileByClusterId(cluster_id, db) -> "KubeConfigFile":

@@ -410,7 +410,7 @@ class TestUser(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 204)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"payment method successfully added"}')
+        self.assertEqual(result.body.decode(), '{"status":"ok","message":"payment method successfully added","i18n_code":"payment_method_added"}')
 
     @patch('controllers.user.retrievePaymentMethod')
     @patch('entities.User.User.getUserById',side_effect = None) 

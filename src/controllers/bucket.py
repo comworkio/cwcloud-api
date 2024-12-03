@@ -9,6 +9,8 @@ from utils.common import is_empty, is_numeric
 from utils.encoder import AlchemyEncoder
 from utils.observability.cid import get_current_cid
 from utils.provider import exist_provider
+from entities.Bucket import Bucket
+from entities.Access import Access
 
 def get_bucket(current_user, provider, region, bucket_id, db):
     if not exist_provider(provider):
@@ -27,10 +29,8 @@ def get_bucket(current_user, provider, region, bucket_id, db):
             'cid': get_current_cid()
         }, status_code = 400)
 
-    from entities.Bucket import Bucket
     user_bucket = Bucket.findUserBucket(provider, current_user.id, bucket_id, region, db)
     if not user_bucket:
-        from entities.Access import Access
         access = Access.getUserAccessToObject(current_user.id, "bucket", bucket_id, db)
         if not access:
             return JSONResponse(content = {
@@ -41,6 +41,7 @@ def get_bucket(current_user, provider, region, bucket_id, db):
             }, status_code = 404)
         user_bucket = Bucket.findBucket(provider, region, access.object_id, db)
     dumpedBucket = json.loads(json.dumps(user_bucket, cls = AlchemyEncoder))
+
     return JSONResponse(content = dumpedBucket, status_code = 200)
 
 def remove_bucket(current_user, provider, region, bucket_id, db, bt: BackgroundTasks):
@@ -58,7 +59,7 @@ def remove_bucket(current_user, provider, region, bucket_id, db, bt: BackgroundT
             'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
-    from entities.Bucket import Bucket
+    
     user_bucket = Bucket.findUserBucket(provider, current_user.id, bucket_id, region, db)
     if not user_bucket:
         return JSONResponse(content = {
@@ -67,6 +68,7 @@ def remove_bucket(current_user, provider, region, bucket_id, db, bt: BackgroundT
             'i18n_code': '2fa_method_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
+
     user_email = user_bucket.user.email if user_bucket.user is not None else None
     if is_empty(user_email):
         return JSONResponse(content = {
@@ -108,7 +110,7 @@ def update_bucket(current_user, provider, region, bucket_id, db):
             'i18n_code': 'invalid_payment_method_id',
             'cid': get_current_cid()
         }, status_code = 400)
-    from entities.Bucket import Bucket
+
     user_bucket = Bucket.findUserBucket(provider, current_user.id, bucket_id, region, db)
     if not user_bucket:
         return JSONResponse(content = {
@@ -117,6 +119,7 @@ def update_bucket(current_user, provider, region, bucket_id, db):
             'i18n_code': '2fa_method_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
+
     try:
         update_credentials(user_bucket.provider, user_bucket, db)
         return JSONResponse(content = {
@@ -141,12 +144,11 @@ def get_buckets(current_user, provider, region, db):
             'cid': get_current_cid()
         }, status_code = 404)
 
-    from entities.Bucket import Bucket
     userRegionBuckets = Bucket.getAllUserBucketsByRegion(provider, region, current_user.id, db)
-    from entities.Access import Access
     other_buckets_access = Access.getUserAccessesByType(current_user.id, "bucket", db)
     other_buckets_ids = [access.object_id for access in other_buckets_access]
     other_buckets = Bucket.findBucketsByRegion(other_buckets_ids, provider, region, db)
     userRegionBuckets.extend(other_buckets)
     userRegionBucketsJson = json.loads(json.dumps(userRegionBuckets, cls = AlchemyEncoder))
+
     return JSONResponse(content = userRegionBucketsJson, status_code = 200)

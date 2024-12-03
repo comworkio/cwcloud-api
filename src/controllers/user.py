@@ -33,8 +33,7 @@ def get_current_user_data(current_user, db):
     return user
 
 def update_user_informations(current_user, payload, db):
-    email = payload.email
-    if is_not_email_valid(email):
+    if is_not_email_valid(payload.email):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'email is not valid', 
@@ -54,7 +53,7 @@ def update_user_informations(current_user, payload, db):
     User.updateUser(current_user.id, payload, db)
     return JSONResponse(content = {
             'status': 'ok',
-            'message': f'user successfully updated', 
+            'message': 'user successfully updated', 
             'i18n_code': 'user_updated'
         }, status_code = 200)
 
@@ -94,10 +93,13 @@ def create_user_account(payload, db):
 
         customer = create_customer(email)
         payload.password = generate_hash_password(password)
+
         new_user = User(**payload.dict())
         new_user.st_customer_id = customer["id"]
         new_user.save(db)
+
         create_gitlab_user(email)
+
         subject = "Confirm your account"
         token = jwt_encode({
             "exp": (datetime.now() + timedelta(minutes = 5)).timestamp(),
@@ -108,8 +110,16 @@ def create_user_account(payload, db):
         activation_link = "{}/confirmation/{}".format(os.getenv("DOMAIN"), token)
         log_msg("INFO", f"[api_user_signup] User {email} has joined comwork cloud")
         log_msg("INFO", f"[api_user_signup] Sending confirmation email to {email}")
+
         send_confirmation_email(new_user.email, activation_link, subject)
-        return JSONResponse(content = {'status': 'ok', 'message': 'user successfully created', 'id': new_user.id, 'i18n_code': 'user_created'}, status_code = 201)
+
+        return JSONResponse(content = {
+            'status': 'ok',
+            'message': 'user successfully created',
+            'i18n_code': 'user_created',
+            'id': new_user.id
+        }, status_code = 201)
+
     except HTTPException as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -139,7 +149,6 @@ def update_user_autopayment(current_user, payload, db):
             'cid': get_current_cid()
         }, status_code = 400)
 
-    from entities.User import User
     user = User.getUserById(current_user.id, db)
     if is_empty(user.st_payment_method_id):
         return JSONResponse(content = {
@@ -205,7 +214,7 @@ def update_user_password(current_user, payload, db):
     User.updateUserPassword(user.id, new_password, db)
     return JSONResponse(content = {
         'status': 'ok',
-        'message': f'user successfully updated', 
+        'message': 'user successfully updated', 
         'i18n_code': 'user_updated'
         }, status_code = 200)
 
@@ -238,11 +247,13 @@ def forget_password_email(payload, db):
         activation_link = "{}/reset-password/{}".format(os.getenv("DOMAIN"), token)
         send_forget_password_email(user.email, activation_link, subject)
         log_msg("INFO", f"[api_reset_password] User {user.email} requested a reset password email")
+
         return JSONResponse(content = {
             'status': 'ok',
             "message": "successfully sent reset password email",
             "i18n_code": "reset_password_success"
         }, status_code = 200)
+
     except HTTPException as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -262,6 +273,7 @@ def user_reset_password(payload, db):
                 'i18n_code': 'not_valid_email',
                 'cid': get_current_cid()
             }, status_code = 400)
+
         check = check_password(password)
         if is_false(check["status"]):
             return JSONResponse(content = {
@@ -286,6 +298,7 @@ def user_reset_password(payload, db):
             'message': 'user successfully updated',
             'i18n_code': 'user_updated'
         }, status_code = 200)
+
     except HTTPException as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -302,6 +315,7 @@ def verify_user_token(token, db):
             'i18n_code': 'confirm_token_mandatory',
             'cid': get_current_cid()
         }, status_code = 400)
+
     try:
         data = jwt_decode(token)
         user = User.getUserByEmail(data["email"], db)
@@ -312,12 +326,14 @@ def verify_user_token(token, db):
                 'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         return JSONResponse(content = {
             'status': 'ok',
             'email': user.email, 
             'message': 'user verified', 
             'i18n_code': 'user_verified'
         }, status_code = 200)
+
     except HTTPException as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -325,6 +341,7 @@ def verify_user_token(token, db):
             'i18n_code': e.headers['i18n_code'],
             'cid': get_current_cid()
         }, status_code = e.code)
+
     except ExpiredSignatureError as e:
         log_msg("WARN", "[user][verify_user_token] expired signature: e.type = {}, e.msg = {}".format(type(e), e))
         return JSONResponse(content = {
@@ -333,6 +350,7 @@ def verify_user_token(token, db):
             'i18n_code': 'user_verification_failed',
             'cid': get_current_cid()
         }, status_code = 400)
+
     except JOSEError as e:
         log_msg("WARN", "[user][verify_user_token] invalid jwt token: e.type = {}, e.msg = {}".format(type(e), e))
         return JSONResponse(content = {
@@ -341,6 +359,7 @@ def verify_user_token(token, db):
             'i18n_code': 'invalid_jwt_token',
             'cid': get_current_cid()
         }, status_code = 400)
+
     except Exception as e:
         log_msg("ERROR", "[user][verify_user_token] err :{}".format(e))
         return JSONResponse(content = {
@@ -358,6 +377,7 @@ def confirm_user_account(token, db):
             'i18n_code': 'confirm_token_mandatory',
             'cid': get_current_cid()
         }, status_code = 400)
+
     try:
         data = jwt_decode(token)
         user = User.getUserByEmail(data['email'], db)
@@ -375,16 +395,20 @@ def confirm_user_account(token, db):
                 'i18n_code': 'user_already_confirmed',
                 'cid': get_current_cid()
             }, status_code = 409)
+
         User.updateConfirmation(user.id, True, db)
+
         device = Device.getUserLatestInactiveDevice(user.email, db)
         if is_not_empty(device):
             Device.activateDevice(device.id, db)
+
         return JSONResponse(content = {
             'status': 'ok',
             'email': user.email, 
             'message': 'user successfully confirmed', 
             'i18n_code': 'user_confirmed'
         }, status_code = 200)
+
     except HTTPException as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -392,6 +416,7 @@ def confirm_user_account(token, db):
             'i18n_code': e.headers['i18n_code'],
             'cid': get_current_cid()
         }, status_code = e.code)
+
     except JWTError as e:
         log_msg('WARN', '[user][confirm_user_account] invalid jwt token :{}'.format(e))
         return JSONResponse(content = {
@@ -400,6 +425,7 @@ def confirm_user_account(token, db):
             'i18n_code': 'invalid_jwt_token',
             'cid': get_current_cid()
         }, status_code = 400)
+
     except ExpiredSignatureError:
         return JSONResponse(content = {
             'status': 'ko',
@@ -407,6 +433,7 @@ def confirm_user_account(token, db):
             'i18n_code': 'user_verification_failed',
             'cid': get_current_cid()
         }, status_code = 400)
+
     except Exception as e:
         log_msg('ERROR', '[user][confirm_user_account] e.type = {}, e.msg = {}'.format(type(e), e))
         return JSONResponse(content = {
@@ -453,11 +480,13 @@ def confirmation_email(payload, db):
         activation_link = "{}/confirmation/{}".format(os.getenv("DOMAIN"), token)
         log_msg("INFO", f"[api_confirm_account] User {user.email} requested a confirm account email")
         send_confirmation_email(user.email, activation_link, subject)
+
         return JSONResponse(content = {
             'status': 'ok',
             "message": "successfully send email confirmation",
             "i18n_code": "success_confirmation_email"
         }, status_code = 200)
+
     except HTTPError as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -470,7 +499,6 @@ def listPaymentMethods(user):
     return PAYMENT_ADAPTER().list_payment_methods(user)
 
 def get_payment_methods(current_user, db):
-    from entities.User import User
     user = User.getUserById(current_user.id, db)
     return JSONResponse(content = {'payment_method': listPaymentMethods(user)}, status_code = 200)
 
@@ -490,7 +518,6 @@ def add_payment_method(current_user, payload, db):
             'cid': get_current_cid()
         }, status_code = 404)
 
-    from entities.User import User
     user = User.getUserById(current_user.id, db)
     if is_empty(user.st_payment_method_id):
         User.activateUserPayment(current_user.id, payment_method, db)
@@ -504,7 +531,8 @@ def add_payment_method(current_user, payload, db):
 
     return JSONResponse(content = {
         'status': 'ok',
-        'message': 'payment method successfully added'
+        'message': 'payment method successfully added',
+        'i18n_code': 'payment_method_added'
     }, status_code = 204)
 
 def remove_payment_method(current_user, payment_method_id, db):
@@ -525,7 +553,6 @@ def remove_payment_method(current_user, payment_method_id, db):
             'cid': get_current_cid()
         }, status_code = 404)
 
-    from entities.User import User
     user = User.getUserById(current_user.id, db)
     if user.st_payment_method_id == payment_method_id:
         User.desactivateUserPayment(current_user.id, db)
@@ -561,7 +588,6 @@ def update_payment_method(current_user, payment_method_id, db):
             'cid': get_current_cid()
         }, status_code = 400)
 
-    from entities.User import User
     user = User.getUserById(current_user.id, db)
     if user.st_payment_method_id == payment_method_id:
         #? If we're getting here, that means the user tried to unselect the selected payment method

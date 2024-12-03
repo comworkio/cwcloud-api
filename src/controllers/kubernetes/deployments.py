@@ -34,10 +34,12 @@ def get_deployments(current_user: UserSchema, db):
 
     deploymentJson = json.loads(json.dumps(deployments, cls = AlchemyEncoder))
     
-    deploymentJson = [{
-        **deployment,
-        "namespace": f'{deployment["name"]}-{deployment["hash"]}',
-    } for deployment in deploymentJson]
+    deploymentJson = [
+        {
+            **deployment,
+            "namespace": f'{deployment["name"]}-{deployment["hash"]}'
+        } for deployment in deploymentJson
+    ]
     
     return JSONResponse(content = deploymentJson, status_code = 200)
 
@@ -82,13 +84,23 @@ def create_new_deployment(current_user:UserSchema, deployment:DeploymentSchema, 
         
     charts = unmarshall_list_array(env.roles)
     external_charts = unmarshall_list_array(env.external_roles)
-        
 
     generatedHash = generate_random_bytes(6)
     deployment.name = deployment.name.lower()
     kubeconfigFile = cluster.getKuberConfigFileByClusterId(cluster.id, db)
     generatedName = f'{deployment.name}-{generatedHash}'
-    push_charts(project.id, project.gitlab_host, deployment.name, generatedName, env.environment_template, env.doc_template, project.access_token, charts, external_charts, deployment.args)
+    push_charts(
+        project.id,
+        project.gitlab_host,
+        deployment.name,
+        generatedName,
+        env.environment_template,
+        env.doc_template,
+        project.access_token,
+        charts,
+        external_charts,
+        deployment.args
+    )
     set_git_config(kubeconfigFile.content,generatedName,generatedName,project)
     deployment = Deployment(name=deployment.name,
                             description=deployment.description,
@@ -99,6 +111,7 @@ def create_new_deployment(current_user:UserSchema, deployment:DeploymentSchema, 
                             user_id=current_user.id)
     deployment.save(db)
     deploymentJson = json.loads(json.dumps(deployment, cls = AlchemyEncoder))
+
     return JSONResponse(content = deploymentJson, status_code = 201)
 
 def get_deployment(current_user:UserSchema,deployment_id:int, db):
@@ -199,7 +212,14 @@ def delete_deployment(current_user:UserSchema,deployment_id:int, db):
     
     cluster = Cluster.getById(deployment.cluster_id, db)
     kubeconfigFile = cluster.getKuberConfigFileByClusterId(cluster.id, db)
-    deleted = delete_custom_resource(GROUP, VERSION, PLURAL, f'{deployment.name}-{deployment.hash}-release', NAMESPACE, kubeconfigFile.content)
+    deleted = delete_custom_resource(
+        GROUP,
+        VERSION,
+        PLURAL,
+        f'{deployment.name}-{deployment.hash}-release',
+        NAMESPACE,
+        kubeconfigFile.content
+    )
 
     deployment.delete(db)
     if is_true(deleted):

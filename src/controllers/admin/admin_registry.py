@@ -58,6 +58,7 @@ def admin_add_registry(current_user, provider, region, payload, db, bt: Backgrou
                         'i18n_code': 'registry_type_not_exist',
                         'cid': get_current_cid()
                     }, status_code = 400)
+
         possible_regions = get_provider_infos(provider, "registry_available_regions")
         if region not in possible_regions:
             return JSONResponse(content = {
@@ -67,7 +68,6 @@ def admin_add_registry(current_user, provider, region, payload, db, bt: Backgrou
                 'cid': get_current_cid()
             }, status_code = 400)
 
-        from entities.User import User
         exist_user = User.getUserByEmail(email, db)
         if not exist_user:
             return JSONResponse(content = {
@@ -119,7 +119,7 @@ def admin_get_registry(current_user, registryId, db):
             'error': 'Invalid registry id',
             'cid': get_current_cid()
         }, status_code = 400)
-    from entities.Registry import Registry
+
     user_Registry = Registry.findById(registryId, db)
     if not user_Registry:
         return JSONResponse(content = { 
@@ -128,6 +128,7 @@ def admin_get_registry(current_user, registryId, db):
             'i18n_code': 'registry_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
+
     dumpedRegistry = json.loads(json.dumps(user_Registry, cls = AlchemyEncoder))
     dumpedUser = json.loads(json.dumps(user_Registry.user, cls = AlchemyEncoder))
     registryJson = {**dumpedRegistry, "user": {**dumpedUser}}
@@ -184,6 +185,7 @@ def admin_update_registry(current_user, registryId, payload, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid registry id',
+            'i18n_code': 'invalid_registry_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -200,7 +202,6 @@ def admin_update_registry(current_user, registryId, payload, db):
             update_credentials(user_registry.provider, user_registry, user_registry.user.email, db)
 
         if is_not_empty(payload.email):
-            from entities.User import User
             user = User.getUserByEmail(payload.email, db)
             if not user:
                 return JSONResponse(content = {
@@ -231,7 +232,7 @@ def admin_refresh_registry(current_user, registry_id, db):
             'error': 'Invalid registry id',
             'cid': get_current_cid()
         }, status_code = 400)
-    from entities.Registry import Registry
+
     user_registry = Registry.findById(registry_id, db)
     if not user_registry:
         return JSONResponse(content = {
@@ -240,6 +241,7 @@ def admin_refresh_registry(current_user, registry_id, db):
             'i18n_code': 'registry_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
+
     hashed_registry_name = f"{user_registry.name}-{user_registry.hash}"
     refresh_registry(current_user.email, user_registry.provider, user_registry.id, hashed_registry_name, db)
     return JSONResponse(content = {'message': 'done','status': 'ok'}, status_code = 200)

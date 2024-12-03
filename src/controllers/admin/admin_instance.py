@@ -98,7 +98,7 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
             if instance_type not in possible_types:
                 return JSONResponse(content = {
                     'status': 'ko',
-                    'error': f'Instance type does not exist', 
+                    'error': 'Instance type does not exist', 
                     'i18n_code': 'instance_type_not_exist',
                     'cid': get_current_cid()
                 }, status_code = 400)
@@ -107,7 +107,7 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
         if region not in [region['name'] for region in possible_regions]:
             return JSONResponse(content = {
                 'status': 'ko',
-                'error': f'region does not exist', 
+                'error': 'region does not exist', 
                 'i18n_code': 'region_not_exist',
                 'cid': get_current_cid()
             }, status_code = 400)
@@ -124,7 +124,7 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
         if not exist_env:
             return JSONResponse(content = {
                 'status': 'ko',
-                'error': f'environment not found', 
+                'error': 'environment not found', 
                 'i18n_code': 'environment_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
@@ -177,7 +177,7 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
         if is_not_project_found_in_gitlab(gitlab_project):
             return JSONResponse(content = {
                 'status': 'ko',
-                'error': f'project not found with gitlab', 
+                'error': 'project not found with gitlab', 
                 'i18n_code':  'project_not_found_with_gitlab',
                 'cid': get_current_cid()
             }, status_code = 404)
@@ -323,7 +323,7 @@ def admin_attach_instance(bt: BackgroundTasks, current_user, provider, region, z
             'cid': get_current_cid()
         }, status_code = 400)
 
-    if not instance_name in [name.split("playbook-")[1] for name in project_playbooks]:
+    if instance_name not in [name.split("playbook-")[1] for name in project_playbooks]:
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'playbook not found', 
@@ -340,7 +340,7 @@ def admin_attach_instance(bt: BackgroundTasks, current_user, provider, region, z
         if instance_type not in possible_types:
             return JSONResponse(content = {
                 'status': 'ko',
-                'error': f'Instance type does not exist', 
+                'error': 'Instance type does not exist', 
                 'i18n_code': 'instance_type_not_exist',
                 'cid': get_current_cid()
             }, status_code = 400)
@@ -349,7 +349,7 @@ def admin_attach_instance(bt: BackgroundTasks, current_user, provider, region, z
     if region not in [region['name'] for region in possible_regions]:
         return JSONResponse(content = {
             'status': 'ko',
-            'error': f'region does not exist', 
+            'error': 'region does not exist', 
             'i18n_code': 'region_not_exist',
             'cid': get_current_cid()
         }, status_code = 400)
@@ -367,7 +367,7 @@ def admin_attach_instance(bt: BackgroundTasks, current_user, provider, region, z
     if not exist_env:
         return JSONResponse(content = {
             'status': 'ko',
-            'error': f'environment not found', 
+            'error': 'environment not found', 
             'i18n_code': 'environment_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
@@ -550,7 +550,7 @@ def admin_update_instance(current_user, instance_id, payload, db):
     target_server_id = server["id"]
     possible_actions = ["poweroff", "poweron", "reboot"]
     if is_not_empty(action):
-        if not action in possible_actions:
+        if action not in possible_actions:
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'action doesnt exist', 

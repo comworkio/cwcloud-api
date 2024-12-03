@@ -73,7 +73,7 @@ def invoke(payload, current_user, user_auth, db):
         return {
             'status': 'ko',
             'code': 400,
-            'message': "Wrong number of arguments".format(id),
+            'message': "Wrong number of arguments",
             'i18n_code': 'faas_wrong_args_number',
             'cid': get_current_cid()
         }
@@ -82,7 +82,7 @@ def invoke(payload, current_user, user_auth, db):
         return {
             'status': 'ko',
             'code': 400,
-            'message': "Not the same arguments".format(id),
+            'message': "Not the same arguments",
             'i18n_code': 'faas_not_same_args',
             'cid': get_current_cid()
         }
@@ -223,7 +223,7 @@ def complete(id, payload, current_user, db):
         return {
             'status': 'ko',
             'code': 400,
-            'message': "Wrong number of arguments".format(id),
+            'message': "Wrong number of arguments",
             'i18n_code': 'faas_wrong_args_number',
             'cid': get_current_cid()
         }
@@ -232,7 +232,7 @@ def complete(id, payload, current_user, db):
         return {
             'status': 'ko',
             'code': 400,
-            'message': "Not the same arguments".format(id),
+            'message': "Not the same arguments",
             'i18n_code': 'faas_not_same_args',
             'cid': get_current_cid()
         }

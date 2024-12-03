@@ -57,6 +57,8 @@ def import_resources(app):
     from routes.admin.iot import api_admin_device
     from routes.admin.iot import api_admin_data
     from routes.admin.dns import api_admin_dns
+    from routes.monitor import api_monitor
+    from routes.admin.monitor import api_admin_monitor
     
     version = os.environ['API_VERSION']
 
@@ -94,6 +96,7 @@ def import_resources(app):
     app.include_router(api_object_type.router, tags = ['IoT'], prefix = f'/{version}/iot')
     app.include_router(api_device.router, tags = ['IoT'], prefix = f'/{version}/iot')
     app.include_router(api_data.router, tags = ['IoT'], prefix = f'/{version}/iot')
+    app.include_router(api_monitor.router, tags = ['Monitor'], prefix = f'/{version}/monitor')
     app.include_router(api_contact.router, tags = ['Contact and Support'], prefix = f'/{version}/contact')
     app.include_router(api_support.router, tags = ['Contact and Support'], prefix = f'/{version}/support')
     app.include_router(api_pricing.router, tags = ['Pricing'])
@@ -119,6 +122,7 @@ def import_resources(app):
     app.include_router(api_admin_object_type.router, tags = ['Admin IoT'], prefix = f'/{version}/admin/iot')
     app.include_router(api_admin_device.router, tags = ['Admin IoT'], prefix = f'/{version}/admin/iot')
     app.include_router(api_admin_data.router, tags = ['Admin IoT'], prefix = f'/{version}/admin/iot')
+    app.include_router(api_admin_monitor.router, tags = ['Admin Monitor'], prefix = f'/{version}/admin/monitor')
     app.include_router(api_admin_email.router, tags = ['Admin Email'], prefix = f'/{version}/admin/email')
     app.include_router(api_admin_support.router, tags = ['Admin Support Tickets'], prefix = f'/{version}/admin/support')
     app.include_router(api_admin_consumption.router, tags = ['Admin Consumption'], prefix = f'/{version}/admin/consumption')

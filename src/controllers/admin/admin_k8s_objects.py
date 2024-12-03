@@ -30,7 +30,7 @@ GIT_HELMCHARTS_REPO_URL = os.getenv('GIT_HELMCHARTS_REPO_URL')
 CHARTS_PJ_ID = os.getenv('GIT_HELMCHARTS_REPO_ID')
 
 def get_cluster_configfile(current_user: UserSchema, cluster_id: int, db: Session):
-    cluster: Cluster = Cluster.findOneByUser(cluster_id, current_user.id, db)
+    cluster: Cluster = Cluster.getById(cluster_id, db)
     if not cluster:
         return JSONResponse(content = {
             'status': 'ko',
@@ -168,7 +168,7 @@ def delete_resource(kc_content, manifest: ObjectSchema, api_group: str, api_vers
     dynamic_client.delete(resource=resource,name=manifest.name, namespace=manifest.namespace, api_version=f"{api_group}/{api_version}")
 
 def delete_object(current_user: UserSchema, object: ObjectSchema, db: Session):
-    cluster: Cluster = Cluster.findOneByUser(object.cluster_id, current_user.id, db)
+    cluster: Cluster = Cluster.getById(object.cluster_id, db)
     kubeconfigFile: KubeConfigFile = KubeConfigFile.findOne(cluster.kubeconfig_file_id,db)
     kc_content = read_uploaded_yaml_file(kubeconfigFile.content)
     resource = K8S_RESOURCES[object.kind]
@@ -179,7 +179,7 @@ def delete_object(current_user: UserSchema, object: ObjectSchema, db: Session):
     }, status_code = 200)
 
 def update_object(current_user: UserSchema, object: ObjectSchema,yaml_file:UploadFile, db: Session):
-    cluster: Cluster = Cluster.findOneByUser(object.cluster_id, current_user.id, db)
+    cluster: Cluster = Cluster.getById(object.cluster_id, db)
     if not cluster:
         return JSONResponse(content = {
             'status': 'ko',
@@ -201,7 +201,7 @@ def update_object(current_user: UserSchema, object: ObjectSchema,yaml_file:Uploa
 
 def add_object_to_cluster(current_user:UserSchema, values_file:UploadFile, object:ObjectAddSchema, db:Session):
     # Validate parameters
-    cluster: Cluster = Cluster.findOneByUser(object.cluster_id, current_user.id, db)
+    cluster: Cluster = Cluster.getById(object.cluster_id, db)
     
     if not cluster:
         return JSONResponse(content = {
@@ -301,7 +301,7 @@ def get_object(current_user: UserSchema, object: ObjectSchema, db: Session):
             'cid': get_current_cid()
         }, status_code = 400)
 
-    cluster: Cluster = Cluster.findOneByUser(object.cluster_id, current_user.id, db)
+    cluster: Cluster = Cluster.getById(object.cluster_id, db)
     kubeconfigFile: KubeConfigFile = KubeConfigFile.findOne(cluster.kubeconfig_file_id,db)
     kc_content = read_uploaded_yaml_file(kubeconfigFile.content)
     config.load_kube_config_from_dict(kc_content)

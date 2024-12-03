@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from entities.faas.Function import FunctionEntity
 
-from utils.common import is_empty, is_false, is_not_empty, is_not_empty_key, is_not_numeric, is_true
+from utils.common import is_empty, is_false, is_not_empty, is_not_numeric, is_true
 from utils.faas.functions import is_not_supported_language, is_not_supported_callback_type, restructure_callbacks
 from utils.faas.owner import get_email_owner, get_owner_id, override_owner_id
 from utils.faas.security import has_not_exec_right, has_not_write_right
@@ -50,6 +50,7 @@ def add_function(payload, current_user, db):
     db.add(new_function)
     db.commit()
     db.refresh(new_function)
+
     return {
         'status': 'ok',
         'code': 201,

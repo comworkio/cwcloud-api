@@ -45,6 +45,7 @@ def add_device(current_user, payload, db):
             new_user.save(db)
             create_gitlab_user(email)
             log_msg("INFO", f"[add_device] user account created with {email}")
+
             created_user = User.getUserByEmail(email, db)
             if is_true(is_admin):
                 User.updateConfirmation(created_user.id, True, db)
@@ -100,15 +101,17 @@ def confirm_device_by_token(token, db):
                 'i18n_code': 'user_not_found',
                 'cid': get_current_cid()
             }, status_code = 404)
+
         device = Device.getUserLatestInactiveDevice(user.email, db)
         if is_not_empty(device):
             Device.activateDevice(device.id, db)
+
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'Device successfully confirmed',
             'i18n_code': 'device_confirmed'
         }, status_code = 200)
-    except Exception as e:
+    except Exception:
         return JSONResponse(content = {
             'status': 'ko',
             'message': 'Invalid token',

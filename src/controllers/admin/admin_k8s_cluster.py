@@ -17,8 +17,8 @@ def get_all_clusters(db):
     response = get_dumped_json(clusters)
     return JSONResponse(content = response, status_code = 200)
 
-def get_cluster_by_user(current_user, cluster_id, db) -> Cluster:
-    cluster = Cluster.findOneByUser(cluster_id, current_user.id, db)
+def get_cluster(cluster_id, db) -> Cluster:
+    cluster = Cluster.getById(cluster_id, db)
     if not cluster:
         return JSONResponse(content = {
             'status': 'ko',
@@ -29,7 +29,7 @@ def get_cluster_by_user(current_user, cluster_id, db) -> Cluster:
     return cluster
 
 def get_clusters_byKubeconfigFile(current_user, kubeconfig_file_id, db):
-    clusters = Cluster.findByKubeConfigFileAndUserId(kubeconfig_file_id, current_user.id, db)
+    clusters = Cluster.findByKubeConfigFile(kubeconfig_file_id, db)
     if not clusters:
         return JSONResponse(content = {
             'status': 'ko',
@@ -43,7 +43,7 @@ def get_clusters_byKubeconfigFile(current_user, kubeconfig_file_id, db):
 
 def get_cluster_infos(current_user, cluster_id, db):
     try:
-        cluster = get_cluster_by_user(current_user, cluster_id, db)
+        cluster = get_cluster(cluster_id, db)
         kubeconfigFile = KubeConfigFile.findOne(cluster.kubeconfig_file_id, db)
         if not kubeconfigFile:
             return JSONResponse(content={
@@ -145,11 +145,6 @@ def get_cluster_infos(current_user, cluster_id, db):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-def get_cluster_byKubeconfigFile(kubeconfig_file_id, db):
-    clusters = Cluster.findByKubeConfigFile(kubeconfig_file_id.id, db)
-    dumpedClusters = get_dumped_json(clusters)
-    return JSONResponse(content = dumpedClusters, status_code = 200)
-
 def save_kubeconfig(current_user:UserSchema, kubeconfig:UploadFile, db:Session):
     file = kubeconfig.file.read()
     
@@ -191,7 +186,7 @@ def read_clusters_and_save(file, file_id, db):
         install_flux(file)
 
 def delete_cluster_by_id(current_user, cluster_id, db):
-    cluster: Cluster = get_cluster_by_user(current_user,cluster_id,db)
+    cluster = get_cluster(cluster_id, db)
     if cluster is None:
         return JSONResponse(content = {
             'status': 'ko',

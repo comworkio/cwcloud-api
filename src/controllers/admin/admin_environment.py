@@ -6,7 +6,7 @@ from fastapi import UploadFile
 from fastapi.responses import JSONResponse
 
 from entities.Environment import Environment
-from utils.common import is_empty, is_not_numeric, safe_get_entry, is_not_empty_key, is_not_empty
+from utils.common import is_empty, is_not_numeric, is_not_empty_key, is_not_empty
 from utils.encoder import AlchemyEncoder
 from utils.file import quiet_remove
 from utils.gitlab import get_helm_charts, get_infra_playbook_roles
@@ -87,7 +87,7 @@ def admin_import_environment(env: UploadFile, db):
             'i18n_code': 'path_already_exist',
             'cid': get_current_cid()
         }, status_code = 409)
-    elif not env_dict["type"] in ["vm", "k8s"]:
+    elif env_dict["type"] not in ["vm", "k8s"]:
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid environment type', 
@@ -180,7 +180,20 @@ def admin_update_environment(environment_id, payload, db):
             'cid': get_current_cid()
         }, status_code = 409)
 
-    Environment.updateEnvironment(environment_id, name, path, description, roles, subdomains, environment_template, doc_template, is_private, logo_url, args, db)
+    Environment.updateEnvironment(
+        environment_id,
+        name,
+        path,
+        description,
+        roles,
+        subdomains,
+        environment_template,
+        doc_template,
+        is_private,
+        logo_url,
+        args,
+        db
+    )
     return JSONResponse(content = {
         'status': 'ok',
         'message': 'environment successfully updated', 

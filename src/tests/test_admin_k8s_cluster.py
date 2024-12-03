@@ -24,7 +24,7 @@ class TestAdminK8sCluster(TestCase):
         cluster.platform = "cluster1 platform"
         cluster.created_at = "cluster1 created at"
         
-        Cluster.getAll.return_value = cluster
+        getAll.return_value = [cluster]
         
         # When
         result = get_all_clusters(mock_db)
@@ -37,11 +37,11 @@ class TestAdminK8sCluster(TestCase):
             'file_id': cluster.id
         })
       
-    @patch('controllers.admin.admin_k8s_cluster.get_cluster_by_user', side_effect=lambda current_user, cluster_id, db: {'id': '1', 'user_id': "testuser@example.com"})
+    @patch('controllers.admin.admin_k8s_cluster.get_cluster', side_effect=lambda cluster_id, db: {'id': '1', 'user_id': "testuser@example.com"})
     @patch('entities.kubernetes.Cluster.Cluster')   
-    def test_get_cluster_by_user(self, findOneByUser, get_cluster_by_user):
+    def test_get_cluster(self, getById, get_cluster):
         # Given
-        from controllers.admin.admin_k8s_cluster import get_cluster_by_user
+        from controllers.admin.admin_k8s_cluster import get_cluster
         from entities.kubernetes.Cluster import Cluster
         
         cluster = Cluster()
@@ -52,17 +52,17 @@ class TestAdminK8sCluster(TestCase):
         cluster.platform = "cluster1 platform"
         cluster.created_at = "cluster1 created at"
         
-        Cluster.findOneByUser.return_value = cluster
+        getById.return_value = cluster
         
         # When
-        result = get_cluster_by_user(test_current_user, '1', mock_db)
+        result = get_cluster('1', mock_db)
 
         # Then
         self.assertEqual(result, {'id': '1', 'user_id': "testuser@example.com"})
       
     @patch('controllers.admin.admin_k8s_cluster.get_clusters_byKubeconfigFile', side_effect=lambda current_user, kubeconfig_file_id, db: {'status': 'ok', 'message': 'kubeconfig successfully uploaded', 'file_id': 'kubeconfig_file_id'})
     @patch('entities.kubernetes.Cluster.Cluster')   
-    def test_get_clusters_byKubeconfigFile(self, findByKubeConfigFileAndUserId, get_clusters_byKubeconfigFile):
+    def test_get_clusters_byKubeconfigFile(self, findByKubeConfigFile, get_clusters_byKubeconfigFile):
         # Given
         from controllers.admin.admin_k8s_cluster import get_clusters_byKubeconfigFile
         from entities.kubernetes.Cluster import Cluster
@@ -75,7 +75,7 @@ class TestAdminK8sCluster(TestCase):
         cluster.platform = "cluster1 platform"
         cluster.created_at = "cluster1 created at"
         
-        Cluster.findByKubeConfigFileAndUserId.return_value = cluster
+        Cluster.findByKubeConfigFile.return_value = cluster
         
         # When
         result = get_clusters_byKubeconfigFile(test_current_user, '1', mock_db)
@@ -87,10 +87,10 @@ class TestAdminK8sCluster(TestCase):
         
     @patch('controllers.admin.admin_k8s_cluster.delete_cluster_by_id', return_value={'status': 'ok', 'message': 'Cluster successfully deleted'})
     @patch('entities.kubernetes.Cluster.Cluster.deleteOne')
-    @patch('controllers.admin.admin_k8s_cluster.get_cluster_by_user')
-    def test_delete_cluster_by_id(self, get_cluster_by_user, deleteOne, delete_cluster_by_id):
+    @patch('controllers.admin.admin_k8s_cluster.get_cluster')
+    def test_delete_cluster_by_id(self, get_cluster, deleteOne, delete_cluster_by_id):
         # Given
-        from controllers.admin.admin_k8s_cluster import delete_cluster_by_id, get_cluster_by_user
+        from controllers.admin.admin_k8s_cluster import delete_cluster_by_id, get_cluster
         from entities.kubernetes.Cluster import Cluster
         
         cluster = Cluster()
@@ -101,7 +101,7 @@ class TestAdminK8sCluster(TestCase):
         cluster.platform = "cluster1 platform"
         cluster.created_at = "cluster1 created at"
         
-        get_cluster_by_user.return_value = cluster
+        get_cluster.return_value = cluster
         deleteOne.return_value = None
 
         # When
@@ -116,7 +116,7 @@ class TestAdminK8sCluster(TestCase):
     @patch('utils.yaml.read_uploaded_yaml_file')
     def test_get_cluster_infos(self, findOne, get_cluster_infos, mock_read_uploaded_yaml_file):
         # Given
-        from controllers.admin.admin_k8s_cluster import get_cluster_infos, get_cluster_by_user
+        from controllers.admin.admin_k8s_cluster import get_cluster_infos, get_cluster
         from entities.kubernetes.KubeconfigFile import KubeConfigFile
 
         kubeconfigfile = KubeConfigFile()

@@ -12,7 +12,8 @@ ALL_FLAGS = [
     'cwaiapi',
     'faasapi',
     'k8sapi', 
-    'iotapi'
+    'iotapi',
+    'monitorapi'
 ]
 
 def is_flag_enabled(vdict, key):

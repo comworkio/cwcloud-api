@@ -79,7 +79,7 @@ def add_trigger(payload, current_user, db):
         return {
             'status': 'ko',
             'code': 400,
-            'message': "Wrong number of arguments".format(id),
+            'message': "Wrong number of arguments",
             'i18n_code': 'faas_wrong_args_number',
             'cid': get_current_cid()
         }
@@ -158,7 +158,7 @@ def override_trigger(id, current_user, payload, db):
         return {
             'status': 'ko',
             'code': 400,
-            'message': "Wrong number of arguments".format(id),
+            'message': "Wrong number of arguments",
             'i18n_code': 'faas_wrong_args_number',
             'cid': get_current_cid()
         }

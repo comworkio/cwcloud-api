@@ -161,7 +161,7 @@ class TestAdminK8sObjects(TestCase):
             }]
         }])
         
-    @patch('entities.kubernetes.Cluster.Cluster.findOneByUser', side_effect = lambda id,_user_id, db:{'id' : '1'})
+    @patch('entities.kubernetes.Cluster.Cluster.getById', side_effect = lambda id, db:{'id' : '1'})
     @patch('entities.kubernetes.KubeconfigFile.KubeConfigFile')
     @patch('utils.yaml.read_uploaded_yaml_file')
     @patch('constants.k8s_constants.K8S_RESOURCES')
@@ -190,7 +190,7 @@ class TestAdminK8sObjects(TestCase):
         cluster.version = "test"
         cluster.platform = "cluster1 platform"
         cluster.created_at = "cluster1 created at"
-        Cluster.findOneByUser.return_value = cluster
+        Cluster.getById.return_value = cluster
         
         mock_yaml_content = MagicMock()
         mock_read_uploaded_yaml_file.return_value = mock_yaml_content
@@ -214,11 +214,11 @@ class TestAdminK8sObjects(TestCase):
             'message': 'Successfully updated object'
         })
  
-    @patch('entities.kubernetes.Cluster.Cluster.findOneByUser', side_effect = lambda id,_user_id, db:{'id' : '1'})
+    @patch('entities.kubernetes.Cluster.Cluster.getById', side_effect = lambda id, db:{'id' : '1'})
     @patch('entities.kubernetes.KubeconfigFile.KubeConfigFile')
     @patch('utils.yaml.read_uploaded_yaml_file')
     @patch('controllers.admin.admin_k8s_objects.get_object', return_value=PlainTextResponse(content=sample_object_yaml, status_code=200))
-    def test_get_object(self, read_uploaded_yaml_file, get_object, findOne, findOneByUser):
+    def test_get_object(self, read_uploaded_yaml_file, get_object, findOne, getById):
         # Given
         from controllers.admin.admin_k8s_objects import get_object
         from schemas.Kubernetes import ObjectSchema
@@ -239,7 +239,7 @@ class TestAdminK8sObjects(TestCase):
         cluster.version = "test"
         cluster.platform = "cluster1 platform"
         cluster.created_at = "cluster1 created at"
-        Cluster.findOneByUser.return_value = cluster
+        Cluster.getById.return_value = cluster
         
         object_schema = ObjectSchema(
                     kind='Pod',

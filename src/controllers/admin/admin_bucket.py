@@ -104,6 +104,7 @@ def admin_create_bucket(current_user, provider, region, payload, db, bt: Backgro
             'error': "{}".format(exn),
             'cid': get_current_cid()
         }, status_code = 500)
+
 def admin_get_bucket(current_user, bucket_id, db):
     if not is_numeric(bucket_id):
         return JSONResponse(content = {

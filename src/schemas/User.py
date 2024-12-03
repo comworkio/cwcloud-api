@@ -71,6 +71,7 @@ class EnabledFeatures(BaseModel):
     disable_emails: Optional[bool] = False
     k8sapi: Optional[bool] = False
     iotapi: Optional[bool] = False
+    monitorapi: Optional[bool] = False
 
 class UserEmailUpdateSchema(BaseModel):
     email: str

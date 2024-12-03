@@ -95,7 +95,7 @@ async def get_current_user(user_token: str = Depends(user_token_header), X_Auth_
                     raise CwHTTPException(message = {"error": "authentification failed 2", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
 
                 user = User.getUserByEmail(token_data.email, db)
-            except JWTError as e:
+            except JWTError:
                 raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
         else:
             if is_not_empty(X_Auth_Token):

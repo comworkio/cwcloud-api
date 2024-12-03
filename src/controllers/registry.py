@@ -5,8 +5,7 @@ from fastapi import BackgroundTasks
 from fastapi.responses import JSONResponse
 
 from entities.Registry import Registry
-
-from utils.common import is_numeric
+from entities.Access import Access
 from utils.encoder import AlchemyEncoder
 from utils.provider import exist_provider
 from utils.registry import delete_registry, update_credentials
@@ -21,6 +20,7 @@ def get_registry(current_user, provider, region, registryId, db):
             'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
+
     if not is_numeric(registryId):
         return JSONResponse(content = {
             'status': 'ko',
@@ -31,7 +31,6 @@ def get_registry(current_user, provider, region, registryId, db):
 
     userRegistry = Registry.findUserRegistry(provider, current_user.id, registryId, region, db)
     if not userRegistry:
-        from entities.Access import Access
         access = Access.getUserAccessToObject(current_user.id, "registry", registryId, db)
         if not access:
             return JSONResponse(content = {
@@ -42,6 +41,7 @@ def get_registry(current_user, provider, region, registryId, db):
             }, status_code = 404)
         userRegistry = Registry.findRegistry(provider, region, registryId)
     dumpedRegistry = json.loads(json.dumps(userRegistry, cls = AlchemyEncoder))
+
     return JSONResponse(content = dumpedRegistry, status_code = 200)
 
 def remove_registry(current_user, provider, region, registryId, db, bt: BackgroundTasks):
@@ -52,6 +52,7 @@ def remove_registry(current_user, provider, region, registryId, db, bt: Backgrou
             'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
+
     if not is_numeric(registryId):
         return JSONResponse(content = {
             'status': 'ko',
@@ -81,11 +82,13 @@ def remove_registry(current_user, provider, region, registryId, db, bt: Backgrou
     try:
         bt.add_task(delete_registry, user_registry.provider, user_registry, user_email)
         Registry.updateStatus(user_registry.id, "deleted", db)
+
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'registry successfully deleted', 
             'i18n_code': 'registry_deleted'
         }, status_code = 200)
+
     except HTTPError as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -102,6 +105,7 @@ def update_registry(current_user, provider, region, registryId, db):
             'i18n_code': 'provider_not_exist',
             'cid': get_current_cid()
         }, status_code = 404)
+
     if not is_numeric(registryId):
         return JSONResponse(content = {
             'status': 'ko',
@@ -125,6 +129,7 @@ def update_registry(current_user, provider, region, registryId, db):
             'message': 'registry successfully updated', 
             'i18n_code': 'registry_deleted'
         }, status_code = 200)
+
     except HTTPError as e:
         return JSONResponse(content = {
             'status': 'ko',
@@ -143,10 +148,10 @@ def get_registries(current_user, provider, region, db):
         }, status_code = 404)
 
     userRegionRegistries = Registry.getAllUserRegistriesByRegion(provider, region, current_user.id, db)
-    from entities.Access import Access
     other_registries_access = Access.getUserAccessesByType(current_user.id, "registry", db)
     other_registries_ids = [access.object_id for access in other_registries_access]
     other_registries = Registry.findRegistriesByRegion(other_registries_ids, provider, region, db)
     userRegionRegistries.extend(other_registries)
     userRegionRegistriesJson = json.loads(json.dumps(userRegionRegistries, cls = AlchemyEncoder))
+
     return JSONResponse(content = userRegionRegistriesJson, status_code = 200)
