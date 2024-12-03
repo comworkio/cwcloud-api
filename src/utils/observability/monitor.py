@@ -45,7 +45,7 @@ def check_http_monitor(monitor, gauges):
             "message": "Not an http monitor",
             "monitor": monitor 
         })
-        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id'] })
+        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
         return 'failure', 0
 
     if is_empty_key(monitor, 'url'):
@@ -83,7 +83,7 @@ def check_http_monitor(monitor, gauges):
         if method == "GET":
             response = requests.get(monitor['url'], auth=auth, headers=headers, timeout=timeout)
             duration = response.elapsed.total_seconds() * 1000
-            set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration'})
+            set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
         elif method == "POST":
             response = requests.post(monitor['url'], auth=auth, headers=headers, data=monitor.get('body'), timeout=timeout)
             duration = response.elapsed.total_seconds() * 1000
