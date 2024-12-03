@@ -45,7 +45,7 @@ def check_http_monitor(monitor, gauges):
             "message": "Not an http monitor",
             "monitor": monitor 
         })
-        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result'})
+        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id'] })
         return 'failure', 0
 
     if is_empty_key(monitor, 'url'):
@@ -56,7 +56,7 @@ def check_http_monitor(monitor, gauges):
             "message": "Missing mandatory url",
             "monitor": monitor 
         })
-        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result'})
+        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
         return
 
     method = get_or_else(monitor, 'method', 'GET')
@@ -87,11 +87,11 @@ def check_http_monitor(monitor, gauges):
         elif method == "POST":
             response = requests.post(monitor['url'], auth=auth, headers=headers, data=monitor.get('body'), timeout=timeout)
             duration = response.elapsed.total_seconds() * 1000
-            set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration'})
+            set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
         elif method == "PUT":
             response = requests.put(monitor['url'], auth=auth, headers=headers, data=monitor.get('body'), timeout=timeout)
             duration = response.elapsed.total_seconds() * 1000
-            set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration'})
+            set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
         else:
             log_msg("ERROR", { 
                 "status": "ko",
@@ -100,7 +100,7 @@ def check_http_monitor(monitor, gauges):
                 "message": "Not supported http method: actual = {}".format(method),
                 "monitor": pmonitor
             })
-            set_gauge(gauges['result'], 0, {**labels, 'kind': 'result'})
+            set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
             return 'failure', 0
 
         if not check_status_code_pattern(response.status_code, expected_http_code):
@@ -112,7 +112,7 @@ def check_http_monitor(monitor, gauges):
                 "message": "Not expected status code: expected pattern = {}, actual = {}".format(expected_http_code, response.status_code),
                 "monitor": pmonitor
             })
-            set_gauge(gauges['result'], 0, {**labels, 'kind': 'result'})
+            set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
             return 'failure', duration
 
         if is_not_empty(expected_contain) and expected_contain not in response.text:
@@ -124,10 +124,10 @@ def check_http_monitor(monitor, gauges):
                 "message": "Response not valid: expected = {}, actual = {}".format(expected_contain, response.text),
                 "monitor": pmonitor
             })
-            set_gauge(gauges['result'], 0, {**labels, 'kind': 'result'})
+            set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
             return 'failure', duration
 
-        set_gauge(gauges['result'], 1, {**labels, 'kind': 'result'})
+        set_gauge(gauges['result'], 1, {**labels, 'kind': 'result', 'user': monitor['user_id']})
         log_msg("INFO", { 
             "status": "ok",
             "type": "monitor",
@@ -139,7 +139,7 @@ def check_http_monitor(monitor, gauges):
         return 'success', duration
 
     except Exception as e:
-        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result'})
+        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
         log_msg("ERROR", {
             "status": "ko",
             "type": "monitor",
@@ -159,7 +159,7 @@ def check_monitors():
 
         db = SessionLocal()
         loaded_data = Monitor.getAllMonitors(db)
-        labels = ['name', 'family', 'kind', 'env', 'source', 'url', 'version']
+        labels = ['name', 'family', 'kind', 'env', 'source', 'url', 'version', 'user']
 
         for monitor in loaded_data:
             if monitor.name not in gauges:

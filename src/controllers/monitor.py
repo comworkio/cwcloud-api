@@ -83,9 +83,7 @@ def update_monitor(current_user, monitor_id, payload, db):
             'i18n_code': 'invalid_http_status_code',
             'cid': get_current_cid()
         }, status_code = 400)
-    
-    _, hashed_monitor_name = generate_hashed_name(payload.name)
-    payload.name = hashed_monitor_name    
+
     Monitor.updateInfo(payload, monitor_id, db)
 
     return JSONResponse(content = {
