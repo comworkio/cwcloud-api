@@ -181,6 +181,7 @@ def check_monitors():
                 'expected_contain': monitor.expected_contain,
                 'username': monitor.username,
                 'password': monitor.password,
+                'user_id': monitor.user_id,
                 'headers': [{'name': h['name'], 'value': h['value']} for h in monitor.headers] if monitor.headers else []
             }
             status, response_time = check_http_monitor(monitor_dict, gauges[monitor.name])
