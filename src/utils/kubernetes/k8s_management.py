@@ -2,12 +2,15 @@ import os
 import json
 import yaml
 import requests
-from entities.Project import Project
+
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
 from base64 import b64encode
+
+from entities.Project import Project
 from kubernetes import client, config, dynamic
 from constants.k8s_constants import FLUX_FILE_URL
+
 from utils.encoder import AlchemyEncoder
 from utils.common import AUTOESCAPE_EXTENSIONS
 

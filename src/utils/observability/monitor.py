@@ -1,9 +1,8 @@
 import re
+import os
 import requests
 import asyncio
 import threading
-
-import requests
 
 from datetime import datetime
 from time import sleep
@@ -16,18 +15,26 @@ from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
 from utils.observability.enums import Method
 
+URL = os.environ['DOMAIN']
+VERSION = os.environ['APP_VERSION']
+ENV = os.environ['APP_ENV']
+MONITOR_SRC = os.getenv('MONITOR_SRC', 'cwcloud-api')
 WAIT_TIME = get_env_int('WAIT_TIME', 10)
 
-def check_status_code_pattern(actual_code, expected_pattern):
-    pattern = expected_pattern.replace('*', '[0-9]+')
-    return bool(re.match(f"^{pattern}$", str(actual_code)))
+def check_status_code_pattern(actual_code, pattern):
+    regexp = "^{}$".format(pattern.replace('*', '[0-9]+'))
+    return bool(re.match(regexp, str(actual_code)))
 
 def check_http_monitor(monitor, gauges):
     vdate = datetime.now()
 
     labels = {
         'name': monitor['name'],
-        'family': monitor['family'] if is_not_empty_key(monitor, 'family') else monitor['name']
+        'family': monitor['family'] if is_not_empty_key(monitor, 'family') else monitor['name'],
+        'source': MONITOR_SRC,
+        'url': URL,
+        'env': ENV,
+        'version': VERSION
     }
 
     if monitor['type'] != 'http':
@@ -152,7 +159,7 @@ def check_monitors():
 
         db = SessionLocal()
         loaded_data = Monitor.getAllMonitors(db)
-        labels = ['name', 'family', 'kind']
+        labels = ['name', 'family', 'kind', 'env', 'source', 'url', 'version']
 
         for monitor in loaded_data:
             if monitor.name not in gauges:
