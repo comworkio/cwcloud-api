@@ -1,13 +1,16 @@
+from typing import Optional
 from datetime import datetime
 from entities.Monitor import Monitor
 from fastapi.responses import JSONResponse
 from fastapi import HTTPException
-from utils.common import is_not_http_status_code
+from utils.common import is_not_empty, is_not_http_status_code
 from utils.observability.cid import get_current_cid
 from utils.dynamic_name import generate_hashed_name
 
-def get_monitors(db):
+def get_monitors(db, family: Optional[str] = None):
     monitors = Monitor.getAllMonitors(db)
+    if is_not_empty(family):
+        monitors = [monitor for monitor in monitors if monitor.family == family]
     return monitors
 
 def get_monitor(monitor_id, db):

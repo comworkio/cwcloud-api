@@ -11,6 +11,7 @@ class Monitor(Base):
     user_id = Column(Integer, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     type = Column(String, nullable=False)
     name = Column(String, nullable=False)
+    family = Column(String)
     url = Column(Text, nullable=False)
     method = Column(String, default='GET')
     body = Column(Text)

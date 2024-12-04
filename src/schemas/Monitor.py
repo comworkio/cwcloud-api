@@ -17,6 +17,7 @@ class Header(BaseModel):
 class BaseMonitorSchema(BaseModel):
     type: MonitorType = Field(..., description="Type of monitor")
     name: str
+    family: Optional[str] = None
     url: HttpUrl
     method: HttpMethod = Field(default=HttpMethod.GET, description="HTTP method")
     expected_http_code: str = Field(default='20*')

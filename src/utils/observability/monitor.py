@@ -171,7 +171,7 @@ def check_monitors():
         for monitor in loaded_data:
             monitor_dict = {
                 'name': monitor.name,
-                'family': monitor.name,
+                'family': monitor.family,
                 'type': monitor.type,
                 'url': monitor.url,
                 'method': monitor.method,

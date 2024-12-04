@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from sqlalchemy.orm import Session
 from controllers.admin.admin_monitor import get_monitors, get_monitor, add_monitor, update_monitor, remove_monitor
 from fastapi import Depends, APIRouter
@@ -19,10 +19,10 @@ _span_prefix = "admin-monitor"
 _counter = create_counter("admin_monitor_api", "Admin Monitor API counter")
 
 @router.get("/all")
-def get_all_monitors(current_user: Annotated[UserSchema, Depends(admin_required)], db: Session = Depends(get_db)):
+def get_all_monitors(current_user: Annotated[UserSchema, Depends(admin_required)], db: Session = Depends(get_db), family: Optional[str] = None):
     with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET)):
         increment_counter(_counter, Method.GET)
-        return get_monitors(db)
+        return get_monitors(db, family)
     
 @router.get("/{monitor_id}")
 def get_monitor_by_id(current_user: Annotated[UserSchema, Depends(admin_required)], monitor_id: str, db: Session = Depends(get_db)):
