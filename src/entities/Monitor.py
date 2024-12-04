@@ -61,6 +61,7 @@ class Monitor(Base):
     def _prepare_update_data(payload):
         return {
             'name': payload.name,
+            'family': payload.family,
             'url': payload.url,
             'method': payload.method,
             'body': payload.body,
