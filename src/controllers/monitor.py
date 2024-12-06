@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from datetime import datetime
 from entities.Monitor import Monitor
-from utils.common import is_false, is_not_empty, is_not_http_status_code
+from utils.common import is_empty, is_false, is_not_empty, is_not_http_status_code
 from utils.observability.cid import get_current_cid
 from utils.dynamic_name import generate_hashed_name
 
@@ -49,8 +49,9 @@ def add_monitor(current_user, payload, db):
         
         new_monitor = Monitor(**payload.dict())
         new_monitor.user_id = current_user.id
-        _, hashed_monitor_name = generate_hashed_name(new_monitor.name)
+        hash, hashed_monitor_name = generate_hashed_name(new_monitor.name)
         new_monitor.name = hashed_monitor_name
+        new_monitor.hash = hash
         current_date = datetime.now().date().strftime('%Y-%m-%d')
         new_monitor.created_at = current_date
         new_monitor.updated_at = current_date
@@ -87,11 +88,13 @@ def update_monitor(current_user, monitor_id, payload, db):
             'i18n_code': 'invalid_http_status_code',
             'cid': get_current_cid()
         }, status_code = 400)
+        
+    # ? temporary procedure for old monitors with null hash
+    if is_empty(monitor.hash):
+        _, hash = monitor.name.rsplit('-', 1)
+        monitor.hash = hash
 
-    if monitor.name != payload.name:
-        _, hashed_monitor_name = generate_hashed_name(payload.name)
-        payload.name = hashed_monitor_name
-
+    payload.name = "{}-{}".format(payload.name, monitor.hash)
     Monitor.updateInfo(payload, monitor_id, db)
 
     return JSONResponse(content = {

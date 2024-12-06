@@ -3,7 +3,7 @@ from datetime import datetime
 from entities.Monitor import Monitor
 from fastapi.responses import JSONResponse
 from fastapi import HTTPException
-from utils.common import is_not_empty, is_not_http_status_code
+from utils.common import is_empty, is_not_empty, is_not_http_status_code
 from utils.observability.cid import get_current_cid
 from utils.dynamic_name import generate_hashed_name
 
@@ -37,8 +37,9 @@ def add_monitor(payload, db):
             }, status_code = 400)
         
         new_monitor = Monitor(**payload.dict())
-        _, hashed_monitor_name = generate_hashed_name(new_monitor.name)
+        hash, hashed_monitor_name = generate_hashed_name(new_monitor.name)
         new_monitor.name = hashed_monitor_name
+        new_monitor.hash = hash
         current_date = datetime.now().date().strftime('%Y-%m-%d')
         new_monitor.created_at = current_date
         new_monitor.updated_at = current_date
@@ -76,8 +77,12 @@ def update_monitor(monitor_id, payload, db):
             'cid': get_current_cid()
         }, status_code = 400)
         
-    _, hashed_monitor_name = generate_hashed_name(payload.name)
-    payload.name = hashed_monitor_name    
+    # ? temporary procedure for old monitors with null hash
+    if is_empty(monitor.hash):
+        _, hash = monitor.name.rsplit('-', 1)
+        monitor.hash = hash
+        
+    payload.name = "{}-{}".format(payload.name, monitor.hash)
     Monitor.adminUpdateInfo(payload, monitor_id, db)
 
     return JSONResponse(content = {
@@ -87,7 +92,7 @@ def update_monitor(monitor_id, payload, db):
         'i18n_code': 'monitor_updated'
     })
     
-def remove_monitor(current_user, monitor_id, db):
+def remove_monitor(monitor_id, db):
     monitor = Monitor.findMonitorById(monitor_id, db)
     if not monitor:
         return JSONResponse(content = {

@@ -1,0 +1,2 @@
+ALTER TABLE monitor
+ADD COLUMN hash VARCHAR(10);

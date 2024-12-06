@@ -160,16 +160,12 @@ def sanitize_header_name(name: str) -> str:
     return '-'.join(word.capitalize() for word in name.split('-'))
 
 def is_http_status_code(status_code: str) -> bool:
-    if not isinstance(status_code, str):
+    if not isinstance(status_code, str) or len(status_code) != 3:
         return False
-    if '*' in status_code:
-        if len(status_code) != 3 or status_code.count('*') != 1:
-            return False
-
-        pattern = status_code.replace('*', '0')
+    if status_code.endswith('*'):
         try:
-            first_digit = int(pattern[0])
-            return 1 <= first_digit <= 5
+            first_two = int(status_code[:2])
+            return 10 <= first_two <= 59
         except ValueError:
             return False
     try:
