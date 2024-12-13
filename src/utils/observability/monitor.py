@@ -140,12 +140,19 @@ def check_http_monitor(monitor, gauges):
 
     except Exception as e:
         set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
+        details = {
+            "type": type(e).__name__,
+            "file": __file__,
+            "lno": e.__traceback__.tb_lineno
+        }
+
         log_msg("ERROR", {
             "status": "ko",
             "type": "monitor",
             "time": vdate.isoformat(),
             "message": "Unexpected error",
             "error": "{}".format(e),
+            "details": details,
             "monitor": pmonitor
         })
         return 'failure', 0
@@ -188,12 +195,19 @@ def check_monitors():
             Monitor.updateMonitorStatus(monitor.id, status, f'{response_time} ms', db)
 
     except Exception as e:
+        details = {
+            "type": type(e).__name__,
+            "file": __file__,
+            "lno": e.__traceback__.tb_lineno
+        }
+
         log_msg("ERROR", {
             "status": "ko",
             "i18n_code": "monitor_check_failed",
             "type": "monitor",
             "time": datetime.now().isoformat(),
-            "message": f"Error in monitor loop: {str(e)}"
+            "message": f"Error in monitor loop: {str(e)}",
+            "details": details
         })
     finally:
         db.close()

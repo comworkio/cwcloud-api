@@ -321,7 +321,7 @@ def get_project_quietly(exist_project):
             }
 
         try:
-            log_msg("WARN", "[get_project_quietly] this gitlab access token seems expired: {} on {}, retrying with the default one".format(exist_project.access_token, exist_project.gitlab_host))
+            log_msg("WARN", "[get_project_quietly] this gitlab access token seems expired on {}, retrying with the default one".format(exist_project.gitlab_host))
             gitlab_project = get_gitlab_project(exist_project.id, GITLAB_URL, GIT_DEFAULT_TOKEN)
         except HTTPError as he2:
             return {
