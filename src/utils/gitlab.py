@@ -311,7 +311,8 @@ def refresh_project_credentials(db, exist_project, gitlab_project):
        exist_project.access_token = gitlab_project['new_credentials']['access_token']
        exist_project.gitlab_host = gitlab_project['new_credentials']['gitlab_host']
        exist_project.save(db)
-       return exist_project
+
+    return exist_project
 
 def get_project_quietly(exist_project):
     if is_empty(exist_project) or is_empty(exist_project.id):
