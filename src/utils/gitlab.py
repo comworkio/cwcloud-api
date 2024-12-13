@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 from utils.api_url import is_url_not_responding
 from utils.bytes_generator import generate_random_bytes
-from utils.common import exists_entry, is_disabled, is_empty, is_empty_key, is_not_empty, is_not_empty_key, safe_compare_entry, safe_contain_entry, is_response_ok
+from utils.common import exists_entry, is_disabled, is_empty, is_empty_key, is_not_empty, is_not_empty_key, is_response_ko, safe_compare_entry, safe_contain_entry, is_response_ok
 from utils.logger import log_msg
 from utils.mail import send_email
 
@@ -306,7 +306,7 @@ def is_project_found_in_gitlab(gitlab_project):
     return not is_not_project_found_in_gitlab(gitlab_project)
 
 def is_http_error_fetching_project(gitlab_project):
-    return is_not_empty_key(gitlab_project, 'http_code') and is_not_empty_key(gitlab_project, 'i18n_code') and is_not_empty_key(gitlab_project, 'reason')
+    return is_not_empty_key(gitlab_project, 'http_code') and is_response_ko(gitlab_project['http_code']) and is_not_empty_key(gitlab_project, 'i18n_code') and is_not_empty_key(gitlab_project, 'reason')
 
 def refresh_project_credentials(db, exist_project, gitlab_project):
     if is_not_empty_key(gitlab_project['new_credentials']):

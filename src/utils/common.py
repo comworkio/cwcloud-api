@@ -98,6 +98,9 @@ def name_from_email(email):
 def is_response_ok(code):
     return code >= 200 and code < 400
 
+def is_response_ko(code):
+    return not is_response_ok(code)
+
 def is_duration_valid(duration):
     return is_not_empty(duration) and duration != -1
 

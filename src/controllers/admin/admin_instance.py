@@ -174,22 +174,20 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
                 }, status_code = 404)
 
         gitlab_project = get_project_quietly(exist_project)
-        if is_not_project_found_in_gitlab(gitlab_project):
-            if is_not_project_found_in_gitlab(gitlab_project):
-                if is_http_error_fetching_project(gitlab_project):
-                    return JSONResponse(content= {
-                        'status': 'ko',
-                        'error': gitlab_project['reason'],
-                        'i18n_code': gitlab_project['i18n_code'],
-                        'cid': get_current_cid()
-                    }, status_code = gitlab_project['http_code'])
-                else:
-                    return JSONResponse(content = {
-                        'status': 'ko',
-                        'error': 'project not found with gitlab',
-                        'i18n_code':  'project_not_found_with_gitlab',
-                        'cid': get_current_cid()
-                    }, status_code = 404)
+        if is_http_error_fetching_project(gitlab_project):
+            return JSONResponse(content= {
+                'status': 'ko',
+                'error': gitlab_project['reason'],
+                'i18n_code': gitlab_project['i18n_code'],
+                'cid': get_current_cid()
+            }, status_code = gitlab_project['http_code'])
+        elif is_not_project_found_in_gitlab(gitlab_project):
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'project not found with gitlab',
+                'i18n_code':  'project_not_found_with_gitlab',
+                'cid': get_current_cid()
+            }, status_code = 404)
 
         exist_project = refresh_project_credentials(db, exist_project, gitlab_project)
         project_playbooks = get_gitlab_project_playbooks(project_id, exist_project.gitlab_host, exist_project.access_token)
