@@ -298,7 +298,7 @@ def is_not_project_found_in_gitlab(gitlab_project):
     return is_empty(gitlab_project) or 'id' not in gitlab_project or is_empty(gitlab_project['id'])
 
 def is_http_error_fetching_project(gitlab_project):
-    return is_not_empty_key(gitlab_project, 'http_code') and is_not_empty_key(gitlab_project, 'i18n_code')
+    return is_not_empty_key(gitlab_project, 'http_code') and is_not_empty_key(gitlab_project, 'i18n_code') and is_not_empty_key(gitlab_project, 'reason')
 
 def get_project_quietly(exist_project):
     if is_empty(exist_project) or is_empty(exist_project.id):
@@ -309,8 +309,9 @@ def get_project_quietly(exist_project):
         gitlab_project = get_gitlab_project(exist_project.id, exist_project.gitlab_host, exist_project.access_token)
     except HTTPError as he:
         return {
-            "http_code": he.getcode,
-            "i18n_code": he.geturl
+            'http_code': he.code,
+            'i18n_code': he.filename,
+            'reason': he.msg
         }
 
     return gitlab_project

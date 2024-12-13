@@ -178,10 +178,10 @@ def admin_add_instance(current_user, payload, provider, region, zone, environmen
             if is_not_project_found_in_gitlab(gitlab_project):
                 if is_http_error_fetching_project(gitlab_project):
                     return JSONResponse(content= {
-                    'status': 'ko',
-                    'error': gitlab_project['i18n_code'].replace("_", " "),
-                    'i18n_code': gitlab_project['i18n_code'],
-                    'cid': get_current_cid()
+                        'status': 'ko',
+                        'error': gitlab_project['reason'],
+                        'i18n_code': gitlab_project['i18n_code'],
+                        'cid': get_current_cid()
                     }, status_code = gitlab_project['http_code'])
                 else:
                     return JSONResponse(content = {
