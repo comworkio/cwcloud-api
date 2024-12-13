@@ -297,6 +297,9 @@ def get_gitlab_project_object(gitlab_url, private_token, project_id):
 def is_not_project_found_in_gitlab(gitlab_project):
     return is_empty(gitlab_project) or 'id' not in gitlab_project or is_empty(gitlab_project['id'])
 
+def is_http_error_fetching_project(gitlab_project):
+    return is_not_empty_key(gitlab_project, 'http_code') and is_not_empty_key(gitlab_project, 'i18n_code')
+
 def get_project_quietly(exist_project):
     if is_empty(exist_project) or is_empty(exist_project.id):
         return None
