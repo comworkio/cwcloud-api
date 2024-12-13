@@ -284,8 +284,8 @@ def get_gitlab_project(project_id, gitlab_host, access_token):
         log_msg("WARN", "[get_gitlab_project] project not found, project id: {}".format(project_id))
         raise HTTPError("project_not_found_with_gitlab", 404, "project not found", hdrs = {"i18n_code": "project_not_found_with_gitlab"}, fp = None)
     elif projectReponse.status_code == 401:
-       log_msg("ERROR", "[get_gitlab_project] unauthorized, project id: {}".format(project_id))
-       raise HTTPError("gitlab_unauthorized", 401, "gitlab unauthorized", hdrs = {"i18n_code": "gitlab_unauthorized"}, fp = None)
+       log_msg("ERROR", "[get_gitlab_project] gitlab token expired, project id: {}".format(project_id))
+       raise HTTPError("gitlab_token_expired", 440, "gitlab token expired", hdrs = {"i18n_code": "gitlab_token_expired"}, fp = None)
     project = projectReponse.json()
     log_msg("DEBUG", "[get_gitlab_project] found project: id = {}, payload = {}".format(project_id, project))
     return project
