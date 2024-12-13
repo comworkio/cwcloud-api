@@ -309,7 +309,7 @@ def is_http_error_fetching_project(gitlab_project):
     return is_not_empty_key(gitlab_project, 'http_code') and is_response_ko(gitlab_project['http_code']) and is_not_empty_key(gitlab_project, 'i18n_code') and is_not_empty_key(gitlab_project, 'reason')
 
 def refresh_project_credentials(db, exist_project, gitlab_project):
-    if is_not_empty_key(gitlab_project['new_credentials']):
+    if is_not_empty_key(gitlab_project, 'new_credentials'):
        exist_project.git_username = gitlab_project['new_credentials']['git_username']
        exist_project.access_token = gitlab_project['new_credentials']['access_token']
        exist_project.gitlab_host = gitlab_project['new_credentials']['gitlab_host']
