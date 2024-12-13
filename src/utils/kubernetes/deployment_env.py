@@ -10,16 +10,14 @@ from git import Repo
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 from schemas.Kubernetes import ExternalChart
-from utils.gitlab import push_files_to_repository
+from utils.gitlab import push_files_to_repository, GIT_DEFAULT_TOKEN, GIT_USERNAME
 from utils.observability.cid import get_current_cid
 from utils.common import AUTOESCAPE_EXTENSIONS
 
-access_token = os.getenv('GIT_PRIVATE_TOKEN')
-git_username = os.getenv('GIT_USERNAME')
 repo_dir = os.getenv('LOCAL_CLONE_CHARTS_URL')
 charts_url = os.getenv('GIT_HELMCHARTS_REPO_URL', '')
 
-git_url = f'https://{git_username}:{access_token}@{charts_url.replace("https://", "")}'
+git_url = f'https://{GIT_USERNAME}:{GIT_DEFAULT_TOKEN}@{charts_url.replace("https://", "")}'
 
 def push_charts(
     project_id,
@@ -33,7 +31,7 @@ def push_charts(
     external_charts: Optional[list[ExternalChart]],
     args: Optional[dict[str, any]],
 ):
-    if None in (access_token, git_username, repo_dir, charts_url):
+    if None in (GIT_DEFAULT_TOKEN, GIT_USERNAME, repo_dir, charts_url):
         raise ValueError(
             "One or more required environment variables are missing.")
 

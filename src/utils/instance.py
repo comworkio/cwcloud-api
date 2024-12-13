@@ -15,7 +15,7 @@ from utils.api_url import get_api_url
 from utils.driver import sanitize_project_name
 from utils.exec import exec_cmd
 from utils.file import create_dir_if_not_exists, quiet_remove
-from utils.gitlab import delete_runner, get_project_runners, inject_default_credentials_to_url, inject_git_credentials_to_url
+from utils.gitlab import delete_runner, get_project_runners, inject_default_credentials_to_url, inject_git_credentials_to_url, GIT_USERNAME, GIT_EMAIL
 from utils.bytes_generator import generate_random_bytes
 from utils.dynamic_name import rehash_dynamic_name
 from utils.consumption import generate_instance_consumption
@@ -145,9 +145,6 @@ def setup_ansible(user_email, gitlab_project, user_project, instance_name, hashe
     if is_disabled(gitlab_project_remote):
         return
 
-    git_username = os.getenv('GIT_USERNAME')
-    git_email = os.getenv('GIT_EMAIL')
-
     if is_empty(root_password):
         root_password = generate_random_bytes(20)
 
@@ -170,9 +167,9 @@ def setup_ansible(user_email, gitlab_project, user_project, instance_name, hashe
                     '-o', created_project_remote,
                     '-j', user_project['gitlab_host'],
                     '-q', generate_dns,
-                    '-m', git_email,
+                    '-m', GIT_EMAIL,
                     '-b', user_email,
-                    '-u', git_username,
+                    '-u', GIT_USERNAME,
                     '-l', gitlab_project_remote,
                     '-p', root_password,
                     '-t', gitlab_project['runners_token'],
@@ -193,13 +190,10 @@ def config_cloud_init(instance_id, instance_name, user_project, gitlab_project_n
     cloud_init_script = ProviderDriver().cloud_init_script()
     template = env.get_template(f'{cloud_init_script}.j2')
 
-    git_username = os.getenv('GIT_USERNAME')
-    git_email = os.getenv('GIT_EMAIL')
-
     data = {
         "dynamic_repo": dynamic_repo,
-        "git_username": git_username,
-        "git_email": git_email,
+        "git_username": GIT_USERNAME,
+        "git_email": GIT_EMAIL,
         "instance_id": instance_id,
         "gitlab_project_name": gitlab_project_name,
         "instance_name": instance_name,

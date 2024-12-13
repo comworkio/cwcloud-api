@@ -17,6 +17,11 @@ from utils.logger import log_msg
 from utils.mail import send_email
 
 GITLAB_URL = os.environ['GITLAB_URL']
+GIT_USERNAME = os.getenv('GIT_USERNAME')
+GIT_EMAIL = os.getenv('GIT_EMAIL')
+GIT_DEFAULT_TOKEN = os.getenv('GIT_PRIVATE_TOKEN')
+GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
+
 timeout_value = int(os.getenv("TIMEOUT", "60"))
 
 def check_gitlab_url(gitlab_url):
@@ -41,27 +46,24 @@ def get_public_instances():
     return result
 
 def create_project_label(name, color):
-    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')):
+    if is_disabled(GITLAB_PROJECTID_ISSUES):
         return {}
 
-    GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
-    token = os.getenv('GIT_PRIVATE_TOKEN')
     label_json = {
         "name": name,
         "color": color
     }
 
     check_gitlab_url(GITLAB_URL)
-    requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', json=label_json, headers={"PRIVATE-TOKEN": token}, timeout=timeout_value)
+    requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', json=label_json, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
 
 def check_create_labels_support():
-    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')):
+    if is_disabled(GITLAB_PROJECTID_ISSUES):
         return {}
-    GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
-    token = os.getenv('GIT_PRIVATE_TOKEN')
+
     check_gitlab_url(GITLAB_URL)
 
-    project_labels_reponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', headers={"PRIVATE-TOKEN": token}, timeout=timeout_value)
+    project_labels_reponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
     project_labels = project_labels_reponse.json()
 
     if is_not_empty_key(project_labels, "error"):
@@ -87,13 +89,10 @@ def get_relevant_labels_from_issue(issue):
 def close_gitlab_issue(issue_id):
     check_gitlab_url(GITLAB_URL)
 
-    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')) or is_empty(issue_id):
+    if is_disabled(GITLAB_PROJECTID_ISSUES) or is_empty(issue_id):
         return {}
 
-    GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
-    token = os.getenv('GIT_PRIVATE_TOKEN')
-
-    issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers={"PRIVATE-TOKEN": token}, timeout=timeout_value).json()
+    issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value).json()
     if is_not_empty_key(issue, "error"):
         log_msg("WARN", "[close_gitlab_issue] There's an error when fetching the issue: error = {}".format(issue['error']))
         return {}
@@ -104,16 +103,14 @@ def close_gitlab_issue(issue_id):
         "labels": new_labels
     }
 
-    requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json=data, headers={"PRIVATE-TOKEN": token}, timeout=timeout_value)
+    requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json=data, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
 
 def reopen_gitlab_issue(issue_id):
-    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')) or is_empty(issue_id):
+    if is_disabled(GITLAB_PROJECTID_ISSUES) or is_empty(issue_id):
         return {}
 
-    GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
-    token = os.getenv('GIT_PRIVATE_TOKEN')
     check_gitlab_url(GITLAB_URL)
-    issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers={"PRIVATE-TOKEN": token}, timeout=timeout_value).json()
+    issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value).json()
     if is_not_empty_key(issue, "error"):
         log_msg("WARN", "[reopen_gitlab_issue] There's an error when fetching the issue: error = {}".format(issue['error']))
         return {}
@@ -128,13 +125,11 @@ def reopen_gitlab_issue(issue_id):
     requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json=data, headers={"PRIVATE-TOKEN": token}, timeout=timeout_value)
 
 def add_gitlab_issue(ticketId, user_email, title, description, severity, product):
-    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')):
+    if is_disabled(GITLAB_PROJECTID_ISSUES):
         return None
 
     check_gitlab_url(GITLAB_URL)
-    GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
     check_create_labels_support()
-    token = os.getenv('GIT_PRIVATE_TOKEN')
 
     issue_description = "* __Ticket:__ [# {}]({}/admin/support/{}) \n\n * __User:__ {} \n\n * __Service:__ {} \n\n * __Description:__ {}".format(ticketId, os.getenv("DOMAIN"), ticketId, user_email, product, description)
 
@@ -144,7 +139,7 @@ def add_gitlab_issue(ticketId, user_email, title, description, severity, product
         "labels": "todo, support, s-{} ".format(severity)
     }
 
-    res = requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues', json=data, headers={"PRIVATE-TOKEN": token}, timeout=timeout_value)
+    res = requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues', json=data, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
     issue = res.json()
 
     if is_not_empty_key(issue, "error"):
@@ -158,28 +153,24 @@ def add_gitlab_issue(ticketId, user_email, title, description, severity, product
     return issue['iid']
 
 def add_gitlab_issue_comment(issue_id, user_email, message):
-    if is_disabled(os.getenv('GITLAB_PROJECTID_ISSUES')):
+    if is_disabled(GITLAB_PROJECTID_ISSUES):
         return {}
 
-    GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
     check_create_labels_support()
-    token = os.getenv('GIT_PRIVATE_TOKEN')
     issue_comment = "* __User:__ {} \n\n * __Message:__ {}".format(user_email, message)
     data = {
         "body": issue_comment,
     }
     check_gitlab_url(GITLAB_URL)
-    requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}/notes', json=data, headers={"PRIVATE-TOKEN": token}, timeout=timeout_value)
+    requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}/notes', json=data, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
 
 def inject_git_credentials_to_url(remote, username, token):
     splittedRemote = remote.split('//')
     return f'{splittedRemote[0]}//{username}:{token}@{splittedRemote[1]}'
 
 def inject_default_credentials_to_url(remote):
-    token = os.getenv('GIT_PRIVATE_TOKEN')
-    username = os.getenv('GIT_USERNAME')
     splittedRemote = remote.split('//')
-    return f'{splittedRemote[0]}//{username}:{token}@{splittedRemote[1]}'
+    return f'{splittedRemote[0]}//{GIT_USERNAME}:{GIT_DEFAULT_TOKEN}@{splittedRemote[1]}'
 
 def create_gitlab_user(user_email):
     if is_public_instance(GITLAB_URL):
@@ -187,7 +178,7 @@ def create_gitlab_user(user_email):
 
     check_gitlab_url(GITLAB_URL)
     user_password = generate_random_bytes(24)
-    gl = gitlab.Gitlab(url = "{}/".format(GITLAB_URL), private_token = os.getenv('GIT_PRIVATE_TOKEN'))
+    gl = gitlab.Gitlab(url = "{}/".format(GITLAB_URL), private_token = GIT_DEFAULT_TOKEN)
 
     try:
         if not gl.users.list(search = user_email):
@@ -211,19 +202,18 @@ def create_gitlab_user(user_email):
 
 def attach_default_gitlab_project_to_user(projectid, user_email):
     check_gitlab_url(GITLAB_URL)
-    default_token = os.getenv('GIT_PRIVATE_TOKEN')
-    if is_disabled(default_token):
+    if is_disabled(GIT_DEFAULT_TOKEN):
         return
-    attach_gitlab_project_to_user(projectid, user_email, GITLAB_URL, default_token)
+
+    attach_gitlab_project_to_user(projectid, user_email, GITLAB_URL, GIT_DEFAULT_TOKEN)
 
 def detach_user_gitlab_project(projectid, user_email):
     check_gitlab_url(GITLAB_URL)
-    access_token = os.getenv('GIT_PRIVATE_TOKEN')
     gitlab_host = GITLAB_URL
-    if is_disabled(access_token):
+    if is_disabled(GIT_DEFAULT_TOKEN):
         return
 
-    gl = gitlab.Gitlab(url = "{}/".format(gitlab_host), private_token = access_token)
+    gl = gitlab.Gitlab(url = "{}/".format(gitlab_host), private_token = GIT_DEFAULT_TOKEN)
     project = gl.projects.get(projectid)
     # add user as gitlab project member
     users = gl.users.list(search = user_email)
@@ -294,7 +284,7 @@ def get_gitlab_project(project_id, gitlab_host, access_token):
         log_msg("WARN", "[get_gitlab_project] project not found, project id: {}".format(project_id))
         raise HTTPError("project_not_found_with_gitlab", 404, "project not found", hdrs = {"i18n_code": "project_not_found_with_gitlab"}, fp = None)
     elif projectReponse.status_code == 401:
-       log_msg("ERROR", "[get_gitlab_project] project not found, project id: {}".format(project_id))
+       log_msg("ERROR", "[get_gitlab_project] unauthorized, project id: {}".format(project_id))
        raise HTTPError("gitlab_unauthorized", 401, "gitlab unauthorized", hdrs = {"i18n_code": "gitlab_unauthorized"}, fp = None)
     project = projectReponse.json()
     log_msg("DEBUG", "[get_gitlab_project] found project: id = {}, payload = {}".format(project_id, project))
@@ -380,16 +370,15 @@ def verify_gitlab_host(host):
 
 def create_gitlab_project(project_name, userid, user_email, host, git_username, access_token, namespace_id, project_type, db):
     default_namespace_id = os.getenv('DYNAMIC_REPO_GROUPID')
-    default_token = os.getenv('GIT_PRIVATE_TOKEN')
 
     from entities.Project import Project
     namespace = namespace_id if namespace_id else default_namespace_id
-    token = access_token if access_token else default_token
+    token = access_token if access_token else GIT_DEFAULT_TOKEN
     gitlab_host = host if verify_gitlab_host(host) else GITLAB_URL
-    gitUsername = git_username if git_username else os.getenv('GIT_USERNAME')
+    gitUsername = git_username if git_username else GIT_USERNAME
 
     check_gitlab_url(gitlab_host)
-    if is_disabled(default_token) or is_disabled(default_namespace_id):
+    if is_disabled(GIT_DEFAULT_TOKEN) or is_disabled(default_namespace_id):
         random_id = secrets.randbelow(999) + 1  #? Generate number between 1 and 1000
         project = Project()
         project.id = random_id
@@ -438,17 +427,16 @@ def create_gitlab_project(project_name, userid, user_email, host, git_username, 
 def get_infra_playbook_roles():
     check_gitlab_url(GITLAB_URL)
     playbook_project_id = os.getenv('PLAYBOOK_REPO_PROJECTID')
-    token = os.getenv('GIT_PRIVATE_TOKEN')
     gitlab_connexion_error = JSONResponse(content={
         "status": "ko",
         "message": "can not get roles from gitlab",
         "i18n_code": "can_not_get_roles"
     }, status_code=400)
         
-    if is_disabled(playbook_project_id) or is_disabled(token):
+    if is_disabled(playbook_project_id) or is_disabled(GIT_DEFAULT_TOKEN):
         return gitlab_connexion_error, []
 
-    rolesResponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{playbook_project_id}/repository/tree?path=roles&per_page=200&ref=main', headers={"PRIVATE-TOKEN": token}, timeout=timeout_value)
+    rolesResponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{playbook_project_id}/repository/tree?path=roles&per_page=200&ref=main', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
     if not is_response_ok(rolesResponse.status_code):
         log_msg("DEBUG", "[get_infra_playbook_roles] can not get roles from gitlab with url = {}, status = {}".format(GITLAB_URL, rolesResponse.status_code))
         return gitlab_connexion_error, []
@@ -491,8 +479,7 @@ def delete_project_runners(project_id, gitlab_host, access_token):
 
 def delete_gitlab_project(project_id, gitlab_host, access_token):
     check_gitlab_url(gitlab_host)
-    default_token = os.getenv('GIT_PRIVATE_TOKEN')
-    if is_disabled(access_token) or is_disabled(default_token):
+    if is_disabled(access_token) or is_disabled(GIT_DEFAULT_TOKEN):
         return
 
     try:
@@ -500,7 +487,7 @@ def delete_gitlab_project(project_id, gitlab_host, access_token):
     except HTTPError as he:
         log_msg("WARN", "[delete_gitlab_project] something went wrong when deleting project's runners: he = {}".format(he))
 
-    token = default_token if GITLAB_URL == gitlab_host else access_token
+    token = GIT_DEFAULT_TOKEN if GITLAB_URL == gitlab_host else access_token
     res = requests.delete(f'{gitlab_host}/api/v4/projects/{project_id}', headers={"PRIVATE-TOKEN": token}, timeout=timeout_value)
     if res.status_code != 202:
         log_msg("WARN", "[delete_gitlab_project] something went wrong when deleting project: status = {}".format(res.status_code))
@@ -611,19 +598,18 @@ def get_helm_charts():
     check_gitlab_url(GITLAB_URL)
     charts_project_id = os.getenv('GIT_HELMCHARTS_REPO_ID')
     git_charts_url = os.getenv('GIT_HELMCHARTS_REPO_URL')
-    token = os.getenv('GIT_PRIVATE_TOKEN')
     gitlab_connexion_error = JSONResponse(content={
         "status": "ko",
         "message": "can not get helm charts from gitlab",
         "i18n_code": "can_not_get_helm_charts"
     }, status_code=400)
-    if is_disabled(charts_project_id) or is_disabled(token):
+    if is_disabled(charts_project_id) or is_disabled(GIT_DEFAULT_TOKEN):
         return gitlab_connexion_error, []
     parsed_url = urlparse(f'{git_charts_url}')
     host = f"{parsed_url.scheme}://{parsed_url.netloc}"
     charts_response = requests.get(
         f'{host}/api/v4/projects/{charts_project_id}/repository/tree?path=charts&per_page=200&ref=main', 
-        headers={"PRIVATE-TOKEN": token},
+        headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN},
         timeout=timeout_value
     )
     if not is_response_ok(charts_response.status_code):
