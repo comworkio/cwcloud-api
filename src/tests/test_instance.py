@@ -100,11 +100,12 @@ class TestInstance(TestCase):
     @patch('entities.Environment.Environment.getByPath')
     @patch('controllers.instance.get_project_quietly', side_effect = lambda e: {'id': 1})
     @patch('controllers.instance.get_user_project_by_id')
+    @patch('controllers.instance.refresh_project_credentials')
     @patch('controllers.instance.register_instance')
     @patch('controllers.instance.create_instance', side_effect = lambda provider, ami_image, instance_id, user_email, instance_name, hashed_instance_name, environment, instance_region, instance_zone, generate_dns, gitlab_project, user_project, instance_type, debug, centralized, root_dns_zone, db : "")
     @patch('utils.gitlab.get_gitlab_project_tree', side_effect = lambda x, y, z: [])
     @patch('controllers.instance.check_exist_instance', side_effect = lambda userid, instance_name, db: False)
-    def test_create_instance(self, check_exist_instance, get_gitlab_project_tree, create_instance, register_instance, get_user_project_by_id, get_gitlab_project, getByPath, getUserById, generate_hashed_name):
+    def test_create_instance(self, check_exist_instance, get_gitlab_project_tree, create_instance, register_instance, get_user_project_by_id, refresh_project_credentials, get_gitlab_project, getByPath, getUserById, generate_hashed_name):
         # Given
         from controllers.instance import provision_instance
         from entities.Environment import Environment
@@ -140,6 +141,7 @@ class TestInstance(TestCase):
         project.gitlab_project_id = "1"
         project.id = 1
         get_user_project_by_id.return_value = project
+        refresh_project_credentials.return_value = project
 
         environment = Environment()
         environment.name = "code"

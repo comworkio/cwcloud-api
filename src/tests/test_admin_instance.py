@@ -95,12 +95,13 @@ class TestAdminInstance(TestCase):
     @patch('entities.Environment.Environment.getByPath')
     @patch('controllers.admin.admin_instance.get_project_quietly', side_effect = lambda e: {'id': 1})
     @patch('controllers.admin.admin_instance.get_user_project_by_id')
+    @patch('controllers.admin.admin_instance.refresh_project_credentials')
     @patch('controllers.admin.admin_instance.register_instance')
     @patch('controllers.admin.admin_instance.create_instance', side_effect = lambda provider, ami_image, instance_id, user_email, instance_name, hashed_instance_name, environment, instance_region, instance_zone, generate_dns, gitlab_project, user_project, instance_type, debug, centralized, root_dns_zone, db : "")
     @patch('controllers.admin.admin_instance.get_gitlab_project_playbooks', side_effect = lambda x, y, z: [])
     @patch('controllers.admin.admin_instance.check_exist_instance', side_effect = lambda userid, instance_name, db: False)
     @patch('utils.common.generate_hash_password', side_effect = lambda p: p)
-    def test_admin_create_instance(self, generate_hash_password, check_exist_instance, get_gitlab_project_playbooks, create_instance, register_instance, get_user_project_by_id, get_gitlab_project, getByPath, getUserByEmail, generate_hashed_name):
+    def test_admin_create_instance(self, generate_hash_password, check_exist_instance, get_gitlab_project_playbooks, create_instance, register_instance, get_user_project_by_id, refresh_project_credentials, get_gitlab_project, getByPath, getUserByEmail, generate_hashed_name):
         # Given
         from controllers.admin.admin_instance import admin_add_instance
         from entities.Environment import Environment
@@ -136,6 +137,7 @@ class TestAdminInstance(TestCase):
         project.namespace_id = "1"
         project.id = 1
         get_user_project_by_id.return_value = project
+        refresh_project_credentials.return_value = project
 
         environment = Environment()
         environment.name = "code"
