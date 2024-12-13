@@ -291,8 +291,10 @@ def get_gitlab_project(project_id, gitlab_host, access_token):
 
     projectReponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}', headers={"PRIVATE-TOKEN": access_token}, timeout=timeout_value)
     if projectReponse.status_code == 404:
+        log_msg("WARN", "[get_gitlab_project] project not found, project id: {}".format(project_id))
         raise HTTPError("project_not_found_with_gitlab", 404, "project not found", hdrs = {"i18n_code": "project_not_found_with_gitlab"}, fp = None)
     project = projectReponse.json()
+    log_msg("INFO", "[get_gitlab_project] found project: {}".format(project))
     return project
 
 def get_gitlab_project_object(gitlab_url, private_token, project_id):
