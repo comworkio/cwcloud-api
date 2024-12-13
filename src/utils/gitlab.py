@@ -122,7 +122,7 @@ def reopen_gitlab_issue(issue_id):
         "labels": new_labels
     }
 
-    requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json=data, headers={"PRIVATE-TOKEN": token}, timeout=timeout_value)
+    requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json=data, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
 
 def add_gitlab_issue(ticketId, user_email, title, description, severity, product):
     if is_disabled(GITLAB_PROJECTID_ISSUES):

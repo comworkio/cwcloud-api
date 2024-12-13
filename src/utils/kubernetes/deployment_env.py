@@ -1,15 +1,16 @@
 import os
+import yaml
 import shutil
+import gitlab
+
+from git import Repo
 from pathlib import Path
 from typing import Optional
-
-import gitlab
-import yaml
 from fastapi.responses import JSONResponse
-from git import Repo
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 from schemas.Kubernetes import ExternalChart
+
 from utils.gitlab import push_files_to_repository, GIT_DEFAULT_TOKEN, GIT_USERNAME
 from utils.observability.cid import get_current_cid
 from utils.common import AUTOESCAPE_EXTENSIONS
