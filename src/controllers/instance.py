@@ -9,7 +9,7 @@ from utils.common import is_boolean, is_empty, is_false, is_not_empty, is_not_em
 from utils.flag import is_flag_disabled
 from utils.dns_zones import get_dns_zones
 from utils.domain import is_not_subdomain_valid
-from utils.gitlab import get_gitlab_project, get_gitlab_project_playbooks, get_project_quietly, get_user_project_by_id, get_user_project_by_name, get_user_project_by_url, is_http_error_fetching_project, is_not_project_found_in_gitlab
+from utils.gitlab import get_gitlab_project, get_gitlab_project_playbooks, get_project_quietly, get_user_project_by_id, get_user_project_by_name, get_user_project_by_url, is_http_error_fetching_project, is_not_project_found_in_gitlab, refresh_project_credentials
 from utils.dynamic_name import generate_hashed_name
 from utils.encoder import AlchemyEncoder
 from utils.images import get_os_image
@@ -648,6 +648,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
                     'cid': get_current_cid()
                 }, status_code = 404)
 
+        exist_project = refresh_project_credentials(db, exist_project, gitlab_project)
         project_playbooks = get_gitlab_project_playbooks(exist_project.id, exist_project.gitlab_host, exist_project.access_token)
         check_instance_name_validity(instance_name)
         check_exist_instance(current_user.id, instance_name, db)

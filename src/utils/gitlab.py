@@ -305,6 +305,14 @@ def is_not_project_found_in_gitlab(gitlab_project):
 def is_http_error_fetching_project(gitlab_project):
     return is_not_empty_key(gitlab_project, 'http_code') and is_not_empty_key(gitlab_project, 'i18n_code') and is_not_empty_key(gitlab_project, 'reason')
 
+def refresh_project_credentials(db, exist_project, gitlab_project):
+    if is_not_empty_key(gitlab_project['new_credentials']):
+       exist_project.git_username = gitlab_project['new_credentials']['git_username']
+       exist_project.access_token = gitlab_project['new_credentials']['access_token']
+       exist_project.gitlab_host = gitlab_project['new_credentials']['gitlab_host']
+       exist_project.save(db)
+       return exist_project
+
 def get_project_quietly(exist_project):
     if is_empty(exist_project) or is_empty(exist_project.id):
         return None
@@ -323,6 +331,12 @@ def get_project_quietly(exist_project):
         try:
             log_msg("WARN", "[get_project_quietly] this gitlab access token seems expired on {}, retrying with the default one".format(exist_project.gitlab_host))
             gitlab_project = get_gitlab_project(exist_project.id, GITLAB_URL, GIT_DEFAULT_TOKEN)
+            if not is_not_project_found_in_gitlab(gitlab_project):
+                gitlab_project['new_credentials'] = {
+                    'access_token': GIT_DEFAULT_TOKEN,
+                    'gitlab_host': GITLAB_URL,
+                    'git_username': GIT_USERNAME
+                }
         except HTTPError as he2:
             return {
                 'http_code': he2.code,
