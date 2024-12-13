@@ -4,8 +4,8 @@ import secrets
 import gitlab
 import requests
 import yaml
-from fastapi.responses import JSONResponse
 
+from fastapi.responses import JSONResponse
 from datetime import datetime, timedelta
 from urllib.error import HTTPError
 from urllib.parse import urlparse
@@ -21,6 +21,11 @@ GIT_USERNAME = os.getenv('GIT_USERNAME')
 GIT_EMAIL = os.getenv('GIT_EMAIL')
 GIT_DEFAULT_TOKEN = os.getenv('GIT_PRIVATE_TOKEN')
 GITLAB_PROJECTID_ISSUES = os.getenv('GITLAB_PROJECTID_ISSUES')
+DYNAMIC_REPO_GROUPID = os.getenv('DYNAMIC_REPO_GROUPID')
+PLAYBOOK_REPO_PROJECTID = os.getenv('PLAYBOOK_REPO_PROJECTID')
+GIT_HELMCHARTS_REPO_ID = os.getenv('GIT_HELMCHARTS_REPO_ID')
+GIT_HELMCHARTS_REPO_URL = os.getenv('GIT_HELMCHARTS_REPO_URL')
+DOMAIN = os.getenv("DOMAIN")
 
 timeout_value = int(os.getenv("TIMEOUT", "60"))
 
@@ -131,7 +136,7 @@ def add_gitlab_issue(ticketId, user_email, title, description, severity, product
     check_gitlab_url(GITLAB_URL)
     check_create_labels_support()
 
-    issue_description = "* __Ticket:__ [# {}]({}/admin/support/{}) \n\n * __User:__ {} \n\n * __Service:__ {} \n\n * __Description:__ {}".format(ticketId, os.getenv("DOMAIN"), ticketId, user_email, product, description)
+    issue_description = "* __Ticket:__ [# {}]({}/admin/support/{}) \n\n * __User:__ {} \n\n * __Service:__ {} \n\n * __Description:__ {}".format(ticketId, DOMAIN, ticketId, user_email, product, description)
 
     data = {
         "title": title,
@@ -308,6 +313,15 @@ def get_project_quietly(exist_project):
     try:
         gitlab_project = get_gitlab_project(exist_project.id, exist_project.gitlab_host, exist_project.access_token)
     except HTTPError as he:
+        try:
+            log_msg("WARN", "[get_project_quietly] this gitlab access token seems expired: {} on {}, retrying with the default one".format(exist_project.access_token, exist_project.gitlab_host))
+            gitlab_project = get_gitlab_project(exist_project.id, GITLAB_URL, GIT_DEFAULT_TOKEN)
+        except HTTPError as he2:
+            return {
+                'http_code': he2.code,
+                'i18n_code': he2.filename,
+                'reason': he.msg
+            }
         return {
             'http_code': he.code,
             'i18n_code': he.filename,
@@ -338,12 +352,14 @@ def get_gitlab_file_content(project_id, instance_name, gitlab_host, access_token
         return []
 
     fileResponse = requests.get(
-                            f'{gitlab_host}/api/v4/projects/{project_id}/repository/files/playbook-{instance_name}.yml/blame?ref=main',
-                            headers={"PRIVATE-TOKEN": access_token},
-                            timeout=timeout_value
-                        )
+        f'{gitlab_host}/api/v4/projects/{project_id}/repository/files/playbook-{instance_name}.yml/blame?ref=main',
+        headers={"PRIVATE-TOKEN": access_token},
+        timeout=timeout_value
+    )
+
     if fileResponse.status_code == 404:
         raise HTTPError("project_not_found_with_gitlab", 404, "project not found", hdrs = {"i18n_code": "project_not_found_with_gitlab"}, fp = None)
+
     fileJson = fileResponse.json()
     fileLines = fileJson[0]['lines']
     return fileLines
@@ -364,8 +380,9 @@ def get_roles_from_playbook(project_id, instance_name, gitlab_host, access_token
     return roles
 
 def verify_gitlab_host(host):
-    if not host:
+    if is_empty(host):
         return False
+
     res = requests.get(f'{host}/health', timeout=timeout_value)
     if res.status_code!= 200:
         raise HTTPError("1120", 400, "gitlab host not available", hdrs = {"i18n_code": "1120"}, fp = None)
@@ -373,16 +390,14 @@ def verify_gitlab_host(host):
     return True
 
 def create_gitlab_project(project_name, userid, user_email, host, git_username, access_token, namespace_id, project_type, db):
-    default_namespace_id = os.getenv('DYNAMIC_REPO_GROUPID')
-
     from entities.Project import Project
-    namespace = namespace_id if namespace_id else default_namespace_id
+    namespace = namespace_id if namespace_id else DYNAMIC_REPO_GROUPID
     token = access_token if access_token else GIT_DEFAULT_TOKEN
     gitlab_host = host if verify_gitlab_host(host) else GITLAB_URL
     gitUsername = git_username if git_username else GIT_USERNAME
 
     check_gitlab_url(gitlab_host)
-    if is_disabled(GIT_DEFAULT_TOKEN) or is_disabled(default_namespace_id):
+    if is_disabled(GIT_DEFAULT_TOKEN) or is_disabled(DYNAMIC_REPO_GROUPID):
         random_id = secrets.randbelow(999) + 1  #? Generate number between 1 and 1000
         project = Project()
         project.id = random_id
@@ -430,17 +445,16 @@ def create_gitlab_project(project_name, userid, user_email, host, git_username, 
 
 def get_infra_playbook_roles():
     check_gitlab_url(GITLAB_URL)
-    playbook_project_id = os.getenv('PLAYBOOK_REPO_PROJECTID')
     gitlab_connexion_error = JSONResponse(content={
         "status": "ko",
         "message": "can not get roles from gitlab",
         "i18n_code": "can_not_get_roles"
     }, status_code=400)
         
-    if is_disabled(playbook_project_id) or is_disabled(GIT_DEFAULT_TOKEN):
+    if is_disabled(PLAYBOOK_REPO_PROJECTID) or is_disabled(GIT_DEFAULT_TOKEN):
         return gitlab_connexion_error, []
 
-    rolesResponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{playbook_project_id}/repository/tree?path=roles&per_page=200&ref=main', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
+    rolesResponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{PLAYBOOK_REPO_PROJECTID}/repository/tree?path=roles&per_page=200&ref=main', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
     if not is_response_ok(rolesResponse.status_code):
         log_msg("DEBUG", "[get_infra_playbook_roles] can not get roles from gitlab with url = {}, status = {}".format(GITLAB_URL, rolesResponse.status_code))
         return gitlab_connexion_error, []
@@ -600,22 +614,24 @@ def remove_folder_from_gitlab(project_id, folder_path, commit_message, access_to
         
 def get_helm_charts():
     check_gitlab_url(GITLAB_URL)
-    charts_project_id = os.getenv('GIT_HELMCHARTS_REPO_ID')
-    git_charts_url = os.getenv('GIT_HELMCHARTS_REPO_URL')
+
     gitlab_connexion_error = JSONResponse(content={
         "status": "ko",
         "message": "can not get helm charts from gitlab",
         "i18n_code": "can_not_get_helm_charts"
     }, status_code=400)
-    if is_disabled(charts_project_id) or is_disabled(GIT_DEFAULT_TOKEN):
+
+    if is_disabled(GIT_HELMCHARTS_REPO_ID) or is_disabled(GIT_DEFAULT_TOKEN):
         return gitlab_connexion_error, []
-    parsed_url = urlparse(f'{git_charts_url}')
+
+    parsed_url = urlparse(f'{GIT_HELMCHARTS_REPO_URL}')
     host = f"{parsed_url.scheme}://{parsed_url.netloc}"
     charts_response = requests.get(
-        f'{host}/api/v4/projects/{charts_project_id}/repository/tree?path=charts&per_page=200&ref=main', 
+        f'{host}/api/v4/projects/{GIT_HELMCHARTS_REPO_URL}/repository/tree?path=charts&per_page=200&ref=main', 
         headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN},
         timeout=timeout_value
     )
+
     if not is_response_ok(charts_response.status_code):
         log_msg("DEBUG", "[get_helm_charts] can not get helm charts from gitlab with url = {}, status = {}".format(host, charts_response.status_code))
         return gitlab_connexion_error, []
@@ -624,7 +640,6 @@ def get_helm_charts():
         return None, charts
     except ValueError:
         return gitlab_connexion_error, []
-
 
 def push_selected_chart(charts:list[str], gitlab_connection: gitlab.Gitlab, git_repo_id: str):
     fetchedProject = gitlab_connection.projects.get(git_repo_id)
