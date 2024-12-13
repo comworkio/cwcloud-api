@@ -313,6 +313,13 @@ def get_project_quietly(exist_project):
     try:
         gitlab_project = get_gitlab_project(exist_project.id, exist_project.gitlab_host, exist_project.access_token)
     except HTTPError as he:
+        if he.code != 440:
+            return {
+                'http_code': he.code,
+                'i18n_code': he.filename,
+                'reason': he.msg
+            }
+
         try:
             log_msg("WARN", "[get_project_quietly] this gitlab access token seems expired: {} on {}, retrying with the default one".format(exist_project.access_token, exist_project.gitlab_host))
             gitlab_project = get_gitlab_project(exist_project.id, GITLAB_URL, GIT_DEFAULT_TOKEN)
@@ -322,11 +329,6 @@ def get_project_quietly(exist_project):
                 'i18n_code': he2.filename,
                 'reason': he.msg
             }
-        return {
-            'http_code': he.code,
-            'i18n_code': he.filename,
-            'reason': he.msg
-        }
 
     return gitlab_project
 
