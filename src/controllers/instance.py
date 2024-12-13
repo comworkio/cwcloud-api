@@ -5,7 +5,7 @@ from pulumi import automation as auto
 from fastapi import BackgroundTasks
 from fastapi.responses import JSONResponse
 
-from utils.common import is_boolean, is_empty, is_false, is_not_empty, is_numeric, is_true
+from utils.common import is_boolean, is_empty, is_false, is_not_empty, is_not_empty_key, is_numeric, is_true
 from utils.flag import is_flag_disabled
 from utils.dns_zones import get_dns_zones
 from utils.domain import is_not_subdomain_valid
@@ -587,7 +587,7 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'project not found',
-                'i18n_code': 'project_not_found',
+                'i18n_code': 'project_not_found_with_gitlab',
                 'cid': get_current_cid()
             }, status_code = 404)
 
@@ -633,12 +633,20 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
 
         gitlab_project = get_project_quietly(exist_project)
         if is_not_project_found_in_gitlab(gitlab_project):
-            return JSONResponse(content = {
-                'status': 'ko',
-                'error': 'project not found with gitlab',
-                'i18n_code':  'project_not_found_with_gitlab',
-                'cid': get_current_cid()
-            }, status_code = 404)
+            if not any(is_not_empty_key(gitlab_project, key) for key in ['http_code', 'i18n_code']):
+                return JSONResponse(content= {
+                   'status': 'ko',
+                   'error': gitlab_project['i18n_code'].replace("_", " "),
+                   'i18n_code': gitlab_project['i18n_code'],
+                   'cid': get_current_cid()
+                }, status_code = gitlab_project['http_code'])
+            else:
+                return JSONResponse(content = {
+                    'status': 'ko',
+                    'error': 'project not found with gitlab',
+                    'i18n_code':  'project_not_found_with_gitlab',
+                    'cid': get_current_cid()
+                }, status_code = 404)
 
         project_playbooks = get_gitlab_project_playbooks(exist_project.id, exist_project.gitlab_host, exist_project.access_token)
         check_instance_name_validity(instance_name)

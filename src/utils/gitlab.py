@@ -293,8 +293,11 @@ def get_gitlab_project(project_id, gitlab_host, access_token):
     if projectReponse.status_code == 404:
         log_msg("WARN", "[get_gitlab_project] project not found, project id: {}".format(project_id))
         raise HTTPError("project_not_found_with_gitlab", 404, "project not found", hdrs = {"i18n_code": "project_not_found_with_gitlab"}, fp = None)
+    elif projectReponse.status_code == 401:
+       log_msg("ERROR", "[get_gitlab_project] project not found, project id: {}".format(project_id))
+       raise HTTPError("gitlab_unauthorized", 401, "gitlab unauthorized", hdrs = {"i18n_code": "gitlab_unauthorized"}, fp = None)
     project = projectReponse.json()
-    log_msg("INFO", "[get_gitlab_project] found project: {}".format(project))
+    log_msg("DEBUG", "[get_gitlab_project] found project: id = {}, payload = {}".format(project_id, project))
     return project
 
 def get_gitlab_project_object(gitlab_url, private_token, project_id):
@@ -312,8 +315,10 @@ def get_project_quietly(exist_project):
     try:
         gitlab_project = get_gitlab_project(exist_project.id, exist_project.gitlab_host, exist_project.access_token)
     except HTTPError as he:
-        log_msg("WARN", "[gitlab][get_project_quietly] the gitlab project doesn't seems exist: {}".format(he))
-        gitlab_project = None
+        return {
+            "http_code": he.getcode,
+            "i18n_code": he.geturl
+        }
 
     return gitlab_project
 
