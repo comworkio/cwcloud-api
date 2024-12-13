@@ -302,6 +302,9 @@ def get_gitlab_project_object(gitlab_url, private_token, project_id):
 def is_not_project_found_in_gitlab(gitlab_project):
     return is_empty(gitlab_project) or 'id' not in gitlab_project or is_empty(gitlab_project['id'])
 
+def is_project_found_in_gitlab(gitlab_project):
+    return not is_not_project_found_in_gitlab(gitlab_project)
+
 def is_http_error_fetching_project(gitlab_project):
     return is_not_empty_key(gitlab_project, 'http_code') and is_not_empty_key(gitlab_project, 'i18n_code') and is_not_empty_key(gitlab_project, 'reason')
 
@@ -332,7 +335,7 @@ def get_project_quietly(exist_project):
         try:
             log_msg("WARN", "[get_project_quietly] this gitlab access token seems expired on {}, retrying with the default one".format(exist_project.gitlab_host))
             gitlab_project = get_gitlab_project(exist_project.id, GITLAB_URL, GIT_DEFAULT_TOKEN)
-            if not is_not_project_found_in_gitlab(gitlab_project):
+            if is_project_found_in_gitlab(gitlab_project):
                 gitlab_project['new_credentials'] = {
                     'access_token': GIT_DEFAULT_TOKEN,
                     'gitlab_host': GITLAB_URL,

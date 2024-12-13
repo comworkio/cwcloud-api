@@ -197,12 +197,13 @@ class TestInstance(TestCase):
     @patch('entities.User.User.getUserById')
     @patch('controllers.instance.get_gitlab_project')
     @patch('controllers.instance.get_user_project_by_id')
+    @patch('controllers.instance.refresh_project_credentials')
     @patch('controllers.instance.reregister_instance')
     @patch('controllers.instance.get_gitlab_project_playbooks', side_effect = lambda x, y, z: ["playbook-test-instance"])
     @patch('controllers.instance.check_exist_instance', side_effect = lambda userid, instance_name: False)
     @patch('entities.Instance.Instance.findUserInstanceByName')
     @patch('entities.Environment.Environment.getById')
-    def test_attach_instance(self, getById, findUserInstanceByName, check_exist_instance, get_gitlab_project_tree, reregister_instance, get_user_project_by_id, get_gitlab_project, getUserById):
+    def test_attach_instance(self, getById, findUserInstanceByName, check_exist_instance, get_gitlab_project_tree, reregister_instance, get_user_project_by_id, refresh_project_credentials, get_gitlab_project, getUserById):
         # Given
         from controllers.instance import attach_instance
         from entities.Environment import Environment
@@ -237,6 +238,7 @@ class TestInstance(TestCase):
         project.gitlab_project_id = "1"
         project.id = 1
         get_user_project_by_id.return_value = project
+        refresh_project_credentials.return_value = project
 
         environment = Environment()
         environment.name = "code"
