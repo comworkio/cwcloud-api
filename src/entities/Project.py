@@ -16,7 +16,7 @@ class Project(Base):
     gitlab_host = Column(String(400))
     namespace_id = Column(String(100))
     created_at = Column(String(100), default = datetime.now().isoformat())
-    userid = Column(Integer, ForeignKey('user.id'))
+    userid = Column(Integer, ForeignKey("user.id"))
     type = Column(String(100),default = "vm", nullable = False)
     instances = relationship("Instance", backref = "project", lazy = "select")
 

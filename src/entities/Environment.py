@@ -24,7 +24,7 @@ class Environment(Base):
     type = Column(String(25),default = "vm", nullable = False)
     subdomains = Column(String(300))
     args = Column(JSONB)
-    instances = relationship('Instance', backref = 'environment', lazy = "select")
+    instances = relationship("Instance", backref = "environment", lazy = "select")
 
     def save(self, db):
         db.add(self)
