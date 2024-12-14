@@ -19,7 +19,7 @@ URL = os.environ['DOMAIN']
 VERSION = os.environ['APP_VERSION']
 ENV = os.environ['APP_ENV']
 MONITOR_SRC = os.getenv('MONITOR_SRC', 'cwcloud-api')
-WAIT_TIME = get_env_int('WAIT_TIME', 10)
+MONITOR_WAIT_TIME = get_env_int('MONITOR_WAIT_TIME', 300)
 
 def check_status_code_pattern(actual_code, pattern):
     regexp = "^{}$".format(pattern.replace('*', '[0-9]+'))
@@ -217,10 +217,10 @@ def monitors():
         while True:
             with get_otel_tracer().start_as_current_span(span_format("monitors", Method.ASYNCWORKER)):
                 check_monitors()
-                sleep(WAIT_TIME)
+                sleep(MONITOR_WAIT_TIME)
 
     def start_monitors():
-        sleep(WAIT_TIME)
+        sleep(MONITOR_WAIT_TIME)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(loop_monitors())
