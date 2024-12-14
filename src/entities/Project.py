@@ -18,7 +18,7 @@ class Project(Base):
     created_at = Column(String(100), default = datetime.now().isoformat())
     userid = Column(Integer, ForeignKey('user.id'))
     type = Column(String(100),default = "vm", nullable = False)
-    instances = relationship('Instance', backref = 'project', lazy = "select")
+    instances = relationship("Instance", backref = "project", lazy = "select")
 
     def save(self, db):
         db.add(self)

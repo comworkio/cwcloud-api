@@ -5,7 +5,7 @@ from datetime import datetime
 class Consumption(Base):
     __tablename__ = "consumption"
     id = Column(Integer, primary_key = True)
-    instance_id = Column(Integer, ForeignKey('instance.id'))
+    instance_id = Column(Integer, ForeignKey("instance.id"))
     usage = Column(Float, nullable = False)
     instance_price = Column(Float, nullable = False)
     total_price = Column(Float, nullable = False)
