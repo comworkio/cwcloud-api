@@ -2,7 +2,10 @@ from datetime import datetime
 from sqlalchemy import Column, String, Boolean, Integer, Text, CheckConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
+
 from database.postgres_db import Base
+from entities.Instance import Instance
+
 from utils.list import marshall_list_string
 
 class Environment(Base):

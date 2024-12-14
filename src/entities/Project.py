@@ -1,7 +1,9 @@
-from database.postgres_db import Base
 from sqlalchemy import Column, ForeignKey, String, Integer,CheckConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from database.postgres_db import Base
+from entities.Instance import Instance
 
 class Project(Base):
     __tablename__ = "project"

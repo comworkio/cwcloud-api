@@ -1,8 +1,10 @@
 import os
-from utils.common import get_env_int
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import QueuePool
+
+from utils.common import get_env_int
 
 postgres_db_name = os.getenv("POSTGRES_DB")
 postgres_user = os.getenv("POSTGRES_USER")

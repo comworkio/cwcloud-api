@@ -1,11 +1,9 @@
 from datetime import datetime
-
 from sqlalchemy import text, Column, String, Boolean, Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
 
 from database.postgres_db import Base
-
 from entities.Project import Project
 from entities.Instance import Instance
 from entities.Bucket import Bucket
@@ -14,7 +12,7 @@ from entities.Apikeys import ApiKeys
 from entities.SupportTicketLog import SupportTicketLog
 from entities.SupportTicket import SupportTicket
 
-from utils.common import generate_hash_password, is_true
+from utils.common import generate_hash_password
 from utils.flag import sql_filter_flag_enabled
 
 class User(Base):

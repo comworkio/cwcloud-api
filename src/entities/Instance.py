@@ -1,7 +1,9 @@
-from database.postgres_db import Base
 from sqlalchemy import Column, ForeignKey, String, Integer, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from database.postgres_db import Base
+from entities.Consumption import Consumption
 
 class Instance(Base):
     __tablename__ = "instance"
