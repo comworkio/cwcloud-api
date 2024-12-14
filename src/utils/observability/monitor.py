@@ -220,7 +220,6 @@ def monitors():
                 sleep(MONITOR_WAIT_TIME)
 
     def start_monitors():
-        sleep(MONITOR_WAIT_TIME)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(loop_monitors())
