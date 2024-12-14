@@ -13,7 +13,7 @@ from database.postgres_db import get_db
 from utils.jwt import jwt_encode
 
 from utils.logger import log_msg
-from utils.common import verify_password
+from utils.common import get_env_int, verify_password
 from utils.flag import is_flag_enabled
 from utils.encoder import AlchemyEncoder
 from utils.observability.cid import get_current_cid
@@ -68,7 +68,7 @@ def login_user(payload: UserLoginSchema, db: Session = Depends(get_db)):
                 "time": datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
             })
             CACHE_ADAPTER().delete(user.email)
-            CACHE_ADAPTER().put(user.email, token, int(os.getenv("TOKEN_EXPIRATION_TIME")))
+            CACHE_ADAPTER().put(user.email, token, get_env_int("TOKEN_EXPIRATION_TIME"))
             from entities.Mfa import Mfa
             mfaMethods = Mfa.getUserMfaMethods(user.id, db)
             mfaMethodsJson = json.loads(json.dumps(mfaMethods, cls = AlchemyEncoder))

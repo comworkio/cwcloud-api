@@ -9,7 +9,7 @@ from pulumi import automation as auto
 from urllib.error import HTTPError
 
 from drivers.ProviderDriver import ProviderDriver
-from utils.common import is_not_empty, is_true
+from utils.common import get_env_int, is_not_empty, is_true
 from utils.dns_zones import get_dns_zone_driver, register_scaleway_domain
 from utils.driver import convert_instance_state, sanitize_project_name
 from utils.dynamic_name import rehash_dynamic_name
@@ -20,7 +20,7 @@ SCW_API_URL = "https://api.scaleway.com"
 SCW_ACCESS_KEY = os.getenv('SCW_ACCESS_KEY')
 SCW_SECRET_KEY = os.getenv('SCW_SECRET_KEY')
 SCW_PROJECT_ID = os.getenv('SCW_PROJECT_ID')
-timeout_value = int(os.getenv("TIMEOUT", "60"))
+timeout_value = get_env_int("TIMEOUT", 60)
 
 class ScalewayDriver(ProviderDriver):
     def create_dns_records(self, record_name, environment, ip_address, root_dns_zone):

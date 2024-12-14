@@ -13,7 +13,7 @@ from middleware.cwaiapi_guard import cwaiapi_required
 from schemas.User import UserSchema
 from schemas.Ai import PromptSchema
 
-from utils.common import is_not_empty, is_response_ok
+from utils.common import get_env_int, is_not_empty, is_response_ok
 from utils.logger import log_msg
 from utils.observability.cid import get_current_cid
 from utils.observability.otel import get_otel_tracer
@@ -23,7 +23,7 @@ from utils.observability.enums import Method
 CWAI_API_URL = os.getenv("CWAI_API_URL")
 CWAI_API_USERNAME = os.getenv("CWAI_API_USERNAME")
 CWAI_API_PASSWORD = os.getenv("CWAI_API_PASSWORD")
-timeout_value = int(os.getenv("TIMEOUT", "60"))
+timeout_value = get_env_int("TIMEOUT", 60)
 
 router = APIRouter()
 

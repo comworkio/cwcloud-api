@@ -148,9 +148,9 @@ def object_as_dict(obj):
     return {c.key: getattr(obj, c.key)
             for c in sqlalchemy.inspect(obj).mapper.column_attrs}
 
-def get_env_int(var_name, default):
+def get_env_int(var_name, default = None):
     value = os.getenv(var_name)
-    return int(value) if value else default
+    return int(value) if is_numeric(value) else default
 
 _allowed_chars_metric_pattern = re.compile(r'[^a-zA-Z0-9]')
 def sanitize_metric_name(name: str):

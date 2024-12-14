@@ -10,7 +10,7 @@ from entities.faas.Function import FunctionEntity
 from entities.faas.Invocation import InvocationEntity
 from entities.faas.InvocationExecutionTrace import InvocationExecutionTraceEntity
 
-from utils.common import del_key_if_exists, is_empty, is_false, is_not_empty, is_not_empty_key, is_not_numeric, is_not_uuid, is_true, object_as_dict
+from utils.common import del_key_if_exists, get_env_int, is_empty, is_false, is_not_empty, is_not_empty_key, is_not_numeric, is_not_uuid, is_true, object_as_dict
 from utils.encoder import AlchemyEncoder
 from utils.faas.invocations import _in_progress, is_unknown_state
 from utils.faas.functions import is_not_owner
@@ -24,7 +24,7 @@ _consumer_group = os.environ['CONSUMER_GROUP']
 _consumer_channel = os.environ['CONSUMER_CHANNEL']
 _max_retry_invoke_sync = int(os.environ['MAX_RETRY_INVOKE_SYNC'])
 _invoke_sync_wait_time = int(os.environ['INVOKE_SYNC_WAIT_TIME'])
-timeout_value = int(os.getenv("TIMEOUT", "60"))
+timeout_value = get_env_int("TIMEOUT", 60)
 
 def invoke(payload, current_user, user_auth, db):
     if is_empty(payload.content.state):

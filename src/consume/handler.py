@@ -6,7 +6,7 @@ from jinja2 import Environment, FileSystemLoader, BaseLoader, select_autoescape
 
 from adapters.AdapterConfig import get_adapter
 from utils.command import get_script_output
-from utils.common import get_src_path, is_not_empty, is_empty_key, is_not_empty_key, AUTOESCAPE_EXTENSIONS
+from utils.common import get_env_int, get_src_path, is_not_empty, is_empty_key, is_not_empty_key, AUTOESCAPE_EXTENSIONS
 from utils.observability.otel import get_otel_tracer
 from utils.security import is_forbidden
 from utils.file import quiet_remove
@@ -29,7 +29,7 @@ _api_token = os.getenv('FAAS_API_TOKEN')
 _headers = { "X-Auth-Token": _api_token } if is_not_empty(_api_token) else None
 _span_prefix = "faas-consumer"
 _counter = create_counter("consumer", "consumer counter")
-timeout_value = int(os.getenv("TIMEOUT", "60"))
+timeout_value = get_env_int("TIMEOUT", 60)
 
 def update_invocation(invocation_id, payload):
   invocation_url = "{}/invocation/{}".format(_api_endpoint, invocation_id)

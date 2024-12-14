@@ -12,9 +12,9 @@ from kubernetes import client, config, dynamic
 from constants.k8s_constants import FLUX_FILE_URL
 
 from utils.encoder import AlchemyEncoder
-from utils.common import AUTOESCAPE_EXTENSIONS
+from utils.common import AUTOESCAPE_EXTENSIONS, get_env_int
 
-timeout_value = int(os.getenv("TIMEOUT", "60"))
+timeout_value = get_env_int("TIMEOUT", 60)
 
 def install_flux(config_file: bytes):
     flux_yaml_file = yaml.safe_load_all(requests.get(FLUX_FILE_URL, timeout=timeout_value).content)

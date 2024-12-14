@@ -1,9 +1,9 @@
 import os
-from utils.common import is_empty
+from utils.common import get_env_int, is_empty
 import requests
 from urllib.parse import urlparse
 
-timeout_value = int(os.getenv("TIMEOUT", "60"))
+timeout_value = get_env_int("TIMEOUT", 60)
 
 def get_api_url():
     api_url = os.getenv('API_URL')

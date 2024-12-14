@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 from utils.api_url import is_url_not_responding
 from utils.bytes_generator import generate_random_bytes
-from utils.common import exists_entry, is_disabled, is_empty, is_empty_key, is_not_empty, is_not_empty_key, is_response_ko, safe_compare_entry, safe_contain_entry, is_response_ok
+from utils.common import exists_entry, get_env_int, is_disabled, is_empty, is_empty_key, is_not_empty, is_not_empty_key, is_response_ko, safe_compare_entry, safe_contain_entry, is_response_ok
 from utils.logger import log_msg
 from utils.mail import send_email
 
@@ -27,7 +27,7 @@ GIT_HELMCHARTS_REPO_ID = os.getenv('GIT_HELMCHARTS_REPO_ID')
 GIT_HELMCHARTS_REPO_URL = os.getenv('GIT_HELMCHARTS_REPO_URL')
 DOMAIN = os.getenv("DOMAIN")
 
-timeout_value = int(os.getenv("TIMEOUT", "60"))
+timeout_value = get_env_int("TIMEOUT", 60)
 
 def check_gitlab_url(gitlab_url):
     if is_not_public_instance(gitlab_url) and is_url_not_responding(gitlab_url):

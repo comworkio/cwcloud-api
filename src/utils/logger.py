@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 
 from utils.observability.cid import get_current_cid
-from utils.common import is_disabled, is_enabled, is_true
+from utils.common import get_env_int, is_disabled, is_enabled, is_true
 
 SLACK_WEBHOOK_TPL = "https://hooks.slack.com/services/{}"
 DISCORD_WEBHOOK_TPL = "https://discord.com/api/webhooks/{}/slack"
@@ -23,7 +23,7 @@ _discord_public_token = os.getenv('DISCORD_TOKEN_PUBLIC')
 
 _username = os.getenv('SLACK_USERNAME')
 
-timeout_value = int(os.getenv("TIMEOUT", "60"))
+timeout_value = get_env_int("TIMEOUT", 60)
 
 if is_disabled(_username):
     _username = os.getenv('DISCORD_USERNAME')

@@ -8,6 +8,7 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 from fastapi import Depends, APIRouter
 from fastapi.responses import JSONResponse
+from utils.common import get_env_int
 from yubico_client import Yubico
 
 from entities.Mfa import Mfa
@@ -155,7 +156,7 @@ def verify_u2f(current_user: Annotated[UserSchema, Depends(pre_token_required)],
                 "time": datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
             })
             CACHE_ADAPTER().delete(current_user.email)
-            CACHE_ADAPTER().put(current_user.email, token, int(os.getenv("TOKEN_EXPIRATION_TIME")))
+            CACHE_ADAPTER().put(current_user.email, token, get_env_int("TOKEN_EXPIRATION_TIME"))
             return JSONResponse(content = {
                 'status': 'ok',
                 'token': token
@@ -262,7 +263,7 @@ def post(current_user: Annotated[UserSchema, Depends(pre_token_required)], paylo
             "time": datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         })
         CACHE_ADAPTER().delete(current_user.email)
-        CACHE_ADAPTER().put(current_user.email, token, int(os.getenv("TOKEN_EXPIRATION_TIME")))
+        CACHE_ADAPTER().put(current_user.email, token, get_env_int("TOKEN_EXPIRATION_TIME"))
         return JSONResponse(content = {
             'status': 'ok',
             'token': token

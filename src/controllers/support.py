@@ -11,7 +11,7 @@ from entities.SupportTicketLog import SupportTicketLog
 from entities.User import User
 from utils.bucket import delete_from_attachment_bucket, download_from_attachment_bucket, upload_to_attachment_bucket
 from utils.logger import log_msg
-from utils.common import is_not_numeric
+from utils.common import get_env_int, is_not_numeric
 from utils.encoder import AlchemyEncoder
 from utils.gitlab import add_gitlab_issue, add_gitlab_issue_comment
 from utils.observability.cid import get_current_cid
@@ -253,7 +253,7 @@ def delete_reply_support_ticket(current_user, ticket_id, reply_id, db):
 
 def auto_close_tickets(current_user, db):
     try:
-        threshold_days = int(os.getenv('DAYS_BEFORE_CLOSURE', 7))
+        threshold_days = get_env_int('DAYS_BEFORE_CLOSURE', 7)
         inactive_tickets = SupportTicket.getInactiveSupportTickets(threshold_days, db)
       
         for ticket in inactive_tickets:

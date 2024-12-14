@@ -12,7 +12,7 @@ from schemas.User import UserSchema
 from middleware.auth_guard import get_current_active_user
 from middleware.cwaiapi_guard import cwaiapi_required
 
-from utils.common import is_not_empty
+from utils.common import get_env_int, is_not_empty
 from utils.logger import log_msg
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
@@ -24,7 +24,7 @@ router = APIRouter()
 CWAI_API_URL = os.getenv("CWAI_API_URL")
 CWAI_API_USERNAME = os.getenv("CWAI_API_USERNAME")
 CWAI_API_PASSWORD = os.getenv("CWAI_API_PASSWORD")
-timeout_value = int(os.getenv("TIMEOUT", "60"))
+timeout_value = get_env_int("TIMEOUT", 60)
 
 _span_prefix = "ai-models"
 _counter = create_counter("ai_model_api", "CW AI Model API counter")

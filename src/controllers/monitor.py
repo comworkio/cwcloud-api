@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from datetime import datetime
 from entities.Monitor import Monitor
-from utils.common import is_empty, is_false, is_not_empty, is_not_http_status_code
+from utils.common import get_env_int, is_empty, is_false, is_not_empty, is_not_http_status_code
 from utils.observability.cid import get_current_cid
 from utils.dynamic_name import generate_hashed_name
 
@@ -29,7 +29,7 @@ def get_monitor(current_user, monitor_id, db):
 
 def add_monitor(current_user, payload, db):
     try:
-        max_monitors = int(os.getenv('MONITORS_MAX_NUMBER', 50))
+        max_monitors = get_env_int('MONITORS_MAX_NUMBER', 50)
         current_monitors = Monitor.getUserMonitors(current_user.id, db)
         if is_false(current_user.is_admin) and len(current_monitors) >= max_monitors:
             return JSONResponse(content = {

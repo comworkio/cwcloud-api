@@ -6,7 +6,7 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from dateutil.parser import parse
 
-from utils.common import is_empty_key, is_not_empty
+from utils.common import get_env_int, is_empty_key, is_not_empty
 from utils.bytes_generator import generate_random_bytes
 from utils.cron import parse_crontab
 from utils.date import is_after_current_time
@@ -21,7 +21,7 @@ _api_admin_endpoint = "{}/v1/admin/faas".format(os.environ['FAAS_API_URL'])
 _api_token = os.getenv('FAAS_API_TOKEN')
 _headers = { "X-Auth-Token": _api_token } if is_not_empty(_api_token) else None
 _max_results = int(os.environ['API_MAX_RESULTS'])
-timeout_value = int(os.getenv("TIMEOUT", "60"))
+timeout_value = get_env_int("TIMEOUT", 60)
 
 def invoke_function(trigger):
     invocation_endpoint = "{}/invocation".format(_api_endpoint)
