@@ -38,7 +38,7 @@ def check_http_monitor(monitor, gauges):
     }
 
     if monitor['type'] != 'http':
-        log_msg("DEBUG", { 
+        log_msg("DEBUG", {
             "status": "ok",
             "type": "monitor",
             "time": vdate.isoformat(),
@@ -49,7 +49,7 @@ def check_http_monitor(monitor, gauges):
         return 'failure', 0
 
     if is_empty_key(monitor, 'url'):
-        log_msg("ERROR", { 
+        log_msg("ERROR", {
             "status": "ko",
             "type": "monitor",
             "time": vdate.isoformat(),
@@ -93,7 +93,7 @@ def check_http_monitor(monitor, gauges):
             duration = response.elapsed.total_seconds() * 1000
             set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
         else:
-            log_msg("ERROR", { 
+            log_msg("ERROR", {
                 "status": "ko",
                 "type": "monitor",
                 "time": vdate.isoformat(),
@@ -104,7 +104,7 @@ def check_http_monitor(monitor, gauges):
             return 'failure', 0
 
         if not check_status_code_pattern(response.status_code, expected_http_code):
-            log_msg("ERROR", { 
+            log_msg("ERROR", {
                 "status": "ko",
                 "type": "monitor",
                 "time": vdate.isoformat(),
@@ -116,7 +116,7 @@ def check_http_monitor(monitor, gauges):
             return 'failure', duration
 
         if is_not_empty(expected_contain) and expected_contain not in response.text:
-            log_msg("ERROR", { 
+            log_msg("ERROR", {
                 "status": "ko",
                 "type": "monitor",
                 "time": vdate.isoformat(),
@@ -128,7 +128,7 @@ def check_http_monitor(monitor, gauges):
             return 'failure', duration
 
         set_gauge(gauges['result'], 1, {**labels, 'kind': 'result', 'user': monitor['user_id']})
-        log_msg("INFO", { 
+        log_msg("DEBUG", {
             "status": "ok",
             "type": "monitor",
             "time": vdate.isoformat(),
