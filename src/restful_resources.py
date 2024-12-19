@@ -58,6 +58,7 @@ def import_resources(app):
     from routes.admin.iot import api_admin_data
     from routes.admin.dns import api_admin_dns
     from routes.monitor import api_monitor
+    from routes.tracker import api_tracker
     from routes.admin.monitor import api_admin_monitor
     
     version = os.environ['API_VERSION']
@@ -96,7 +97,8 @@ def import_resources(app):
     app.include_router(api_object_type.router, tags = ['IoT'], prefix = f'/{version}/iot')
     app.include_router(api_device.router, tags = ['IoT'], prefix = f'/{version}/iot')
     app.include_router(api_data.router, tags = ['IoT'], prefix = f'/{version}/iot')
-    app.include_router(api_monitor.router, tags = ['Monitor'], prefix = f'/{version}/monitor')
+    app.include_router(api_monitor.router, tags = ['Observability'], prefix = f'/{version}/monitor')
+    app.include_router(api_tracker.router, tags = ['Observability'], prefix = f'/{version}/tracker')
     app.include_router(api_contact.router, tags = ['Contact and Support'], prefix = f'/{version}/contact')
     app.include_router(api_support.router, tags = ['Contact and Support'], prefix = f'/{version}/support')
     app.include_router(api_pricing.router, tags = ['Pricing'])

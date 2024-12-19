@@ -32,7 +32,7 @@ app = FastAPI(
 
 app.add_middleware(
     CorrelationIdMiddleware,
-    header_name = 'x-comwork-cid',
+    header_name = 'x-cwcloud-cid',
     generator = lambda: "{}".format(uuid4())
 )
 
@@ -59,7 +59,7 @@ instrumentator.expose(app, endpoint='/metrics')
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    headers = {'x-comwork-cid': get_current_cid()}
+    headers = {'x-cwcloud-cid': get_current_cid()}
 
     if isinstance(exc, CwHTTPException):
         return JSONResponse(content = exc.message, status_code = exc.status_code, headers = headers)
