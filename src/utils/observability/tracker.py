@@ -2,7 +2,7 @@ import os
 import requests
 
 from PIL import Image
-from utils.common import get_env_int, is_empty_key, is_not_empty_key, is_response_ok
+from utils.common import get_env_int, is_empty, is_empty_key, is_response_ok
 from utils.logger import log_msg
 
 TRACKER_IMAGE_PATH = os.getenv('TRACKER_IMAGE_PATH', "tracker_image.png")
@@ -15,7 +15,7 @@ def init_tracker_img():
         img.save(TRACKER_IMAGE_PATH)
 
 def override_if_is_empty(payload, pkey, data, dkey = None):
-    if is_empty_key(dkey):
+    if is_empty(dkey):
         dkey = pkey
 
     return data.get(dkey, DEFAULT_VALUE) if is_empty_key(payload, pkey) or payload[pkey] == DEFAULT_VALUE else payload[pkey]
