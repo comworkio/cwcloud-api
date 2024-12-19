@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse
 
 from utils.common import is_empty
-from utils.logger import log_msg
+from utils.logger import quiet_log_msg
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
 from utils.observability.counter import create_counter, increment_counter
@@ -48,7 +48,7 @@ def track(request: Request, format: TrackerFormat, website: str):
             "infos": get_infos_from_ip(host)
         }
 
-        log_msg("INFO", payload)
+        quiet_log_msg("INFO", payload)
 
         return FileResponse(TRACKER_IMAGE_PATH, media_type="image/png", headers = {
             "x-cwcloud-client-host": host,
