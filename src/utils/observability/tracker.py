@@ -37,6 +37,7 @@ def get_infos_from_ip(ip: str):
                 "country": data.get("country_name", DEFAULT_VALUE),
                 "region_code": data.get("region_code", DEFAULT_VALUE),
                 "country_iso": data.get("country_code", DEFAULT_VALUE),
+                "lookup": data.get("country_code_iso3", DEFAULT_VALUE),
                 "timezone": data.get("timezone", DEFAULT_VALUE),
                 "utc_offset": data.get("country_code", DEFAULT_VALUE),
                 "currency": data.get("currency", DEFAULT_VALUE),
