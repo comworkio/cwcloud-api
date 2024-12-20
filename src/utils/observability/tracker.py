@@ -83,6 +83,7 @@ def get_infos_from_ip(ip: str):
             payload['region_code'] = override_if_is_empty(payload, 'region_code', data, 'region')
             payload['country'] = override_if_is_empty(payload, 'country', data)
             payload['country_iso'] = override_if_is_empty(payload, 'country_iso', data, 'country')
+            payload['lookup'] = override_if_is_empty(payload, 'lookup', data, 'country')
             payload['timezone'] = override_if_is_empty(payload, 'timezone', data)
             payload['ip'] = override_if_is_empty(payload, 'ip', data)
     except Exception as e:
