@@ -49,6 +49,7 @@ def track(request: Request, format: TrackerFormat, website: str):
             "device": parsed_ua['device'],
             "browser": parsed_ua['browser'],
             "os": parsed_ua['os'],
+            "details": parsed_ua['details'],
             "infos": get_infos_from_ip(host)
         }
 

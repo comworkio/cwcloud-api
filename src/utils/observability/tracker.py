@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 
 from user_agents import parse
@@ -93,9 +94,19 @@ def parse_user_agent(user_agent):
         return {
             "device": DEFAULT_VALUE,
             "os": DEFAULT_VALUE,
-            "browser": DEFAULT_VALUE
+            "browser": DEFAULT_VALUE,
+            "details": {
+                "brand": DEFAULT_VALUE,
+                "type": DEFAULT_VALUE
+            }
         }
 
+    details = {
+        "brand": DEFAULT_VALUE,
+        "type": DEFAULT_VALUE
+    }
+
+    lower_user_agent = user_agent.lower()
     parsed_ua = parse(user_agent)
     if parsed_ua.is_mobile:
         device = "mobile"
@@ -115,15 +126,43 @@ def parse_user_agent(user_agent):
         os = "linux"
     elif "mac" in os_family:
         os = "macos"
+        details['brand'] = "apple"
+        details['type'] = "macos"
+    elif "linux" in lower_user_agent:
+        os = "linux"
+    elif "mac os" in lower_user_agent:
+        os = "macos"
     else:
         os = DEFAULT_VALUE
+
+    if "iphone" in lower_user_agent:
+        details['brand'] = "apple"
+        details['type'] = "iphone"
+        os = "ios"
+    elif "samsung" in lower_user_agent:
+        details['brand'] = "samsung"
+        if device == "mobile":
+            details['type'] = "android"
+    elif "huwei" in lower_user_agent or "honor" in lower_user_agent:
+        details['brand'] = "huwei"
+        if device == "mobile":
+            details['type'] = "android"
+
+    if "smart-tv" in lower_user_agent:
+       device = "smarttv"
+       details['type'] = "smarttv"
 
     browser = parsed_ua.browser.family.lower()
     if browser == "other":
         browser = DEFAULT_VALUE
+    elif re.search(r'.* internet', browser):
+        browser = browser.split()[0]
+    elif re.search(r'mobile .*', browser):
+        browser = browser.split()[1]
 
     return {
         "device": device,
         "os": os,
-        "browser": browser
+        "browser": browser,
+        "details": details
     }
