@@ -68,3 +68,5 @@ opentelemetry-instrumentation-fastapi
 opentelemetry-exporter-otlp
 paho-mqtt==1.6.1
 Pillow
+ua-parser
+user-agents

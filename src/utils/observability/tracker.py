@@ -1,7 +1,9 @@
 import os
 import requests
 
+from user_agents import parse
 from PIL import Image
+
 from utils.common import get_env_int, is_empty, is_empty_key, is_response_ok
 from utils.logger import log_msg
 
@@ -85,3 +87,43 @@ def get_infos_from_ip(ip: str):
         log_msg("WARN", "[get_infos_from_ip] unexpected error with ipinfo.io: ip = {}, e.type = {}, e.msg = {}".format(ip, type(e), e))
 
     return payload
+
+def parse_user_agent(user_agent):
+    if is_empty(user_agent):
+        return {
+            "device": DEFAULT_VALUE,
+            "os": DEFAULT_VALUE,
+            "browser": DEFAULT_VALUE
+        }
+
+    parsed_ua = parse(user_agent)
+    if parsed_ua.is_mobile:
+        device = "mobile"
+    elif parsed_ua.is_tablet:
+        device = "tablet"
+    elif parsed_ua.is_pc:
+        device = "computer"
+    elif parsed_ua.is_bot:
+        device = "bot"
+    else:
+        device = DEFAULT_VALUE
+
+    os_family = parsed_ua.os.family.lower()
+    if "windows" in os_family:
+        os = "windows"
+    elif "linux" in os_family:
+        os = "linux"
+    elif "mac" in os_family:
+        os = "macos"
+    else:
+        os = DEFAULT_VALUE
+
+    browser = parsed_ua.browser.family.lower()
+    if browser == "other":
+        browser = DEFAULT_VALUE
+
+    return {
+        "device": device,
+        "os": os,
+        "browser": browser
+    }
