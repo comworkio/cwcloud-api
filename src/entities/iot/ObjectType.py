@@ -1,11 +1,12 @@
 from sqlalchemy import Column, Integer, ForeignKey, String
 from sqlalchemy.dialects.postgresql import JSONB
-from fastapi_utils.guid_type import GUID, GUID_SERVER_DEFAULT_POSTGRESQL
+from fastapi_utils.guid_type import GUID_SERVER_DEFAULT_POSTGRESQL
 from database.postgres_db import Base
+from database.types import CachedGUID
 
 class ObjectType(Base):
     __tablename__ = 'object_type'
-    id = Column(GUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
+    id = Column(CachedGUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
     user_id = Column(Integer, ForeignKey("user.id"))
     content = Column(JSONB, nullable=False)
     created_at = Column(String, nullable=False)

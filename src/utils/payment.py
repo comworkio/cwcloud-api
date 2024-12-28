@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from adapters.AdapterConfig import get_adapter
 
+from utils.billing import TTVA
 from utils.file import quiet_remove
 from utils.mail import send_relaunch_email
 from utils.currency import get_payment_currency
@@ -72,7 +73,7 @@ def pay(db, user, invoice, voucher_id = "", auto_pay = False):
     if is_true(user['enabled_features']['without_vat']):
         total_ht = total_ttc
     else:
-        total_ht = round(total_ttc / float(os.getenv('TTVA')), 4)
+        total_ht = round(total_ttc / TTVA, 4)
 
     if is_false(user['enabled_features']['billable']):
         return JSONResponse(content = {

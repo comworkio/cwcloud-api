@@ -2,13 +2,14 @@ from datetime import datetime
 
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.dialects.postgresql import JSONB
-from fastapi_utils.guid_type import GUID, GUID_SERVER_DEFAULT_POSTGRESQL
+from fastapi_utils.guid_type import GUID_SERVER_DEFAULT_POSTGRESQL
 
 from database.postgres_db import Base
+from database.types import CachedGUID
 
 class TriggerEntity(Base):
     __tablename__ = 'faas_trigger'
-    id = Column(GUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
+    id = Column(CachedGUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
     owner_id = Column(Integer, nullable=False)
     content = Column(JSONB, nullable=False)
     kind = Column(String, nullable=False)

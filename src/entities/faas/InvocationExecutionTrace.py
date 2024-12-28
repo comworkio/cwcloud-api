@@ -2,14 +2,15 @@ from datetime import datetime
 
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.dialects.postgresql import JSONB
-from fastapi_utils.guid_type import GUID, GUID_SERVER_DEFAULT_POSTGRESQL
+from fastapi_utils.guid_type import GUID_SERVER_DEFAULT_POSTGRESQL
 
 from database.postgres_db import Base
+from database.types import CachedGUID
 
 class InvocationExecutionTraceEntity(Base):
     __tablename__ = 'faas_execution_trace'
-    id = Column(GUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
-    invocation_id = Column(GUID, nullable=False)
+    id = Column(CachedGUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
+    invocation_id = Column(CachedGUID, nullable=False)
     content = Column(JSONB, nullable=False)
     invoker_id = Column(Integer, nullable=False)
     created_at = Column(String, nullable=False, default=datetime.now)

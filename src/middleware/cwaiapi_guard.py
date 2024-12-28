@@ -1,5 +1,3 @@
-import os
-
 from fastapi import Depends, status
 from sqlalchemy.orm import Session
 
@@ -9,11 +7,12 @@ from exceptions.CwHTTPException import CwHTTPException
 from middleware.auth_guard import get_current_user
 from database.postgres_db import get_db
 
-from utils.common import is_empty, is_false, is_not_empty, is_true
+from utils.ai.default_values import CWAI_ENABLE
+from utils.common import is_false, is_not_empty, is_true
 from utils.flag import is_flag_enabled
 
 def cwaiapi_required(current_user: UserSchema = Depends(get_current_user), db: Session = Depends(get_db)):
-    if is_empty(os.getenv("CWAI_API_URL")):
+    if CWAI_ENABLE:
         raise CwHTTPException(message = {"error": "not implemented", "i18n_code": "cwaiapi_not_enabled"}, status_code = status.HTTP_405_METHOD_NOT_ALLOWED)
 
     is_granted = is_true(current_user.is_admin)

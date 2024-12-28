@@ -14,6 +14,7 @@ from schemas.User import UserSchema
 from schemas.Invoice import InvoiceCustomSchema
 from middleware.auth_guard import admin_required
 
+from utils.billing import TIMBRE_FISCAL, TTVA
 from utils.common import is_false, is_not_empty
 from utils.file import quiet_remove
 from utils.flag import is_flag_disabled, is_flag_enabled
@@ -89,13 +90,12 @@ def create_custom_invoice(current_user: Annotated[UserSchema, Depends(admin_requ
             items_dict.append(itemd)
 
         total_ttc = 0
-        timbre_fiscal = os.getenv("TIMBRE_FISCAL")
         if is_flag_disabled(target_user.enabled_features, 'without_vat'):
             total_ttc = round(total_ht, 4)
-        elif is_not_empty(timbre_fiscal):
-            total_ttc = round((total_ht * float(os.getenv("TTVA"))) + float(timbre_fiscal), 4)
+        elif is_not_empty(TIMBRE_FISCAL):
+            total_ttc = round((total_ht * TTVA) + TIMBRE_FISCAL, 4)
         else:
-            total_ttc = round(total_ht * float(os.getenv("TTVA")), 4)
+            total_ttc = round(total_ht * TTVA, 4)
 
         total_ht = round(total_ht, 4)
         from entities.Invoice import Invoice

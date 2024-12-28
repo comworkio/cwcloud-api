@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Text, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 from fastapi_utils.guid_type import GUID_SERVER_DEFAULT_POSTGRESQL
 from database.postgres_db import Base
@@ -26,6 +26,9 @@ class Monitor(Base):
     updated_at = Column(String, nullable=False)
     status = Column(String, default='failure')
     response_time = Column(String, default='')
+    callbacks = Column(JSONB, default=list)
+    check_tls = Column(Boolean, default=True)
+    level = Column(String, default='DEBUG')
 
     def save(self, db):
         db.add(self)
@@ -57,6 +60,30 @@ class Monitor(Base):
         if not headers:
             return []
         return [{"name": header.name, "value": header.value} for header in headers]
+    
+    @staticmethod
+    def _serialize_callbacks(callbacks):
+        """Convert Callback objects to dictionaries"""
+        if not callbacks:
+            return []
+        return [
+            {
+                "type": callback.type,
+                "endpoint": callback.endpoint,
+                "token": callback.token,
+                "client_id": callback.client_id,
+                "user_data": callback.user_data,
+                "username": callback.username,
+                "password": callback.password,
+                "port": callback.port,
+                "subscription": callback.subscription,
+                "qos": callback.qos,
+                "topic": callback.topic,
+                "certificates_are_required": callback.certificates_are_required,
+                "certificates": callback.certificates.dict() if callback.certificates else None,
+            }
+            for callback in callbacks
+        ]
 
     @staticmethod
     def _prepare_update_data(payload):
@@ -72,6 +99,9 @@ class Monitor(Base):
             'username': payload.username,
             'password': payload.password,
             'headers': Monitor._serialize_headers(payload.headers),
+            'callbacks': Monitor._serialize_callbacks(payload.callbacks),
+            'check_tls': payload.check_tls,
+            'level': payload.level,
             'updated_at': datetime.now().date().strftime('%Y-%m-%d')
         }
 

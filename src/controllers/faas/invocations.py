@@ -10,7 +10,7 @@ from entities.faas.Function import FunctionEntity
 from entities.faas.Invocation import InvocationEntity
 from entities.faas.InvocationExecutionTrace import InvocationExecutionTraceEntity
 
-from utils.common import del_key_if_exists, get_env_int, is_empty, is_false, is_not_empty, is_not_empty_key, is_not_numeric, is_not_uuid, is_true, object_as_dict
+from utils.common import del_key_if_exists, get_env_int, is_empty, is_false, is_not_empty, is_not_empty_key, is_not_numeric, is_not_uuid, is_true
 from utils.encoder import AlchemyEncoder
 from utils.faas.invocations import _in_progress, is_unknown_state
 from utils.faas.functions import is_not_owner

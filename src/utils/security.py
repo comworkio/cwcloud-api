@@ -77,7 +77,7 @@ def is_ref_invoice_valid(ref):
 def is_not_ref_invoice_valid(ref):
     return not is_ref_invoice_valid(ref)
 
-def is_forbidden (var):
+def is_forbidden(var):
     forbidden_chars = ["'" , "\"", "&", ";", "|", "\\", "$"]
     return any(char in var for char in forbidden_chars)
 

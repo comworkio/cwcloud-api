@@ -12,13 +12,13 @@ def get_adapter_type(key, default = _default_adapter):
         loaded_data = yaml.safe_load(stream)
         return loaded_data['adapters'][key] if 'adapters' in loaded_data and key in loaded_data['adapters'] and is_not_empty(loaded_data['adapters'][key]) else default
 
-def get_default_adapter(key):
-    class_path = "{}Adapter".format(_default_adapter.capitalize())
+def get_adapter_by_name(key, name):
+    class_path = "{}Adapter".format(name.capitalize())
     module = importlib.import_module('adapters.{}.{}'.format(key, class_path))
     return getattr(module, class_path)
 
+def get_default_adapter(key):
+    return get_adapter_by_name(key, _default_adapter)
+
 def get_adapter(key, default = _default_adapter):
-    type = get_adapter_type(key, default)
-    class_path = "{}Adapter".format(type.capitalize())
-    module = importlib.import_module('adapters.{}.{}'.format(key, class_path))
-    return getattr(module, class_path)
+    return get_adapter_by_name(key, get_adapter_type(key, default))

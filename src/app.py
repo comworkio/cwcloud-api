@@ -1,5 +1,6 @@
-import uvicorn
 import os
+import uvicorn
+
 from utils.common import get_env_int
 
 if __name__ == "__main__":

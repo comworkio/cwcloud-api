@@ -7,6 +7,7 @@ from datetime import datetime
 from entities.Monitor import Monitor
 from utils.common import get_env_int, is_empty, is_false, is_not_empty, is_not_http_status_code
 from utils.observability.cid import get_current_cid
+from utils.observability.monitor import not_match_tcp_url_format
 from utils.dynamic_name import generate_hashed_name
 
 def get_monitors(current_user, db, family: Optional[str] = None):
@@ -38,8 +39,16 @@ def add_monitor(current_user, payload, db):
                 'i18n_code': 'max_monitors_reached',
                 'cid': get_current_cid()
             }, status_code = 403)
+            
+        if payload.type == 'tcp' and not_match_tcp_url_format(payload.url):
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'Invalid TCP URL format',
+                'i18n_code': 'invalid_tcp_url_format',
+                'cid': get_current_cid()
+            }, status_code = 400)
         
-        if is_not_http_status_code(payload.expected_http_code):
+        if payload.type == 'http' and is_not_http_status_code(payload.expected_http_code):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid HTTP status code',
@@ -80,8 +89,16 @@ def update_monitor(current_user, monitor_id, payload, db):
             'i18n_code': 'monitor_not_found',
             'cid': get_current_cid()
         }, status_code = 404)
+        
+    if payload.type == 'tcp' and not_match_tcp_url_format(payload.url):
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': 'Invalid TCP URL format',
+                'i18n_code': 'invalid_tcp_url_format',
+                'cid': get_current_cid()
+            }, status_code = 400)
     
-    if is_not_http_status_code(payload.expected_http_code):
+    if payload.type == 'http' and is_not_http_status_code(payload.expected_http_code):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid HTTP status code',

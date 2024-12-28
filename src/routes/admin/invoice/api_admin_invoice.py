@@ -29,7 +29,7 @@ from utils.invoice import generate_invoice_pdf
 from utils.consumption import getUserConsumptionsByDate
 from utils.date import parse_date
 from utils.payment import get_min_amount
-from utils.billing import download_billing_file
+from utils.billing import TIMBRE_FISCAL, TTVA, download_billing_file
 from utils.observability.cid import get_current_cid
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
@@ -110,13 +110,12 @@ def generate_invoice(current_user: Annotated[UserSchema, Depends(admin_required)
         total_ht = total_ht + add_subscription(is_flag_enabled(target_user.enabled_features, 'emailapi'), "API_PRICE_EMAIL", "Email API", subscriptions) + add_subscription(is_flag_enabled(target_user.enabled_features, 'cwaiapi'), "API_PRICE_CWAI", "Cwai API", subscriptions)
 
         total_ttc = 0
-        timbre_fiscal = os.getenv("TIMBRE_FISCAL")
         if is_flag_enabled(target_user.enabled_features, 'without_vat'):
             total_ttc = round(total_ht, 4)
-        elif is_not_empty(timbre_fiscal):
-            total_ttc = round((total_ht * float(os.getenv("TTVA"))) + float(timbre_fiscal), 4)
+        elif is_not_empty(TIMBRE_FISCAL):
+            total_ttc = round((total_ht * TTVA) + TIMBRE_FISCAL, 4)
         else:
-            total_ttc = round(total_ht * float(os.getenv("TTVA")), 4)
+            total_ttc = round(total_ht * TTVA, 4)
 
         total_ht = round(total_ht, 4)
 
@@ -214,7 +213,7 @@ def invoice_edition(current_user: Annotated[UserSchema, Depends(admin_required)]
         details = invoice.details
         consumptions = []
         subscriptions = []
-        total_ht = invoice.total_price if is_flag_disabled(user.enabled_features, 'without_vat') else invoice.total_price - ((1 - float(os.getenv("TTVA"))) * invoice.total_price)
+        total_ht = invoice.total_price if is_flag_disabled(user.enabled_features, 'without_vat') else invoice.total_price - ((1 - TTVA) * invoice.total_price)
         total_ttc = invoice.total_price
         if is_not_empty(details) and "consumptions" in details and is_not_empty(details["consumptions"]):
             consumptions = details["consumptions"]

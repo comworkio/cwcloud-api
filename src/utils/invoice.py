@@ -9,6 +9,7 @@ from pathlib import Path
 from datetime import datetime
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from utils.billing import TIMBRE_FISCAL
 from utils.bucket import upload_to_invoices_bucket
 from utils.common import is_empty, is_not_empty, is_true, AUTOESCAPE_EXTENSIONS
 
@@ -51,12 +52,11 @@ def generate_invoice_pdf(invoice_ref, client, consumptions, subscriptions, from_
         registration_number_label = "N° SIRET"
 
     vat_message = "{}%".format((Decimal(ttva)-1)*100)
-    timbre_fiscal = os.getenv('TIMBRE_FISCAL')
     timbre_fiscal_message = None
     if is_true(without_tva):
         vat_message = "Pas de TVA"
-    elif is_not_empty(timbre_fiscal):
-        timbre_fiscal_message = "{} {}".format(timbre_fiscal, price_unit)
+    elif is_not_empty(TIMBRE_FISCAL):
+        timbre_fiscal_message = "{} {}".format(TIMBRE_FISCAL, price_unit)
 
     pdf_content = template.render(
         invoice_ref = invoice_ref,
@@ -113,7 +113,6 @@ def generate_receipt_pdf(invoice_ref, invoice_date, client, total_ht, total_ttc,
 
     vat_message = "{}%".format((Decimal(ttva)-1)*100)
 
-    timbre_fiscal = os.getenv('TIMBRE_FISCAL')
     timbre_fiscal_message = None
 
     price_unit = os.getenv('PRICE_UNIT')
@@ -122,7 +121,7 @@ def generate_receipt_pdf(invoice_ref, invoice_date, client, total_ht, total_ttc,
 
     if is_true(client['enabled_features']['without_vat']):
         vat_message = "Pas de TVA"
-    elif is_not_empty(timbre_fiscal):
+    elif is_not_empty(TIMBRE_FISCAL):
         timbre_fiscal_message = "{} {}".format(timbre_fiscal_message, price_unit)
 
     invoice_company_signature = os.getenv('INVOICE_COMPANY_SIGNATURE')

@@ -1,11 +1,12 @@
 from sqlalchemy import Column, ForeignKey, String, Float
 from sqlalchemy.dialects.postgresql import JSONB
-from fastapi_utils.guid_type import GUID, GUID_SERVER_DEFAULT_POSTGRESQL
+from fastapi_utils.guid_type import GUID_SERVER_DEFAULT_POSTGRESQL
 from database.postgres_db import Base
+from database.types import CachedGUID
 
 class Data(Base):
     __tablename__ = 'data'
-    id = Column(GUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
+    id = Column(CachedGUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
     device_id = Column(String, ForeignKey("device.id"))
     normalized_content = Column(JSONB, nullable=False)
     created_at = Column(String, nullable=False)
@@ -16,7 +17,7 @@ class Data(Base):
 
 class NumericData(Base):
     __tablename__ = 'numeric_data'
-    id = Column(GUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
+    id = Column(CachedGUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
     data_id = Column(String, ForeignKey("data.id"))
     device_id = Column(String, ForeignKey("device.id"))
     key = Column(String, nullable=False)
@@ -29,7 +30,7 @@ class NumericData(Base):
 
 class StringData(Base):
     __tablename__ = 'string_data'
-    id = Column(GUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
+    id = Column(CachedGUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
     data_id = Column(String, ForeignKey("data.id"))
     device_id = Column(String, ForeignKey("device.id"))
     key = Column(String, nullable=False)

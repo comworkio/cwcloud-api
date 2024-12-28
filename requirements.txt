@@ -70,3 +70,9 @@ paho-mqtt==1.6.1
 Pillow
 ua-parser
 user-agents
+torch
+transformers
+textblob
+nltk
+numpy
+scipy

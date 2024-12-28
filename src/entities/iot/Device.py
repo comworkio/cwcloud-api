@@ -1,11 +1,12 @@
 from sqlalchemy import Column, ForeignKey, String, Boolean
-from fastapi_utils.guid_type import GUID, GUID_SERVER_DEFAULT_POSTGRESQL
+from fastapi_utils.guid_type import GUID_SERVER_DEFAULT_POSTGRESQL
 from database.postgres_db import Base
+from database.types import CachedGUID
 
 class Device(Base):
     __tablename__ = 'device'
-    id = Column(GUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
-    typeobject_id = Column(GUID, ForeignKey("object_type.id"))
+    id = Column(CachedGUID, primary_key=True, server_default=GUID_SERVER_DEFAULT_POSTGRESQL)
+    typeobject_id = Column(CachedGUID, ForeignKey("object_type.id"))
     username = Column(String, ForeignKey("user.email"))
     active = Column(Boolean, default = False)
 

@@ -5,7 +5,7 @@ from pulumi import automation as auto
 from fastapi import BackgroundTasks
 from fastapi.responses import JSONResponse
 
-from utils.common import is_boolean, is_empty, is_false, is_not_empty, is_not_empty_key, is_numeric, is_true
+from utils.common import is_boolean, is_empty, is_false, is_not_empty, is_numeric, is_true
 from utils.flag import is_flag_disabled
 from utils.dns_zones import get_dns_zones
 from utils.domain import is_not_subdomain_valid

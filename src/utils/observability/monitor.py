@@ -1,32 +1,101 @@
-import re
 import os
-import requests
+import re
 import asyncio
+import socket
 import threading
+import time
+import requests
 
 from datetime import datetime
 from time import sleep
+
 from requests.auth import HTTPBasicAuth
 
-from utils.common import is_empty_key, get_or_else, is_not_empty, is_not_empty_key, del_key_if_exists, sanitize_header_name, get_env_int
-from utils.logger import log_msg
+from utils.common import del_key_if_exists, get_env_int, get_or_else, is_empty_key, is_not_empty, is_not_empty_key, is_true, sanitize_header_name
+from utils.faas.iot import send_payload_in_realtime
+from utils.logger import LOG_LEVEL, get_int_value_level, log_msg
+from utils.observability.enums import Method
 from utils.observability.gauge import create_gauge, set_gauge
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
-from utils.observability.enums import Method
 
-URL = os.environ['DOMAIN']
-VERSION = os.environ['APP_VERSION']
-ENV = os.environ['APP_ENV']
-MONITOR_SRC = os.getenv('MONITOR_SRC', 'cwcloud-api')
-MONITOR_WAIT_TIME = get_env_int('MONITOR_WAIT_TIME', 300)
+URL = os.environ["DOMAIN"]
+VERSION = os.environ["APP_VERSION"]
+ENV = os.environ["APP_ENV"]
+MONITOR_SRC = os.getenv("MONITOR_SRC", "cwcloud-api")
+MONITOR_WAIT_TIME = get_env_int("MONITOR_WAIT_TIME", 300)
+timeout_value = get_env_int("TIMEOUT", 60)
+_supported_monitor_types = ["http", "tcp"]
 
 def check_status_code_pattern(actual_code, pattern):
     regexp = "^{}$".format(pattern.replace('*', '[0-9]+'))
     return bool(re.match(regexp, str(actual_code)))
 
-def check_http_monitor(monitor, gauges):
+def match_tcp_url_format(url):
+    return re.match(r"^[a-zA-Z0-9.-]+:\d+$", url)
+
+def not_match_tcp_url_format(url):
+    return not match_tcp_url_format(url)
+
+async def async_send_payload_in_realtime(callback, safe_payload):
+    await send_payload_in_realtime(callback, safe_payload)
+
+def get_level_monitor(monitor):
+    level = get_or_else(monitor, 'level', 'DEBUG')
+    if level not in ['INFO', 'DEBUG']:
+        level = 'DEBUG'
+
+    return level
+
+def process_callbacks(monitor, payload):
+    if is_empty_key(monitor, 'callbacks'):
+        return
+
+    if get_int_value_level(get_level_monitor(monitor)) <= get_int_value_level(LOG_LEVEL) and is_true(payload['status']):
+        return
+
+    try:
+        for callback in monitor["callbacks"]:
+            if is_not_empty_key(callback, "endpoint"):
+                if callback["type"] == "http":
+                    callback_headers = ({
+                        "Authorization": callback["token"],
+                        "Content-Type": "application/json",
+                    } if is_not_empty_key(callback, "token") else {
+                        "Content-Type": "application/json"
+                    })
+
+                    try:
+                        requests.post(
+                            callback["endpoint"],
+                            json=payload,
+                            headers=callback_headers,
+                            timeout=timeout_value,
+                        )
+
+                        log_msg("DEBUG", f"[monitor][process_callbacks] monitor result sent to: {callback['endpoint']}")
+                    except Exception as e:
+                        log_msg("ERROR", f"Failed to send HTTP callback: e.type = {type(e)}, e.msg = {str(e)}")
+
+                elif callback["type"] in ["websocket", "mqtt"]:
+                    try:
+                        asyncio.run(async_send_payload_in_realtime(callback, payload))
+                    except Exception as e:
+                        log_msg("ERROR", f"Failed to send {callback['type']} callback: e.type = {type(e)}, e.msg = {str(e)}")
+    except Exception as e:
+        log_msg("ERROR", f"Error processing callbacks: e.type = {type(e)}, e.msg = {str(e)}")
+
+def init_vars_monitor(monitor):
     vdate = datetime.now()
+    timeout = get_or_else(monitor, 'timeout', 30)
+    pmonitor = monitor.copy()
+
+    if monitor['type'] == 'tcp':
+        del_key_if_exists(pmonitor, 'expected_http_code')
+
+    del_key_if_exists(pmonitor, 'username')
+    del_key_if_exists(pmonitor, 'password')
+    level = get_level_monitor(monitor)
 
     labels = {
         'name': monitor['name'],
@@ -36,36 +105,74 @@ def check_http_monitor(monitor, gauges):
         'env': ENV,
         'version': VERSION
     }
+    
+    return vdate, labels, pmonitor, level, timeout
 
-    if monitor['type'] != 'http':
-        log_msg("DEBUG", {
-            "status": "ok",
-            "type": "monitor",
-            "time": vdate.isoformat(),
-            "message": "Not an http monitor",
-            "monitor": monitor 
-        })
-        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
-        return 'failure', 0
+def check_tcp_monitor(monitor, gauges):
+    vdate, labels, pmonitor, level, timeout = init_vars_monitor(monitor)
+    callback_payload = {}
+    duration = 0
 
-    if is_empty_key(monitor, 'url'):
-        log_msg("ERROR", {
+    if not_match_tcp_url_format(monitor['url']):
+        callback_payload = {
             "status": "ko",
             "type": "monitor",
             "time": vdate.isoformat(),
-            "message": "Missing mandatory url",
-            "monitor": monitor 
-        })
-        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
-        return
+            "message": "Incorrect url (expected host:port): actual = {}".format(monitor['url']),
+            "monitor": pmonitor
+        }
 
+        log_msg("ERROR", callback_payload)
+        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
+        set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
+        return duration, callback_payload
+
+    host, port = monitor['url'].split(":")
+    port = int(port)
+    start_time = time.time()
+
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            duration = time.time() - start_time
+            callback_payload = {
+                "status": "ok",
+                "type": "monitor",
+                "time": vdate.isoformat(),
+                "duration": duration,
+                "message": "Monitor is healthy",
+                "monitor": pmonitor
+            }
+
+            log_msg(level, callback_payload)
+            set_gauge(gauges['result'], 1, {**labels, 'kind': 'result', 'user': monitor['user_id']})
+            set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
+            return duration, callback_payload
+            
+    except (socket.timeout, ConnectionRefusedError, socket.error) as e:
+        duration = time.time() - start_time
+        callback_payload = {
+            "status": "ko",
+            "type": "monitor",
+            "time": vdate.isoformat(),
+            "message": "Unable to open connection, e.type = {}, e.msg = {}".format(type(e), e),
+            "monitor": pmonitor
+        }
+
+        log_msg("ERROR", callback_payload)
+        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
+        set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
+        return duration, callback_payload
+
+def check_http_monitor(monitor, gauges):
+    vdate, labels, pmonitor, level, timeout = init_vars_monitor(monitor)
+    callback_payload = {}
     method = get_or_else(monitor, 'method', 'GET')
-    timeout = get_or_else(monitor, 'timeout', 30)
     expected_http_code = get_or_else(monitor, 'expected_http_code', '20*')
     expected_contain = get_or_else(monitor, 'expected_contain', None)
-    duration = None
+    duration = 0
     auth = None
     headers = {}
+    check_tls = is_true(get_or_else(monitor, 'check_tls', True))
 
     if is_not_empty_key(monitor, 'username') and is_not_empty_key(monitor, 'password'): 
         auth = HTTPBasicAuth(monitor['username'], monitor['password'])
@@ -75,87 +182,131 @@ def check_http_monitor(monitor, gauges):
             if is_not_empty_key(header, 'name') and is_not_empty_key(header, 'value'):
                 headers[sanitize_header_name(header['name'])] = header['value']
 
-    pmonitor = monitor.copy()
-    del_key_if_exists(pmonitor, 'username')
-    del_key_if_exists(pmonitor, 'password')
-
     try:
         if method == "GET":
-            response = requests.get(monitor['url'], auth=auth, headers=headers, timeout=timeout)
+            response = requests.get(monitor['url'], auth=auth, headers=headers, timeout=timeout, verify=check_tls)
             duration = response.elapsed.total_seconds() * 1000
-            set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
         elif method == "POST":
-            response = requests.post(monitor['url'], auth=auth, headers=headers, data=monitor.get('body'), timeout=timeout)
+            response = requests.post(monitor['url'], auth=auth, headers=headers, data=monitor.get('body'), timeout=timeout, verify=check_tls)
             duration = response.elapsed.total_seconds() * 1000
-            set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
         elif method == "PUT":
-            response = requests.put(monitor['url'], auth=auth, headers=headers, data=monitor.get('body'), timeout=timeout)
+            response = requests.put(monitor['url'], auth=auth, headers=headers, data=monitor.get('body'), timeout=timeout, verify=check_tls)
             duration = response.elapsed.total_seconds() * 1000
-            set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
         else:
-            log_msg("ERROR", {
+            callback_payload = {
                 "status": "ko",
                 "type": "monitor",
                 "time": vdate.isoformat(),
-                "message": "Not supported http method: actual = {}".format(method),
-                "monitor": pmonitor
-            })
+                "message": f"Not supported http method: actual = {method}",
+                "monitor": pmonitor,
+            }
+
+            log_msg("ERROR", callback_payload)
             set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
-            return 'failure', 0
+            set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
+            return duration, callback_payload
 
         if not check_status_code_pattern(response.status_code, expected_http_code):
-            log_msg("ERROR", {
+            callback_payload = {
                 "status": "ko",
                 "type": "monitor",
                 "time": vdate.isoformat(),
                 "duration": duration,
-                "message": "Not expected status code: expected pattern = {}, actual = {}".format(expected_http_code, response.status_code),
-                "monitor": pmonitor
-            })
+                "message": f"Not expected status code: expected pattern = {expected_http_code}, actual = {response.status_code}",
+                "monitor": pmonitor,
+            }
+
+            log_msg("ERROR", callback_payload)
             set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
-            return 'failure', duration
+            set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
+            return duration, callback_payload
 
         if is_not_empty(expected_contain) and expected_contain not in response.text:
-            log_msg("ERROR", {
+            callback_payload = {
                 "status": "ko",
                 "type": "monitor",
                 "time": vdate.isoformat(),
                 "duration": duration,
-                "message": "Response not valid: expected = {}, actual = {}".format(expected_contain, response.text),
-                "monitor": pmonitor
-            })
+                "message": f"Response not valid: expected = {expected_contain}, actual = {response.text}",
+                "monitor": pmonitor,
+            }
+
+            log_msg("ERROR", callback_payload)
             set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
-            return 'failure', duration
+            set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
+            return duration, callback_payload
 
         set_gauge(gauges['result'], 1, {**labels, 'kind': 'result', 'user': monitor['user_id']})
-        log_msg("DEBUG", {
+        set_gauge(gauges['duration'], duration, {**labels, 'kind': 'duration', 'user': monitor['user_id']})
+        callback_payload = {
             "status": "ok",
             "type": "monitor",
             "time": vdate.isoformat(),
             "duration": duration,
             "message": "Monitor is healthy",
-            "monitor": pmonitor
-        })
-        return 'success', duration
+            "monitor": pmonitor,
+        }
+
+        log_msg(level, callback_payload)
+        return duration, callback_payload
 
     except Exception as e:
         set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
         details = {
             "type": type(e).__name__,
             "file": __file__,
-            "lno": e.__traceback__.tb_lineno
+            "lno": e.__traceback__.tb_lineno,
         }
 
-        log_msg("ERROR", {
+        callback_payload = {
             "status": "ko",
             "type": "monitor",
             "time": vdate.isoformat(),
             "message": "Unexpected error",
-            "error": "{}".format(e),
+            "error": f"{e}",
             "details": details,
-            "monitor": pmonitor
-        })
-        return 'failure', 0
+            "monitor": pmonitor,
+        }
+        log_msg("ERROR", callback_payload)
+        return 0, callback_payload
+
+def check_monitor(monitor, gauges):
+    callback_payload = {}
+    vdate, labels, pmonitor, _, _ = init_vars_monitor(monitor)
+    response_time = 0
+
+    if monitor['type'] not in _supported_monitor_types:
+        callback_payload = {
+            "status": "ko",
+            "type": "monitor",
+            "time": vdate.isoformat(),
+            "message": f"Not supported monitor type: actual = {monitor['type']}",
+            "monitor": pmonitor,
+        }
+
+        log_msg("ERROR", callback_payload)
+        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
+        return response_time, callback_payload
+    
+    if is_empty_key(monitor, 'url'):
+        callback_payload = {
+            "status": "ko",
+            "type": "monitor",
+            "time": vdate.isoformat(),
+            "message": "Missing mandatory url",
+            "monitor": pmonitor,
+        }
+
+        log_msg("ERROR", callback_payload)
+        set_gauge(gauges['result'], 0, {**labels, 'kind': 'result', 'user': monitor['user_id']})
+        return response_time, callback_payload
+    
+    if monitor['type'] == 'http':
+        response_time, callback_payload = check_http_monitor(monitor, gauges)
+    elif monitor['type'] == 'tcp':
+        response_time, callback_payload = check_tcp_monitor(monitor, gauges)
+
+    return response_time, callback_payload
 
 gauges = {}
 
@@ -175,30 +326,37 @@ def check_monitors():
                     'duration': create_gauge(f"monitor_{monitor.name}_duration", f"monitor {monitor.name} duration", labels)
                 }
 
-        for monitor in loaded_data:
             monitor_dict = {
-                'name': monitor.name,
-                'family': monitor.family,
-                'type': monitor.type,
-                'url': monitor.url,
-                'method': monitor.method,
-                'timeout': monitor.timeout,
-                'expected_http_code': monitor.expected_http_code,
-                'body': monitor.body,
-                'expected_contain': monitor.expected_contain,
-                'username': monitor.username,
-                'password': monitor.password,
-                'user_id': monitor.user_id,
-                'headers': [{'name': h['name'], 'value': h['value']} for h in monitor.headers] if monitor.headers else []
+                "name": monitor.name,
+                "family": monitor.family,
+                "type": monitor.type,
+                "url": monitor.url,
+                "method": monitor.method,
+                "timeout": monitor.timeout,
+                "expected_http_code": monitor.expected_http_code,
+                "body": monitor.body,
+                "expected_contain": monitor.expected_contain,
+                "username": monitor.username,
+                "password": monitor.password,
+                "user_id": monitor.user_id,
+                "callbacks": monitor.callbacks if monitor.callbacks else [],
+                "check_tls": monitor.check_tls,
+                "level": monitor.level,
+                "headers": [{"name": h["name"], "value": h["value"]} for h in monitor.headers] if monitor.headers else [],
             }
-            status, response_time = check_http_monitor(monitor_dict, gauges[monitor.name])
-            Monitor.updateMonitorStatus(monitor.id, status, f'{response_time} ms', db)
+
+            try:
+                response_time, callback_payload = check_monitor(monitor_dict, gauges[monitor.name])
+                Monitor.updateMonitorStatus(monitor.id, 'success' if is_true(callback_payload['status']) else 'failure', f"{response_time} ms", db)
+                process_callbacks(monitor_dict, callback_payload)
+            except Exception as me:
+                log_msg("ERROR", f"Error processing monitor {monitor.name}: e.type = {type(me)}, e.msg = {str(me)}")
 
     except Exception as e:
         details = {
             "type": type(e).__name__,
             "file": __file__,
-            "lno": e.__traceback__.tb_lineno
+            "lno": e.__traceback__.tb_lineno,
         }
 
         log_msg("ERROR", {
@@ -206,20 +364,26 @@ def check_monitors():
             "i18n_code": "monitor_check_failed",
             "type": "monitor",
             "time": datetime.now().isoformat(),
-            "message": f"Error in monitor loop: {str(e)}",
-            "details": details
+            "message": f"Error in monitor loop: e.type = {type(e)}, e.msg = {str(e)}",
+            "details": details,
         })
     finally:
-        db.close()
+        if "db" in locals():
+            db.close()
 
 def monitors():
     def loop_monitors():
         while True:
-            with get_otel_tracer().start_as_current_span(span_format("monitors", Method.ASYNCWORKER)):
-                check_monitors()
+            try:
+                with get_otel_tracer().start_as_current_span(span_format("monitors", Method.ASYNCWORKER)):
+                    check_monitors()
+            except Exception as e:
+                log_msg("ERROR", f"Error in monitor loop: e.type = {type(e)}, e.msg = {str(e)}")
+            finally:
                 sleep(MONITOR_WAIT_TIME)
 
     def start_monitors():
+        sleep(MONITOR_WAIT_TIME)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(loop_monitors())

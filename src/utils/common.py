@@ -1,8 +1,8 @@
-import base64
-import re
 import os
+import re
+import base64
+
 from passlib.context import CryptContext
-import sqlalchemy
 
 AUTOESCAPE_EXTENSIONS = ['html', 'xml']
 
@@ -19,14 +19,14 @@ def verify_password(plain_password, hashed_password):
 def generate_hash_password(password):
     return pwd_context.hash(password)
 
-def is_boolean (var):
+def is_boolean(var):
     if isinstance(var, bool):
         return True
 
     bool_chars = ["true", "false", "ok", "ko", "yes", "no"]
     return var is not None and any(c == "{}".format(var).lower() for c in bool_chars)
 
-def is_not_empty (var):
+def is_not_empty(var):
     if isinstance(var, bool):
         return var
     elif isinstance(var, int):
@@ -36,16 +36,16 @@ def is_not_empty (var):
     empty_chars = ["", "null", "nil", "false", "none"]
     return var is not None and not any(c == "{}".format(var).lower() for c in empty_chars)
 
-def is_true (var):
+def is_true(var):
     if isinstance(var, bool):
         return var
     false_char = ["false", "ko", "no", "off"]
     return is_not_empty(var) and not any(c == "{}".format(var).lower() for c in false_char)
 
-def is_false (var):
+def is_false(var):
     return not is_true(var)
 
-def is_empty (var):
+def is_empty(var):
     return not is_not_empty(var)
 
 def is_empty_key(vdict, key):
@@ -58,15 +58,15 @@ def del_key_if_exists(vdict, key):
     if is_not_empty_key(vdict, key):
         del vdict[key]
 
-def is_numeric (var):
+def is_numeric(var):
     if isinstance(var, int):
         return True
     return is_not_empty(var) and str(var).isnumeric()
 
-def is_not_numeric (var):
+def is_not_numeric(var):
     return not is_numeric(var)
 
-def is_disabled (var):
+def is_disabled(var):
     return is_empty(var) or "changeit" in var
 
 def is_enabled(var):
@@ -81,19 +81,8 @@ def safe_compare_entry(dictionary, key, expected_value):
 def safe_contain_entry(dictionary, key, expected_contained_value):
     return exists_entry(dictionary, key) and is_not_empty(expected_contained_value) and expected_contained_value in dictionary[key]
 
-def safe_get_entry_with_default(dictionary, key, default_value):
+def safe_get_entry(dictionary, key, default_value = None):
     return default_value if not exists_entry(dictionary, key) else dictionary[key]
-
-def safe_get_entry(dictionary, key):
-    return safe_get_entry_with_default(dictionary = dictionary, key = key, default_value = None)
-
-def name_from_email(email):
-    first_part = email.split("@")[0]
-    infos = first_part.split(".")
-    return {
-        "first_name": infos[0] if len(infos) > 0 and is_not_empty(infos[0]) else "X.",
-        "last_name": infos[1] if len(infos) > 1 and is_not_empty(infos[1]) else "X."
-    }
 
 def is_response_ok(code):
     return code >= 200 and code < 400
@@ -108,24 +97,12 @@ def unbase64(encoded_data):
     decoded_content = base64.b64decode(encoded_data)
     return decoded_content.decode('utf-8')
 
-def is_uuid (var):
+def is_uuid(var):
     pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89a-bA-B][0-9a-f]{3}-[0-9a-f]{12}$'
     return bool(re.match(pattern, var))
 
-def is_not_uuid (var):
+def is_not_uuid(var):
     return not is_uuid(var)
-
-def to_snake_case(name):
-   s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-   return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
-
-def convert_dict_keys_to_snake_case(data):
-   if isinstance(data, dict):
-       return {to_snake_case(key): convert_dict_keys_to_snake_case(value) for key, value in data.items()}
-   elif isinstance(data, list):
-       return [convert_dict_keys_to_snake_case(item) for item in data]
-   else:
-       return data
    
 def to_camel_case(name):
    return ''.join(word.title() if index_word > 0 else word for index_word, word in enumerate(name.split('_')))
@@ -144,13 +121,13 @@ def get_admin_status(current_user):
     else:
         return current_user.is_admin
 
-def object_as_dict(obj):
-    return {c.key: getattr(obj, c.key)
-            for c in sqlalchemy.inspect(obj).mapper.column_attrs}
-
 def get_env_int(var_name, default = None):
     value = os.getenv(var_name)
     return int(value) if is_numeric(value) else default
+
+def get_env_float(var_name, default = None):
+    value = os.getenv(var_name)
+    return float(value) if is_numeric(value) else default 
 
 _allowed_chars_metric_pattern = re.compile(r'[^a-zA-Z0-9]')
 def sanitize_metric_name(name: str):

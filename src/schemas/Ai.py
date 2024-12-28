@@ -2,7 +2,6 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-
 class PromptSettingsSchema(BaseModel):
     max_length: Optional[int]
     num_return_sequences: Optional[int]

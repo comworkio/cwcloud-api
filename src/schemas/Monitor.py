@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from enum import Enum
 
@@ -9,24 +9,48 @@ class HttpMethod(str, Enum):
 
 class MonitorType(str, Enum):
     HTTP = "http"
+    TCP = "tcp"
 
 class Header(BaseModel):
     name: str
     value: str
+    
+class MQTTCertificates(BaseModel):
+    iot_hub_certificate: Optional[str]
+    device_certificate: Optional[str]
+    device_key_certificate: Optional[str]
+
+class CallbackContent(BaseModel):
+    type: str = Field(examples=["http", "websocket", "mqtt"])
+    endpoint: str
+    token: Optional[str]
+    client_id: Optional[str]
+    user_data: Optional[str]
+    username: Optional[str]
+    password: Optional[str]
+    port: Optional[str]
+    subscription: Optional[str]
+    qos: Optional[str]
+    topic: Optional[str]
+    certificates_are_required: bool = Field(default=False)
+    certificates: Optional[MQTTCertificates]
 
 class BaseMonitorSchema(BaseModel):
-    type: MonitorType = Field(..., description="Type of monitor")
+    type: MonitorType = Field(..., description="Type of monitor (http or tcp)")
     name: str
     family: Optional[str] = None
-    url: HttpUrl
-    method: HttpMethod = Field(default=HttpMethod.GET, description="HTTP method")
-    expected_http_code: str = Field(default='20*')
+    url: str = Field(..., description="URL to monitor")
+    method: Optional[HttpMethod] = Field(default=HttpMethod.GET, description="HTTP method")
+    expected_http_code: Optional[str] = Field(default='20*')
     body: Optional[str] = Field(None, description="Request body for POST/PUT requests")
     expected_contain: Optional[str] = Field(None, description="Expected content in the HTTP response body")
     timeout: int = Field(default=30, gt=0, le=300)
     username: Optional[str] = None
     password: Optional[str] = None
     headers: List[Header] = Field(default_factory=list, description="Optional headers for the HTTP request")
+    callbacks: Optional[List[CallbackContent]] = Field(None, description="List of callbacks to be triggered on monitor failure")
+    check_tls: Optional[bool] = Field(default=True, description="Check TLS certificate")
+    level: Optional[str] = Field(default="DEBUG", description="Log Level (INFO or DEBUG)")
 
 class MonitorSchema(BaseMonitorSchema):
     pass
