@@ -51,37 +51,32 @@ def process_callbacks(monitor, payload):
     if is_empty_key(monitor, 'callbacks'):
         return
 
-    if get_int_value_level(get_level_monitor(monitor)) <= get_int_value_level(LOG_LEVEL) and is_true(payload['status']):
+    if get_int_value_level(get_level_monitor(monitor)) < get_int_value_level(LOG_LEVEL) and is_true(payload['status']):
         return
 
     try:
         for callback in monitor["callbacks"]:
-            if is_not_empty_key(callback, "endpoint"):
-                if callback["type"] == "http":
-                    callback_headers = ({
-                        "Authorization": callback["token"],
-                        "Content-Type": "application/json",
-                    } if is_not_empty_key(callback, "token") else {
-                        "Content-Type": "application/json"
-                    })
+            if is_empty_key(callback, "endpoint"):
+                continue
 
-                    try:
-                        requests.post(
-                            callback["endpoint"],
-                            json=payload,
-                            headers=callback_headers,
-                            timeout=timeout_value,
-                        )
+            if callback["type"] == "http":
+                callback_headers = ({
+                    "Authorization": callback["token"],
+                    "Content-Type": "application/json",
+                } if is_not_empty_key(callback, "token") else {
+                    "Content-Type": "application/json"
+                })
 
-                        log_msg("DEBUG", f"[monitor][process_callbacks] monitor result sent to: {callback['endpoint']}")
-                    except Exception as e:
-                        log_msg("ERROR", f"Failed to send HTTP callback: e.type = {type(e)}, e.msg = {str(e)}")
-
-                elif callback["type"] in ["websocket", "mqtt"]:
-                    try:
-                        asyncio.run(async_send_payload_in_realtime(callback, payload))
-                    except Exception as e:
-                        log_msg("ERROR", f"Failed to send {callback['type']} callback: e.type = {type(e)}, e.msg = {str(e)}")
+                try:
+                    requests.post(callback["endpoint"], json=payload, headers=callback_headers, timeout=timeout_value)
+                    log_msg("DEBUG", f"[monitor][process_callbacks] monitor result sent to: {callback['endpoint']}")
+                except Exception as e:
+                    log_msg("ERROR", f"Failed to send HTTP callback: e.type = {type(e)}, e.msg = {str(e)}")
+            elif callback["type"] in ["websocket", "mqtt"]:
+                try:
+                    asyncio.run(async_send_payload_in_realtime(callback, payload))
+                except Exception as e:
+                    log_msg("ERROR", f"Failed to send {callback['type']} callback: e.type = {type(e)}, e.msg = {str(e)}")
     except Exception as e:
         log_msg("ERROR", f"Error processing callbacks: e.type = {type(e)}, e.msg = {str(e)}")
 
