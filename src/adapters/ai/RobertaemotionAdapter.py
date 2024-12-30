@@ -6,11 +6,12 @@ from scipy.special import softmax
 
 from adapters.ai.ModelAdapter import ModelAdapter
 from schemas.Ai import PromptSchema
+from utils.ai.default_values import CWAI_LOW_CPU_MEM, CWAI_TOKENIZER_USE_FAST
 from utils.logger import log_msg
 
 _model_name = "cardiffnlp/twitter-roberta-base-emotion"
-_roberta_tokenizer = AutoTokenizer.from_pretrained(_model_name)
-_roberta_model = AutoModelForSequenceClassification.from_pretrained(_model_name)
+_roberta_tokenizer = AutoTokenizer.from_pretrained(_model_name, use_fast = CWAI_TOKENIZER_USE_FAST)
+_roberta_model = AutoModelForSequenceClassification.from_pretrained(_model_name, low_cpu_mem_usage = CWAI_LOW_CPU_MEM)
 _roberta_model.save_pretrained(_model_name)
 _roberta_tokenizer.save_pretrained(_model_name)
 

@@ -15,6 +15,8 @@ _default_models = [
 ]
 
 CWAI_ENABLE = is_true(os.getenv("CWAI_ENABLE", "false"))
+CWAI_LOW_CPU_MEM = is_true(os.getenv("CWAI_LOW_CPU_MEM", "true"))
+CWAI_TOKENIZER_USE_FAST = is_true(os.getenv("CWAI_TOKENIZER_USE_FAST", "true"))
 DEFAULT_MAX_LENGTH = get_env_int("DEFAULT_MAX_LENGTH", 50)
 DEFAULT_NUM_RETURN_SEQUENCES =  get_env_int("DEFAULT_NUM_RETURN_SEQUENCES", 1) 
 DEFAULT_NO_REPEAT_NGRAM_SIZE = get_env_int("DEFAULT_NO_REPEAT_NGRAM_SIZE", 2)

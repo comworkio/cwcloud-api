@@ -2,12 +2,13 @@ from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 from adapters.ai.ModelAdapter import ModelAdapter
 from schemas.Ai import PromptSchema
+from utils.ai.default_values import CWAI_LOW_CPU_MEM, CWAI_TOKENIZER_USE_FAST
 from utils.logger import log_msg
 from utils.ai.transformers_utils import get_response
 
 _gpt2_model_name = 'gpt2'
-_gpt2_tokenizer = GPT2Tokenizer.from_pretrained(_gpt2_model_name)
-_gpt2_model = GPT2LMHeadModel.from_pretrained(_gpt2_model_name)
+_gpt2_tokenizer = GPT2Tokenizer.from_pretrained(_gpt2_model_name, use_fast = CWAI_TOKENIZER_USE_FAST)
+_gpt2_model = GPT2LMHeadModel.from_pretrained(_gpt2_model_name, low_cpu_mem_usage = CWAI_LOW_CPU_MEM)
 
 class Gpt2Adapter(ModelAdapter):
     def load_model(self):

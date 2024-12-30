@@ -4,11 +4,12 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from adapters.ai.ModelAdapter import ModelAdapter
 from schemas.Ai import PromptSchema
+from utils.ai.default_values import CWAI_LOW_CPU_MEM, CWAI_TOKENIZER_USE_FAST
 from utils.logger import log_msg
 
 _sentiment_model_name = "nlptown/bert-base-multilingual-uncased-sentiment"
-_sentiment_model = AutoModelForSequenceClassification.from_pretrained(_sentiment_model_name)
-_sentiment_tokenizer = AutoTokenizer.from_pretrained(_sentiment_model_name)
+_sentiment_model = AutoModelForSequenceClassification.from_pretrained(_sentiment_model_name, low_cpu_mem_usage = CWAI_LOW_CPU_MEM)
+_sentiment_tokenizer = AutoTokenizer.from_pretrained(_sentiment_model_name, use_fast = CWAI_TOKENIZER_USE_FAST)
 
 emotion_mapping = {
     1: 'anger',
