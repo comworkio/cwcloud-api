@@ -26,6 +26,7 @@ DEFAULT_TEMPERATURE = get_env_float("DEFAULT_TEMPERATURE", 0.8)
 DEFAULT_DO_SAMPLE = get_env_bool("DEFAULT_DO_SAMPLE", True)
 DEFAULT_EARLY_STOPPING = get_env_bool("DEFAULT_EARLY_STOPPING", True)
 DEFAULT_NUM_BEANS = get_env_int("DEFAULT_NUM_BEANS", 5)
+DEFAULT_SKIP_SPECIAL_TOKENS = get_env_bool("DEFAULT_SKIP_SPECIAL_TOKENS", True)
 
 def get_max_length(prompt: PromptSchema):
     return prompt.settings.max_length if prompt.settings is not None and is_numeric(prompt.settings.max_length) else DEFAULT_MAX_LENGTH
