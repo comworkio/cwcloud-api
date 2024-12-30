@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 
 from utils.observability.cid import get_current_cid
-from utils.common import get_env_int, is_disabled, is_enabled, is_true
+from utils.common import get_env_bool, get_env_int, is_disabled, is_enabled
 
 SLACK_WEBHOOK_TPL = "https://hooks.slack.com/services/{}"
 DISCORD_WEBHOOK_TPL = "https://discord.com/api/webhooks/{}/slack"
@@ -127,7 +127,7 @@ def quiet_log_msg (log_level, message):
 
 def is_notif_enabled():
     notifs_providers = ['SLACK', 'DISCORD']
-    return any(is_true(os.getenv("{}_TRIGGER".format(n))) for n in notifs_providers)
+    return any(get_env_bool("{}_TRIGGER".format(n)) for n in notifs_providers)
 
 def log_msg(log_level, message, is_public = False):
     formated_log = quiet_log_msg (log_level, message)

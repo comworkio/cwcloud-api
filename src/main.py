@@ -13,7 +13,7 @@ from exceptions.CwHTTPException import CwHTTPException
 from database.postgres_db import dbEngine
 from database.postgres_db import Base
 
-from utils.common import is_true
+from utils.common import get_env_bool
 from utils.logger import log_msg
 from utils.observability.monitor import monitors
 from utils.observability.cid import get_current_cid
@@ -36,7 +36,7 @@ app.add_middleware(
     generator = lambda: "{}".format(uuid4())
 )
 
-if os.getenv('APP_ENV') == 'local' or is_true(os.getenv('ENABLE_CORS_ALLOW_ALL')):
+if os.getenv('APP_ENV') == 'local' or get_env_bool('ENABLE_CORS_ALLOW_ALL'):
     app.add_middleware(
         CORSMiddleware,
         allow_origins = ["*"],

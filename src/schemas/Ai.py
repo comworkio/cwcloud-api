@@ -6,6 +6,7 @@ class PromptSettingsSchema(BaseModel):
     max_length: Optional[int]
     num_return_sequences: Optional[int]
     no_repeat_ngram_size: Optional[int]
+    num_beans: Optional[int]
     early_stopping: Optional[bool] = True
     do_sample: Optional[bool] = True
     skip_special_tokens: Optional[bool] = True

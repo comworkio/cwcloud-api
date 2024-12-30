@@ -129,6 +129,9 @@ def get_env_float(var_name, default = None):
     value = os.getenv(var_name)
     return float(value) if is_numeric(value) else default 
 
+def get_env_bool(var_name, default = None):
+    return is_true(os.getenv(var_name, is_true(default)))
+
 _allowed_chars_metric_pattern = re.compile(r'[^a-zA-Z0-9]')
 def sanitize_metric_name(name: str):
     return re.sub(_allowed_chars_metric_pattern, '_', name)
