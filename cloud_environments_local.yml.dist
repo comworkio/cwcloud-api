@@ -260,7 +260,7 @@ providers:
         az_security_group_name: cwcloud-security-group-northeu
     instance_types: ["Standard_DS2_v2"]
     bucket_types: ["Standard_LRS", "Premium_LRS"]
-    storage_available_regions: ["westeurope", "northeurope"]
+    bucket_available_regions: ["westeurope", "northeurope"]
     registry_types: ["public", "private"]
     registry_available_regions: ["westeurope", "northeurope"]
     instance_configs:
