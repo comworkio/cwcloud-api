@@ -1,4 +1,3 @@
-import os
 import yaml
 import json
 
@@ -16,16 +15,12 @@ from constants.k8s_constants import K8S_OBJECTS, K8S_RESOURCES
 from schemas.Kubernetes import ObjectAddSchema, ObjectSchema
 from schemas.User import UserSchema
 
-from utils.gitlab import read_file_from_gitlab, GIT_DEFAULT_TOKEN
+from utils.gitlab import GIT_HELMCHARTS_REPO_ID, GIT_HELMCHARTS_REPO_URL, read_file_from_gitlab, GIT_DEFAULT_TOKEN
 from utils.yaml import read_uploaded_yaml_file
 from utils.kubernetes.object import generate_object
 from utils.kubernetes.object import clear_metadata
 from utils.common import convert_dict_keys_to_camel_case, is_empty
 from utils.observability.cid import get_current_cid
-
-REPO_DIR = os.getenv('LOCAL_CLONE_CHARTS_URL')
-GIT_HELMCHARTS_REPO_URL = os.getenv('GIT_HELMCHARTS_REPO_URL')
-CHARTS_PJ_ID = os.getenv('GIT_HELMCHARTS_REPO_ID')
 
 def get_cluster_configfile(current_user: UserSchema, cluster_id: int, db: Session):
     cluster: Cluster = Cluster.getById(cluster_id, db)
@@ -261,7 +256,7 @@ def add_object_to_cluster(current_user:UserSchema, values_file:UploadFile, objec
 
 def get_chart_values(kind):
     host = f'{GIT_HELMCHARTS_REPO_URL.replace("https://","").split("/")[0]}'
-    f = read_file_from_gitlab(CHARTS_PJ_ID,f'objects-management-values/{kind}.yaml','main', GIT_DEFAULT_TOKEN, host)
+    f = read_file_from_gitlab(GIT_HELMCHARTS_REPO_ID, f'objects-management-values/{kind}.yaml','main', GIT_DEFAULT_TOKEN, host)
     return PlainTextResponse(content = f, status_code = 200)
 
 def apply_resource(kc_content, file, manifest: ObjectSchema, isUpdate: bool = False):
