@@ -16,7 +16,7 @@ from utils.common import exists_entry, get_env_int, is_disabled, is_empty, is_em
 from utils.logger import log_msg
 from utils.mail import send_email
 
-GITLAB_URL = os.environ['GITLAB_URL']
+GITLAB_URL = os.getenv('GITLAB_URL', 'https://gitlab.changeit.com')
 GIT_USERNAME = os.getenv('GIT_USERNAME')
 GIT_EMAIL = os.getenv('GIT_EMAIL')
 GIT_DEFAULT_TOKEN = os.getenv('GIT_PRIVATE_TOKEN')

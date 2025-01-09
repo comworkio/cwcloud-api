@@ -11,7 +11,7 @@ from utils.common import is_empty, is_not_empty, is_true, AUTOESCAPE_EXTENSIONS
 from utils.logger import log_msg
 from utils.bucket import upload_to_invoices_bucket
 
-EMAIL_EXPEDITOR = os.getenv('EMAIL_EXPEDITOR', 'cloud@comwork.io')
+EMAIL_EXPEDITOR = os.getenv('EMAIL_EXPEDITOR', 'cloud@changeit.com')
 EMAIL_ACCOUNTING = os.getenv('EMAIL_ACCOUNTING') if is_not_empty(os.getenv('EMAIL_ACCOUNTING')) else EMAIL_EXPEDITOR
 EMAIL_ADAPTER = get_adapter("emails")
 DEFAULT_EMAIL_ADAPTER = get_default_adapter("emails")
