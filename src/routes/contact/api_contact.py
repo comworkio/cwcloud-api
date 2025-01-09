@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from schemas.Contact import ContactSchema
 
 from utils.common import is_empty
-from utils.mail import send_contact_email
+from utils.mail import EMAIL_EXPEDITOR, send_contact_email
 from utils.security import is_not_email_valid
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
@@ -18,6 +18,8 @@ router = APIRouter()
 
 _span_prefix = "contact"
 _counter = create_counter("contact_api", "Contact API counter")
+
+RECEIVER_CONTACTS_EMAIL = os.getenv('RECEIVER_CONTACTS_EMAIL', EMAIL_EXPEDITOR)
 
 @router.post("")
 def contact_with_us(payload: ContactSchema):
@@ -42,8 +44,7 @@ def contact_with_us(payload: ContactSchema):
                 'cid': get_current_cid()
             }, status_code = 400)
 
-        receiver_contact_mails = os.environ["RECEIVER_CONTACTS_EMAIL"]
-        send_contact_email(email, receiver_contact_mails, message, subject)
+        send_contact_email(email, RECEIVER_CONTACTS_EMAIL, message, subject)
         return JSONResponse(content = {
             'status': 'ok',
             'message': 'successfully sent contact email'

@@ -100,8 +100,8 @@ We're also using `trivy` in our CICD pipelines which is scanning the CVE inside 
 The restful API documentation is available here: https://doc.cloud.comwork.io/docs/tutorials/api/
 
 You can also see the Swagger interface contracts here:
-* Production environment (`main` branch): https://cloud-api.comwork.io
-* Preproduction environment (`develop` branch): https://ppd.cloud-api.comwork.io
+* Production environment (`ce` branch): https://api.cwcloud.tech
+* Preproduction environment (`ce-dev` branch): https://api.cwcloud.tech
 
 ## Architectures
 ### Database

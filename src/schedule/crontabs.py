@@ -10,6 +10,7 @@ from utils.common import get_env_int, is_empty_key, is_not_empty
 from utils.bytes_generator import generate_random_bytes
 from utils.cron import parse_crontab
 from utils.date import is_after_current_time
+from utils.faas.vars import FAAS_API_MAX_RESULTS, FAAS_API_TOKEN, FAAS_API_URL
 from utils.http import HTTP_REQUEST_TIMEOUT
 from utils.logger import log_msg
 
@@ -17,11 +18,9 @@ global _scheduler
 _scheduler = BackgroundScheduler()
 _scheduler.start()
 
-_api_endpoint = "{}/v1/faas".format(os.environ['FAAS_API_URL'])
-_api_admin_endpoint = "{}/v1/admin/faas".format(os.environ['FAAS_API_URL'])
-_api_token = os.getenv('FAAS_API_TOKEN')
-_headers = { "X-Auth-Token": _api_token } if is_not_empty(_api_token) else None
-_max_results = get_env_int('API_MAX_RESULTS', 100)
+_api_endpoint = "{}/v1/faas".format(FAAS_API_URL)
+_api_admin_endpoint = "{}/v1/admin/faas".format(FAAS_API_URL)
+_headers = { "X-Auth-Token": FAAS_API_TOKEN } if is_not_empty(FAAS_API_TOKEN) else None
 
 def invoke_function(trigger):
     invocation_endpoint = "{}/invocation".format(_api_endpoint)
@@ -72,7 +71,7 @@ def init_triggered_functions():
     while True:
         trigger_endpoint = "{}/triggers".format(_api_admin_endpoint)
         log_msg("DEBUG", "[scheduler][init_triggered_functions] trigger_endpoint = {}".format(trigger_endpoint))
-        r_triggers = requests.get("{}?start_index={}&max_results={}".format(trigger_endpoint, start_index, _max_results), headers=_headers, timeout=HTTP_REQUEST_TIMEOUT)
+        r_triggers = requests.get("{}?start_index={}&max_results={}".format(trigger_endpoint, start_index, FAAS_API_MAX_RESULTS), headers=_headers, timeout=HTTP_REQUEST_TIMEOUT)
         if r_triggers.status_code != 200:
             log_msg("ERROR", "[scheduler][init_triggered_functions] triggers api respond an error, r.code = {}, r.body = {}".format(r_triggers.status_code, r_triggers))    
             return

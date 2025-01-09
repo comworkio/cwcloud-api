@@ -1,13 +1,11 @@
-import os
 import nats
 import json
 import asyncio
 
+from utils.consumer import CONSUMER_SLEEP_TIME
 from utils.eventloop import get_event_loop
 from utils.logger import log_msg
 from utils.nats import close_nats, get_creds_file_if_exists, get_nats_url
-
-_sleep_time = int(os.environ['CONSUMER_SLEEP_TIME'])
 
 class JetstreamClient():
     async def stream(self, group, channel):
@@ -25,7 +23,7 @@ class JetstreamClient():
         _nc, _js = await self.stream(group, channel)
         try:
             await _js.subscribe(channel, group, durable = group, cb = handler)
-            await asyncio.sleep(_sleep_time)
+            await asyncio.sleep(CONSUMER_SLEEP_TIME)
         finally:
             await close_nats(_nc)
             log_msg("DEBUG", "[JetstreamClient][aconsume] Shutdown...")

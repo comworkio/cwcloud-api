@@ -61,7 +61,7 @@ def import_resources(app):
     from routes.tracker import api_tracker
     from routes.admin.monitor import api_admin_monitor
     
-    version = os.environ['API_VERSION']
+    version = os.getenv('API_VERSION', 'v1')
 
     app.include_router(api_root.router, tags = ['Informations and Health checks'], prefix = f'/{version}/health')
     app.include_router(api_ping.router, tags = ['Informations and Health checks'], prefix = f'/{version}/ping')

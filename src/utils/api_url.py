@@ -13,9 +13,9 @@ def get_api_url():
         if ENV == "local":
             return "http://localhost:5000"
         elif ENV == "prod":
-            return "https://cloud-api.comwork.io"
+            return "https://api.cwcloud"
         else:
-            return "https://{}.cloud-api.comwork.io".format(ENV)
+            return "https://api.{}.cwcloud.tech".format(ENV)
 
     return api_url
 

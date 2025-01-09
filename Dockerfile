@@ -7,15 +7,7 @@ FROM python:${PYTHON_VERSION} as api
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
-    MANIFEST_FILE_PATH=manifest.json \
     SLACK_TRIGGER="off" \
-    SLACK_EMOJI=":comworkcloud:" \
-    SLACK_CHANNEL="#cloud" \
-    SLACK_USERNAME="comworkcloud" \
-    LOG_LEVEL="INFO" \
-    INVOICE_DAYS_DELTA=4 \
-    INVOKE_SYNC_WAIT_TIME=1 \
-    MAX_RETRY_INVOKE_SYNC=100 \
     PATH="/root/.pulumi/bin:${PATH}" \
     WAIT_TIME=10
 

@@ -15,12 +15,14 @@ router = APIRouter()
 _span_prefix = "manifest"
 _counter = create_counter("manifest_api", "Manifest API counter")
 
+MANIFEST_FILE_PATH = os.getenv('MANIFEST_FILE_PATH', 'manifest.json')
+
 @router.get("")
 def get_manifest():
     with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET)):
         increment_counter(_counter, Method.GET)
         try:
-            with open(os.environ['MANIFEST_FILE_PATH']) as manifest_file:
+            with open(MANIFEST_FILE_PATH) as manifest_file:
                 manifest = json.load(manifest_file)
                 return manifest
         except IOError as err:

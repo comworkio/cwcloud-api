@@ -7,6 +7,7 @@ from adapters.AdapterConfig import get_adapter
 from entities.faas.Function import FunctionEntity
 from entities.faas.Trigger import TriggerEntity
 from utils.common import is_empty, is_false, is_not_empty, is_not_numeric, is_true
+from utils.consumer import TRIGGERS_CHANNEL, TRIGGERS_GROUP
 from utils.date import is_iso_date_valid
 from utils.faas.functions import is_not_owner
 from utils.faas.owner import get_email_owner, get_owner_id, override_owner_id
@@ -14,8 +15,6 @@ from utils.faas.triggers import is_not_supported_kind
 from utils.observability.cid import get_current_cid
 
 _pubsub_adapter = get_adapter("pubsub")
-_triggers_channel = os.environ['TRIGGERS_CHANNEL']
-_triggers_group = os.environ['TRIGGERS_GROUP']
 
 def add_trigger(payload, current_user, db):
     if is_not_supported_kind(payload.kind):
@@ -90,7 +89,7 @@ def add_trigger(payload, current_user, db):
     db.commit()
     db.refresh(new_trigger)
 
-    _pubsub_adapter().publish(_triggers_group, _triggers_channel, {
+    _pubsub_adapter().publish(TRIGGERS_GROUP, TRIGGERS_CHANNEL, {
         'action': 'add',
         'trigger': {
             'id': "{}".format(new_trigger.id),
@@ -176,7 +175,7 @@ def override_trigger(id, current_user, payload, db):
     })
     db.commit()
 
-    _pubsub_adapter().publish(_triggers_group, _triggers_channel, {
+    _pubsub_adapter().publish(TRIGGERS_GROUP, TRIGGERS_CHANNEL, {
         'action': 'override',
         'trigger': {
             'id': "{}".format(id),
@@ -222,7 +221,7 @@ def delete_trigger(id, current_user, db):
         trigger.delete(synchronize_session=False)
         db.commit()
 
-    _pubsub_adapter().publish(_triggers_group, _triggers_channel, {
+    _pubsub_adapter().publish(TRIGGERS_GROUP, TRIGGERS_CHANNEL, {
         'action': 'delete',
         'trigger': {
             'id': "{}".format(id)
@@ -307,7 +306,7 @@ def clear_my_triggers(current_user, db):
     db.query(TriggerEntity).filter(TriggerEntity.owner_id == current_user.id).delete()
     db.commit()
 
-    _pubsub_adapter().publish(_triggers_group, _triggers_channel, {
+    _pubsub_adapter().publish(TRIGGERS_GROUP, TRIGGERS_CHANNEL, {
         'action': 'clear'
     })
 

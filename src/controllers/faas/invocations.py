@@ -11,6 +11,7 @@ from entities.faas.Invocation import InvocationEntity
 from entities.faas.InvocationExecutionTrace import InvocationExecutionTraceEntity
 
 from utils.common import del_key_if_exists, get_env_int, is_empty, is_false, is_not_empty, is_not_empty_key, is_not_numeric, is_not_uuid, is_true
+from utils.consumer import CONSUMER_CHANNEL, CONSUMER_GROUP
 from utils.encoder import AlchemyEncoder
 from utils.faas.invocations import _in_progress, is_unknown_state
 from utils.faas.functions import is_not_owner
@@ -21,10 +22,8 @@ from utils.logger import log_msg
 from utils.observability.cid import get_current_cid
 
 _pubsub_adapter = get_adapter("pubsub")
-_consumer_group = os.environ['CONSUMER_GROUP']
-_consumer_channel = os.environ['CONSUMER_CHANNEL']
-_max_retry_invoke_sync = int(os.environ['MAX_RETRY_INVOKE_SYNC'])
-_invoke_sync_wait_time = int(os.environ['INVOKE_SYNC_WAIT_TIME'])
+_max_retry_invoke_sync = get_env_int('MAX_RETRY_INVOKE_SYNC', 100)
+_invoke_sync_wait_time = get_env_int('INVOKE_SYNC_WAIT_TIME', 1)
 
 def invoke(payload, current_user, user_auth, db):
     if is_empty(payload.content.state):
@@ -105,7 +104,7 @@ def invoke(payload, current_user, user_auth, db):
 
     invocation_id = new_invocation.id
     payload.content.user_auth = user_auth
-    _pubsub_adapter().publish(_consumer_group, _consumer_channel, {'id': "{}".format(invocation_id), **payload.dict()})
+    _pubsub_adapter().publish(CONSUMER_GROUP, CONSUMER_CHANNEL, {'id': "{}".format(invocation_id), **payload.dict()})
 
     return {
         'status': 'ok',

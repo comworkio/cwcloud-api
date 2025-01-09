@@ -7,6 +7,7 @@ from jinja2 import Environment, FileSystemLoader, BaseLoader, select_autoescape
 from adapters.AdapterConfig import get_adapter
 from utils.command import get_script_output
 from utils.common import get_env_int, get_src_path, is_not_empty, is_empty_key, is_not_empty_key, AUTOESCAPE_EXTENSIONS
+from utils.faas.vars import FAAS_API_TOKEN, FAAS_API_URL
 from utils.http import HTTP_REQUEST_TIMEOUT
 from utils.observability.otel import get_otel_tracer
 from utils.security import is_forbidden
@@ -18,7 +19,7 @@ from utils.observability.traces import span_format
 from utils.observability.counter import create_counter, increment_counter
 from utils.observability.enums import Method
 
-_api_endpoint = "{}/v1/faas".format(os.environ['FAAS_API_URL'])
+_api_endpoint = "{}/v1/faas".format(FAAS_API_URL)
 _functions_file_path = "/functions"
 _consume_src_path = "{}/consume".format(get_src_path())
 _templates_path = "{}/templates/faas/main".format(get_src_path())
@@ -26,8 +27,7 @@ _env = Environment(loader=FileSystemLoader(_templates_path), autoescape=select_a
 
 pubsub_adapter = get_adapter("pubsub")
 
-_api_token = os.getenv('FAAS_API_TOKEN')
-_headers = { "X-Auth-Token": _api_token } if is_not_empty(_api_token) else None
+_headers = { "X-Auth-Token": FAAS_API_TOKEN } if is_not_empty(FAAS_API_TOKEN) else None
 _span_prefix = "faas-consumer"
 _counter = create_counter("consumer", "consumer counter")
 

@@ -16,7 +16,7 @@ from schemas.Invoice import InvoiceSchema, InvoiceUpdateSchema, InvoiceDownloadS
 from middleware.auth_guard import admin_required
 
 from utils.encoder import AlchemyEncoder
-from utils.common import is_false, is_not_empty
+from utils.common import get_env_int, is_false, is_not_empty
 from utils.file import quiet_remove
 from utils.flag import is_flag_disabled, is_flag_enabled
 from utils.security import is_not_ref_invoice_valid
@@ -250,7 +250,7 @@ def invoice_edition(current_user: Annotated[UserSchema, Depends(admin_required)]
         updated_invoice.save(db)
 
         if total_ttc > min_amount and is_flag_disabled(user.enabled_features, 'disable_emails'):
-            date_path = (invoice.to_date + timedelta(days = int(os.environ["INVOICE_DAYS_DELTA"]))).strftime("%Y-%m")
+            date_path = (invoice.to_date + timedelta(days = get_env_int('INVOICE_DAYS_DELTA', 4)))).strftime("%Y-%m")
             log_msg("DEBUG", "[InvoiceAdminUpdate][post] edition, date_path = {}".format(date_path))
             send_invoice_email(user.email, name_file, encoded_string, True, True, date_path)
         quiet_remove(name_file)

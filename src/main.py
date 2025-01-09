@@ -19,14 +19,15 @@ from utils.observability.monitor import monitors
 from utils.observability.cid import get_current_cid
 from utils.observability.metrics import metrics
 from utils.observability.otel import init_otel_metrics, init_otel_tracer, init_otel_logger
+from utils.version import APP_VERSION
 
-log_msg("INFO", "[main] the application is starting with version = {}".format(os.environ['APP_VERSION']), True)
+log_msg("INFO", "[main] the application is starting with version = {}".format(APP_VERSION), True)
 Base.metadata.create_all(bind = dbEngine)
 
 app = FastAPI(
     docs_url = "/",
     title = "Comwork Cloud API",
-    version = os.environ['APP_VERSION'],
+    version = APP_VERSION,
     description = "Official Comwork Cloud API Swagger documentation."
 )
 

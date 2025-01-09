@@ -13,7 +13,8 @@ from utils.common import get_env_bool, get_env_int, is_disabled, is_enabled
 SLACK_WEBHOOK_TPL = "https://hooks.slack.com/services/{}"
 DISCORD_WEBHOOK_TPL = "https://discord.com/api/webhooks/{}/slack"
 
-LOG_LEVEL = os.environ['LOG_LEVEL']
+
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 LOG_FORMAT = os.getenv('LOG_FORMAT')
 
 _slack_token = os.getenv('SLACK_TOKEN')
@@ -22,7 +23,9 @@ _slack_public_token = os.getenv('SLACK_TOKEN_PUBLIC')
 _discord_token = os.getenv('DISCORD_TOKEN')
 _discord_public_token = os.getenv('DISCORD_TOKEN_PUBLIC')
 
-_username = os.getenv('SLACK_USERNAME')
+_slack_channel = os.getenv('SLACK_CHANNEL', '#cloud')
+_slack_emoji = os.getenv('SLACK_EMOJI', ':cwcloud:')
+_username = os.getenv('SLACK_USERNAME', 'cwcloud')
 
 if is_disabled(_username):
     _username = os.getenv('DISCORD_USERNAME')
@@ -38,7 +41,7 @@ def slack_message(log_level, message, is_public):
         token = _slack_public_token
 
     if is_enabled(token):
-        data = { "attachments": [{ "color": get_color_level(log_level), "text": message, "title": log_level }], "username": _username, "channel": os.environ['SLACK_CHANNEL'], "icon_emoji": os.environ['SLACK_EMOJI'] }
+        data = { "attachments": [{ "color": get_color_level(log_level), "text": message, "title": log_level }], "username": _username, "channel": _slack_channel, "icon_emoji": _slack_emoji }
         try:
             requests.post(SLACK_WEBHOOK_TPL.format(token), json=data, timeout=HTTP_REQUEST_TIMEOUT)
         except Exception as e:

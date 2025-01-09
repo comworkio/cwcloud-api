@@ -19,9 +19,9 @@ from utils.observability.enums import Method
 from utils.observability.gauge import create_gauge, set_gauge
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
+from utils.version import APP_VERSION
 
 URL = os.environ["DOMAIN"]
-VERSION = os.environ["APP_VERSION"]
 ENV = os.environ["APP_ENV"]
 MONITOR_SRC = os.getenv("MONITOR_SRC", "cwcloud-api")
 MONITOR_WAIT_TIME = get_env_int("MONITOR_WAIT_TIME", 300)
@@ -98,9 +98,9 @@ def init_vars_monitor(monitor):
         'source': MONITOR_SRC,
         'url': URL,
         'env': ENV,
-        'version': VERSION
+        'version': APP_VERSION
     }
-    
+
     return vdate, labels, pmonitor, level, timeout
 
 def check_tcp_monitor(monitor, gauges):
