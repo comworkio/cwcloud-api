@@ -39,6 +39,6 @@ def get_db():
     try:
         yield db
     except Exception as e:
-        quiet_log_msg(f"[get_db] unexpected error: e.type = {type(e).__name__}, e.file = {__file__}, e.lno = {e.__traceback__.tb_lineno}, e.msg={e}")
+        quiet_log_msg("ERROR", f"[get_db] unexpected error: e.type = {type(e).__name__}, e.file = {__file__}, e.lno = {e.__traceback__.tb_lineno}, e.msg={e}")
     finally:
         db.close()
