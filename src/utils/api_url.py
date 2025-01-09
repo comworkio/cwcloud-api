@@ -3,7 +3,7 @@ from utils.common import get_env_int, is_empty
 import requests
 from urllib.parse import urlparse
 
-timeout_value = get_env_int("TIMEOUT", 60)
+from utils.http import HTTP_REQUEST_TIMEOUT
 
 def get_api_url():
     api_url = os.getenv('API_URL')
@@ -25,7 +25,7 @@ def is_url_responding(url):
         return False
 
     try:
-        response = requests.head(url, timeout=timeout_value)
+        response = requests.head(url, timeout=HTTP_REQUEST_TIMEOUT)
         return response.status_code < 400
     except requests.RequestException:
         return False

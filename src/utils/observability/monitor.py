@@ -13,6 +13,7 @@ from requests.auth import HTTPBasicAuth
 
 from utils.common import del_key_if_exists, get_env_int, get_or_else, is_empty_key, is_not_empty, is_not_empty_key, is_true, sanitize_header_name
 from utils.faas.iot import send_payload_in_realtime
+from utils.http import HTTP_REQUEST_TIMEOUT
 from utils.logger import LOG_LEVEL, get_int_value_level, log_msg
 from utils.observability.enums import Method
 from utils.observability.gauge import create_gauge, set_gauge
@@ -24,7 +25,6 @@ VERSION = os.environ["APP_VERSION"]
 ENV = os.environ["APP_ENV"]
 MONITOR_SRC = os.getenv("MONITOR_SRC", "cwcloud-api")
 MONITOR_WAIT_TIME = get_env_int("MONITOR_WAIT_TIME", 300)
-timeout_value = get_env_int("TIMEOUT", 60)
 _supported_monitor_types = ["http", "tcp"]
 
 def check_status_code_pattern(actual_code, pattern):
@@ -68,7 +68,7 @@ def process_callbacks(monitor, payload):
                 })
 
                 try:
-                    requests.post(callback["endpoint"], json=payload, headers=callback_headers, timeout=timeout_value)
+                    requests.post(callback["endpoint"], json=payload, headers=callback_headers, timeout=HTTP_REQUEST_TIMEOUT)
                     log_msg("DEBUG", f"[monitor][process_callbacks] monitor result sent to: {callback['endpoint']}")
                 except Exception as e:
                     log_msg("ERROR", f"Failed to send HTTP callback: e.type = {type(e)}, e.msg = {str(e)}")

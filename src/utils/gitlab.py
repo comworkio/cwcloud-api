@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 from utils.api_url import is_url_not_responding
 from utils.bytes_generator import generate_random_bytes
 from utils.common import exists_entry, get_env_int, is_disabled, is_empty, is_empty_key, is_not_empty, is_not_empty_key, is_response_ko, safe_compare_entry, safe_contain_entry, is_response_ok
+from utils.http import HTTP_REQUEST_TIMEOUT
 from utils.logger import log_msg
 from utils.mail import send_email
 
@@ -26,8 +27,6 @@ PLAYBOOK_REPO_PROJECTID = os.getenv('PLAYBOOK_REPO_PROJECTID')
 GIT_HELMCHARTS_REPO_ID = os.getenv('GIT_HELMCHARTS_REPO_ID', '')
 GIT_HELMCHARTS_REPO_URL = os.getenv('GIT_HELMCHARTS_REPO_URL', '')
 DOMAIN = os.getenv("DOMAIN")
-
-timeout_value = get_env_int("TIMEOUT", 60)
 
 def check_gitlab_url(gitlab_url):
     if is_not_public_instance(gitlab_url) and is_url_not_responding(gitlab_url):
@@ -60,7 +59,7 @@ def create_project_label(name, color):
     }
 
     check_gitlab_url(GITLAB_URL)
-    requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', json=label_json, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
+    requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', json=label_json, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=HTTP_REQUEST_TIMEOUT)
 
 def check_create_labels_support():
     if is_disabled(GITLAB_PROJECTID_ISSUES):
@@ -68,7 +67,7 @@ def check_create_labels_support():
 
     check_gitlab_url(GITLAB_URL)
 
-    project_labels_reponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
+    project_labels_reponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/labels', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=HTTP_REQUEST_TIMEOUT)
     project_labels = project_labels_reponse.json()
 
     if is_not_empty_key(project_labels, "error"):
@@ -97,7 +96,7 @@ def close_gitlab_issue(issue_id):
     if is_disabled(GITLAB_PROJECTID_ISSUES) or is_empty(issue_id):
         return {}
 
-    issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value).json()
+    issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=HTTP_REQUEST_TIMEOUT).json()
     if is_not_empty_key(issue, "error"):
         log_msg("WARN", "[close_gitlab_issue] There's an error when fetching the issue: error = {}".format(issue['error']))
         return {}
@@ -108,14 +107,14 @@ def close_gitlab_issue(issue_id):
         "labels": new_labels
     }
 
-    requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json=data, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
+    requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json=data, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=HTTP_REQUEST_TIMEOUT)
 
 def reopen_gitlab_issue(issue_id):
     if is_disabled(GITLAB_PROJECTID_ISSUES) or is_empty(issue_id):
         return {}
 
     check_gitlab_url(GITLAB_URL)
-    issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value).json()
+    issue = requests.get(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=HTTP_REQUEST_TIMEOUT).json()
     if is_not_empty_key(issue, "error"):
         log_msg("WARN", "[reopen_gitlab_issue] There's an error when fetching the issue: error = {}".format(issue['error']))
         return {}
@@ -127,7 +126,7 @@ def reopen_gitlab_issue(issue_id):
         "labels": new_labels
     }
 
-    requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json=data, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
+    requests.put(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}', json=data, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=HTTP_REQUEST_TIMEOUT)
 
 def add_gitlab_issue(ticketId, user_email, title, description, severity, product):
     if is_disabled(GITLAB_PROJECTID_ISSUES):
@@ -144,7 +143,7 @@ def add_gitlab_issue(ticketId, user_email, title, description, severity, product
         "labels": "todo, support, s-{} ".format(severity)
     }
 
-    res = requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues', json=data, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
+    res = requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues', json=data, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=HTTP_REQUEST_TIMEOUT)
     issue = res.json()
 
     if is_not_empty_key(issue, "error"):
@@ -167,7 +166,7 @@ def add_gitlab_issue_comment(issue_id, user_email, message):
         "body": issue_comment,
     }
     check_gitlab_url(GITLAB_URL)
-    requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}/notes', json=data, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
+    requests.post(f'{GITLAB_URL}/api/v4/projects/{GITLAB_PROJECTID_ISSUES}/issues/{issue_id}/notes', json=data, headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=HTTP_REQUEST_TIMEOUT)
 
 def inject_git_credentials_to_url(remote, username, token):
     splittedRemote = remote.split('//')
@@ -274,7 +273,7 @@ def create_project_access_token(project_id, project_name, gitlab_host, access_to
                                         f'{gitlab_host}/api/v4/projects/{project_id}/access_tokens',
                                         json=json_data,
                                         headers={"PRIVATE-TOKEN": access_token},
-                                        timeout=timeout_value
+                                        timeout=HTTP_REQUEST_TIMEOUT
                                     )
     project_access_token = access_token_response.json()
     log_msg("DEBUG", "[gitlab][create_project_access_token] access token body response = {}".format(project_access_token))
@@ -284,7 +283,7 @@ def get_gitlab_project(project_id, gitlab_host, access_token):
     if is_disabled(gitlab_host) or is_disabled(access_token):
         return {'id': project_id}
 
-    projectReponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}', headers={"PRIVATE-TOKEN": access_token}, timeout=timeout_value)
+    projectReponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}', headers={"PRIVATE-TOKEN": access_token}, timeout=HTTP_REQUEST_TIMEOUT)
     if projectReponse.status_code == 404:
         log_msg("WARN", "[get_gitlab_project] project not found, project id: {}".format(project_id))
         raise HTTPError("project_not_found_with_gitlab", 404, "project not found", hdrs = {"i18n_code": "project_not_found_with_gitlab"}, fp = None)
@@ -354,7 +353,7 @@ def get_gitlab_project_tree(project_id, gitlab_host, access_token):
     if is_disabled(gitlab_host) or is_disabled(access_token):
         return []
 
-    projectTreeReponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}/repository/tree', headers={"PRIVATE-TOKEN": access_token}, timeout=timeout_value)
+    projectTreeReponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}/repository/tree', headers={"PRIVATE-TOKEN": access_token}, timeout=HTTP_REQUEST_TIMEOUT)
     if projectTreeReponse.status_code == 404:
         return []
 
@@ -374,7 +373,7 @@ def get_gitlab_file_content(project_id, instance_name, gitlab_host, access_token
     fileResponse = requests.get(
         f'{gitlab_host}/api/v4/projects/{project_id}/repository/files/playbook-{instance_name}.yml/blame?ref=main',
         headers={"PRIVATE-TOKEN": access_token},
-        timeout=timeout_value
+        timeout=HTTP_REQUEST_TIMEOUT
     )
 
     if fileResponse.status_code == 404:
@@ -403,7 +402,7 @@ def verify_gitlab_host(host):
     if is_empty(host):
         return False
 
-    res = requests.get(f'{host}/health', timeout=timeout_value)
+    res = requests.get(f'{host}/health', timeout=HTTP_REQUEST_TIMEOUT)
     if res.status_code!= 200:
         raise HTTPError("1120", 400, "gitlab host not available", hdrs = {"i18n_code": "1120"}, fp = None)
 
@@ -438,7 +437,7 @@ def create_gitlab_project(project_name, userid, user_email, host, git_username, 
         "namespace_id": namespace
     }
 
-    projectReponse = requests.post(f'{gitlab_host}/api/v4/projects', json=data, headers={"PRIVATE-TOKEN": token}, timeout=timeout_value)
+    projectReponse = requests.post(f'{gitlab_host}/api/v4/projects', json=data, headers={"PRIVATE-TOKEN": token}, timeout=HTTP_REQUEST_TIMEOUT)
     if projectReponse.status_code == 400:
         raise HTTPError("project_already_exists_gitlab", 400, "project already exists", hdrs = {"i18n_code": "project_already_exists_gitlab"}, fp = None)
     elif projectReponse.status_code != 201:
@@ -474,7 +473,7 @@ def get_infra_playbook_roles():
     if is_disabled(PLAYBOOK_REPO_PROJECTID) or is_disabled(GIT_DEFAULT_TOKEN):
         return gitlab_connexion_error, []
 
-    rolesResponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{PLAYBOOK_REPO_PROJECTID}/repository/tree?path=roles&per_page=200&ref=main', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=timeout_value)
+    rolesResponse = requests.get(f'{GITLAB_URL}/api/v4/projects/{PLAYBOOK_REPO_PROJECTID}/repository/tree?path=roles&per_page=200&ref=main', headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN}, timeout=HTTP_REQUEST_TIMEOUT)
     if not is_response_ok(rolesResponse.status_code):
         log_msg("DEBUG", "[get_infra_playbook_roles] can not get roles from gitlab with url = {}, status = {}".format(GITLAB_URL, rolesResponse.status_code))
         return gitlab_connexion_error, []
@@ -489,7 +488,7 @@ def get_project_runners(project_id, gitlab_host, access_token):
     if is_disabled(gitlab_host) or is_disabled(access_token):
         return {}
 
-    runnersResponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}/runners', headers={"PRIVATE-TOKEN": access_token}, timeout=timeout_value)
+    runnersResponse = requests.get(f'{gitlab_host}/api/v4/projects/{project_id}/runners', headers={"PRIVATE-TOKEN": access_token}, timeout=HTTP_REQUEST_TIMEOUT)
     if runnersResponse.status_code == 404:
         raise HTTPError("project_not_found_with_gitlab", 404, "project not found", hdrs = {"i18n_code": "project_not_found_with_gitlab"}, fp = None)
 
@@ -501,7 +500,7 @@ def delete_runner(runnerId, gitlab_host, access_token):
     if is_disabled(gitlab_host) or is_disabled(access_token):
         return
 
-    deleteResponse = requests.delete(f'{gitlab_host}/api/v4/runners/{runnerId}', headers={"PRIVATE-TOKEN": access_token}, timeout=timeout_value)
+    deleteResponse = requests.delete(f'{gitlab_host}/api/v4/runners/{runnerId}', headers={"PRIVATE-TOKEN": access_token}, timeout=HTTP_REQUEST_TIMEOUT)
     if deleteResponse.status_code == 404:
         raise HTTPError("runner_not_found", 400, "runner not found", hdrs = {"i18n_code": "runner_not_found"}, fp = None)
 
@@ -526,7 +525,7 @@ def delete_gitlab_project(project_id, gitlab_host, access_token):
         log_msg("WARN", "[delete_gitlab_project] something went wrong when deleting project's runners: he = {}".format(he))
 
     token = GIT_DEFAULT_TOKEN if GITLAB_URL == gitlab_host else access_token
-    res = requests.delete(f'{gitlab_host}/api/v4/projects/{project_id}', headers={"PRIVATE-TOKEN": token}, timeout=timeout_value)
+    res = requests.delete(f'{gitlab_host}/api/v4/projects/{project_id}', headers={"PRIVATE-TOKEN": token}, timeout=HTTP_REQUEST_TIMEOUT)
     if res.status_code != 202:
         log_msg("WARN", "[delete_gitlab_project] something went wrong when deleting project: status = {}".format(res.status_code))
 
@@ -649,7 +648,7 @@ def get_helm_charts():
     charts_response = requests.get(
         f'{host}/api/v4/projects/{GIT_HELMCHARTS_REPO_URL}/repository/tree?path=charts&per_page=200&ref=main', 
         headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN},
-        timeout=timeout_value
+        timeout=HTTP_REQUEST_TIMEOUT
     )
 
     if not is_response_ok(charts_response.status_code):

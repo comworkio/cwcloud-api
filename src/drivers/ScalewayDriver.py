@@ -13,6 +13,7 @@ from utils.common import get_env_int, is_not_empty, is_true
 from utils.dns_zones import get_dns_zone_driver, register_scaleway_domain
 from utils.driver import convert_instance_state, sanitize_project_name
 from utils.dynamic_name import rehash_dynamic_name
+from utils.http import HTTP_REQUEST_TIMEOUT
 from utils.list import unmarshall_list_array
 from utils.logger import log_msg
 
@@ -20,11 +21,10 @@ SCW_API_URL = "https://api.scaleway.com"
 SCW_ACCESS_KEY = os.getenv('SCW_ACCESS_KEY')
 SCW_SECRET_KEY = os.getenv('SCW_SECRET_KEY')
 SCW_PROJECT_ID = os.getenv('SCW_PROJECT_ID')
-timeout_value = get_env_int("TIMEOUT", 60)
 
 class ScalewayDriver(ProviderDriver):
     def create_dns_records(self, record_name, environment, ip_address, root_dns_zone):
-        dnsZonesResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/domains/{root_dns_zone}/dns-zones', headers={"X-Auth-Token": SCW_SECRET_KEY}, timeout=timeout_value)
+        dnsZonesResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/domains/{root_dns_zone}/dns-zones', headers={"X-Auth-Token": SCW_SECRET_KEY}, timeout=HTTP_REQUEST_TIMEOUT)
         dnsZones = dnsZonesResponse.json()["dns_zones"]
         availableZones = []
         for zone in dnsZones:
@@ -36,7 +36,7 @@ class ScalewayDriver(ProviderDriver):
                 "subdomain": environment['path'],
                 "project_id": SCW_PROJECT_ID
             }
-            dnsZones = requests.post(f'{SCW_API_URL}/domain/v2beta1/dns-zones', headers={"X-Auth-Token": SCW_SECRET_KEY}, json=newDnsInfo, timeout=timeout_value)
+            dnsZones = requests.post(f'{SCW_API_URL}/domain/v2beta1/dns-zones', headers={"X-Auth-Token": SCW_SECRET_KEY}, json=newDnsInfo, timeout=HTTP_REQUEST_TIMEOUT)
 
         register_scaleway_domain(record_name, environment['path'], ip_address, root_dns_zone)
         for subdomain in unmarshall_list_array(environment['subdomains']):
@@ -60,7 +60,7 @@ class ScalewayDriver(ProviderDriver):
                     }
                 }]
             }
-            requests.patch(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{dns_zone}/records', headers={"X-Auth-Token": SCW_SECRET_KEY}, json=json, timeout=timeout_value)
+            requests.patch(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{dns_zone}/records', headers={"X-Auth-Token": SCW_SECRET_KEY}, json=json, timeout=HTTP_REQUEST_TIMEOUT)
             
             pulumi.export("record", record_name)
             pulumi.export("zone", dns_zone)
@@ -75,12 +75,12 @@ class ScalewayDriver(ProviderDriver):
         return {"record": record_name, "zone": dns_zone, "type": record_type, "ttl": ttl, "data": data}
         
     def list_dns_records(self):
-        dnsZonesResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/domains', headers={"X-Auth-Token": SCW_SECRET_KEY}, timeout=timeout_value)
+        dnsZonesResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/domains', headers={"X-Auth-Token": SCW_SECRET_KEY}, timeout=HTTP_REQUEST_TIMEOUT)
         dnsZones = dnsZonesResponse.json()["domains"]
         allRecords = []
         for zone in dnsZones:
             zoneName = zone['domain']
-            zoneRecordsResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{zoneName}/records', headers={"X-Auth-Token": SCW_SECRET_KEY}, timeout=timeout_value)
+            zoneRecordsResponse = requests.get(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{zoneName}/records', headers={"X-Auth-Token": SCW_SECRET_KEY}, timeout=HTTP_REQUEST_TIMEOUT)
             zoneRecords = zoneRecordsResponse.json()["records"]
             for record in zoneRecords:
                 allRecords.append({
@@ -102,7 +102,7 @@ class ScalewayDriver(ProviderDriver):
                         }
                     }]
                 }
-            requests.patch(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{root_dns_zone}/records', headers={"X-Auth-Token": SCW_SECRET_KEY}, json=data, timeout=timeout_value)
+            requests.patch(f'{SCW_API_URL}/domain/v2beta1/dns-zones/{root_dns_zone}/records', headers={"X-Auth-Token": SCW_SECRET_KEY}, json=data, timeout=HTTP_REQUEST_TIMEOUT)
         stack = auto.create_or_select_stack(stack_name = "{}-{}".format(id, record_name),
                                             project_name = "dns-records",
                                             program = create_pulumi_program)
@@ -242,7 +242,7 @@ class ScalewayDriver(ProviderDriver):
     def get_virtual_machine(self, region, zone, instance_name):
         region_zone = "{}-{}".format(region, zone)
         sw_api_key = os.getenv('SCW_SECRET_KEY')
-        res = requests.get(f'{SCW_API_URL}/instance/v1/zones/{region_zone}/servers?name={instance_name}', headers={"X-Auth-Token": sw_api_key}, timeout=timeout_value)
+        res = requests.get(f'{SCW_API_URL}/instance/v1/zones/{region_zone}/servers?name={instance_name}', headers={"X-Auth-Token": sw_api_key}, timeout=HTTP_REQUEST_TIMEOUT)
         servers = res.json()['servers']
         if len(servers)>0:
             return servers[0]
@@ -254,7 +254,7 @@ class ScalewayDriver(ProviderDriver):
         res = requests.post(f'{SCW_API_URL}/instance/v1/zones/{regionZone}/servers/{server_id}/action',
                                 headers={"X-Auth-Token": SCW_SECRET_KEY},
                                 json=actionData,
-                                timeout=timeout_value
+                                timeout=HTTP_REQUEST_TIMEOUT
                             )
         if res.status_code == 404:
             message = f"resource {server_id} not found."

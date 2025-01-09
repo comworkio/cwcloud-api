@@ -4,13 +4,14 @@ import threading
 
 from time import sleep
 
+from utils.common import get_env_int
 from utils.observability.gauge import create_gauge, set_gauge
 from utils.observability.otel import get_otel_tracer
 from utils.observability.resources import all_metrics
 from utils.observability.traces import span_format
 from utils.observability.enums import Method
 
-_loop_wait_time = int(os.environ['LOOP_WAIT_TIME'])
+_loop_wait_time = get_env_int('LOOP_WAIT_TIME', 10)
 
 cpu_gauge = create_gauge("cpu_all", "cpu usage in percent")
 ram_total_gauge = create_gauge("ram_total", "total of ram")

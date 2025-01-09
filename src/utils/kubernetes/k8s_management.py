@@ -13,11 +13,10 @@ from constants.k8s_constants import FLUX_FILE_URL
 
 from utils.encoder import AlchemyEncoder
 from utils.common import AUTOESCAPE_EXTENSIONS, get_env_int
-
-timeout_value = get_env_int("TIMEOUT", 60)
+from utils.http import HTTP_REQUEST_TIMEOUT
 
 def install_flux(config_file: bytes):
-    flux_yaml_file = yaml.safe_load_all(requests.get(FLUX_FILE_URL, timeout=timeout_value).content)
+    flux_yaml_file = yaml.safe_load_all(requests.get(FLUX_FILE_URL, timeout=HTTP_REQUEST_TIMEOUT).content)
     config_file = yaml.safe_load(config_file)
     
     config.load_kube_config_from_dict(config_file)

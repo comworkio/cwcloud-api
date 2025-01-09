@@ -16,6 +16,7 @@ from utils.faas.invocations import _in_progress, is_unknown_state
 from utils.faas.functions import is_not_owner
 from utils.faas.invoker import get_email_invoker, get_invoker_id, override_invoker_id
 from utils.faas.iot import send_payload_in_realtime
+from utils.http import HTTP_REQUEST_TIMEOUT
 from utils.logger import log_msg
 from utils.observability.cid import get_current_cid
 
@@ -24,7 +25,6 @@ _consumer_group = os.environ['CONSUMER_GROUP']
 _consumer_channel = os.environ['CONSUMER_CHANNEL']
 _max_retry_invoke_sync = int(os.environ['MAX_RETRY_INVOKE_SYNC'])
 _invoke_sync_wait_time = int(os.environ['INVOKE_SYNC_WAIT_TIME'])
-timeout_value = get_env_int("TIMEOUT", 60)
 
 def invoke(payload, current_user, user_auth, db):
     if is_empty(payload.content.state):
@@ -154,7 +154,7 @@ def send_result_to_callbacks(payload, invocation, function):
             callback_headers = { "Authorization": serverless_function['content']['callback_authorization_header'], "Content-Type": "application/json" } if is_not_empty_key(serverless_function['content'], 'callback_authorization_header') else { "Content-Type": "application/json" }
             callback_url = serverless_function['content']['callback_url']
             log_msg("DEBUG", "[consume][handle] invoke callback: {}".format(callback_url))
-            requests.post(callback_url, json=safe_payload, headers=callback_headers, timeout=timeout_value)
+            requests.post(callback_url, json=safe_payload, headers=callback_headers, timeout=HTTP_REQUEST_TIMEOUT)
         else:
             if is_not_empty_key(serverless_function['content'], 'callbacks'):
                 callbacks = serverless_function['content']['callbacks']
@@ -163,7 +163,7 @@ def send_result_to_callbacks(payload, invocation, function):
                         if callback['type'] == "http":
                             callback_headers = { "Authorization": callback['token'], "Content-Type": "application/json" } if is_not_empty_key(callback, 'token') else { "Content-Type": "application/json" }
                             log_msg("DEBUG", "[consume][handle] invoke callback: {}".format(callback['endpoint']))
-                            requests.post(callback['endpoint'], json=safe_payload, headers=callback_headers, timeout=timeout_value)
+                            requests.post(callback['endpoint'], json=safe_payload, headers=callback_headers, timeout=HTTP_REQUEST_TIMEOUT)
                         elif callback['type'] == "websocket" or callback['type'] == "mqtt":
                             asyncio.run(async_send_payload_in_realtime(callback, safe_payload))
 

@@ -7,7 +7,7 @@ from utils.common import get_src_path, is_enabled
 from utils.file import quiet_remove
 from utils.logger import log_msg
 
-_nats_url = os.environ['NATS_URL']
+_nats_url = os.getenv("NATS_URL", "nats://changeit.com:4222")
 _creds_file = "{}/faas.creds".format(get_src_path())
 _creds_base64 = os.getenv("NATS_CREDS_BASE64")
 

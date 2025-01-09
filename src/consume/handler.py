@@ -7,6 +7,7 @@ from jinja2 import Environment, FileSystemLoader, BaseLoader, select_autoescape
 from adapters.AdapterConfig import get_adapter
 from utils.command import get_script_output
 from utils.common import get_env_int, get_src_path, is_not_empty, is_empty_key, is_not_empty_key, AUTOESCAPE_EXTENSIONS
+from utils.http import HTTP_REQUEST_TIMEOUT
 from utils.observability.otel import get_otel_tracer
 from utils.security import is_forbidden
 from utils.file import quiet_remove
@@ -29,12 +30,11 @@ _api_token = os.getenv('FAAS_API_TOKEN')
 _headers = { "X-Auth-Token": _api_token } if is_not_empty(_api_token) else None
 _span_prefix = "faas-consumer"
 _counter = create_counter("consumer", "consumer counter")
-timeout_value = get_env_int("TIMEOUT", 60)
 
 def update_invocation(invocation_id, payload):
   invocation_url = "{}/invocation/{}".format(_api_endpoint, invocation_id)
   log_msg("DEBUG", "[consume][update_invocation] update invocation with : {}, invocation_url = {}".format(payload, invocation_url))
-  r_update_payload = requests.put(invocation_url, json=payload, headers=_headers, timeout=timeout_value)
+  r_update_payload = requests.put(invocation_url, json=payload, headers=_headers, timeout=HTTP_REQUEST_TIMEOUT)
   if r_update_payload.status_code != 200:
     log_msg("ERROR", "[consume][update_invocation] bad response from the API: code = {}, body = {}".format(r_update_payload.status_code, r_update_payload.content))
 
@@ -71,7 +71,7 @@ async def handle(msg):
     function_id = payload['content']['function_id']
     function_url = "{}/function/{}".format(_api_endpoint, function_id)
     log_msg("DEBUG", "[consume][handle] getting function_url = {}".format(function_url))
-    r_serverless_function = requests.get(function_url, headers =_headers, timeout=timeout_value)
+    r_serverless_function = requests.get(function_url, headers =_headers, timeout=HTTP_REQUEST_TIMEOUT)
     if r_serverless_function.status_code != 200:
       error_invocation(invocation_id, payload, "the function {} is not found".format(function_id))
       return

@@ -6,6 +6,7 @@ import sys
 
 from datetime import datetime
 
+from utils.http import HTTP_REQUEST_TIMEOUT
 from utils.observability.cid import get_current_cid
 from utils.common import get_env_bool, get_env_int, is_disabled, is_enabled
 
@@ -23,8 +24,6 @@ _discord_public_token = os.getenv('DISCORD_TOKEN_PUBLIC')
 
 _username = os.getenv('SLACK_USERNAME')
 
-timeout_value = get_env_int("TIMEOUT", 60)
-
 if is_disabled(_username):
     _username = os.getenv('DISCORD_USERNAME')
 
@@ -41,7 +40,7 @@ def slack_message(log_level, message, is_public):
     if is_enabled(token):
         data = { "attachments": [{ "color": get_color_level(log_level), "text": message, "title": log_level }], "username": _username, "channel": os.environ['SLACK_CHANNEL'], "icon_emoji": os.environ['SLACK_EMOJI'] }
         try:
-            requests.post(SLACK_WEBHOOK_TPL.format(token), json=data, timeout=timeout_value)
+            requests.post(SLACK_WEBHOOK_TPL.format(token), json=data, timeout=HTTP_REQUEST_TIMEOUT)
         except Exception as e:
             logging.warning("[slack_message] unexpected exception: {}".format(e))
 
@@ -55,7 +54,7 @@ def discord_message(log_level, message, is_public):
     if is_enabled(token):
         data = { "attachments": [{ "color": get_color_level(log_level), "text": message, "title": log_level }], "username": _username }
         try:
-            requests.post(DISCORD_WEBHOOK_TPL.format(token), json=data, timeout=timeout_value)
+            requests.post(DISCORD_WEBHOOK_TPL.format(token), json=data, timeout=HTTP_REQUEST_TIMEOUT)
         except Exception as e:
             logging.warning("[discord_message] unexpected exception: {}".format(e))
 
