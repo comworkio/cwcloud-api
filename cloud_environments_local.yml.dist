@@ -12,22 +12,6 @@ adapters:
   pubsub: nats
   cache: redis
 
-aws_instance_types: &awsInstanceTypes
-  - type: t1.micro
-    core: 1 X86 64bit
-    ram: 1GB
-    disk: 0
-    bandwidth: 100 GB
-    localstorage: 0
-    price_variable: PRICE_t1_MICRO
-  - type: t2.micro
-    core: 1 X86 64bit
-    ram: 1GB
-    disk: 0
-    bandwidth: 100 GB
-    localstorage: 0
-    price_variable: PRICE_t2_MICRO
-
 scw_instance_types: &scwInstancesTypes
   - type: DEV1-S
     core: 2 X86 64bit
@@ -109,41 +93,7 @@ ovh_instance_types: &ovhInstancesTypes
     localstorage: 0 GB
     price_variable: PRICE_b2_15
 
-azure_instance_types: &azureInstanceTypes
-  - type: Standard_DS2_v2
-    core: 2
-    ram: 7GB
-    disk: 100GB
-    bandwidth: 1500Mbps
-    localstorage: 400GB
-    price_variable: PRICE_Standard_DS2_v2
-
 providers:
-  - name: aws
-    driver: AwsDriver
-    regions:  
-      - name: europe-west-1
-        zones: ['a']
-    instance_types: ['']
-    bucket_types: ['public-read', 'private']
-    bucket_available_regions: ['fr-par', 'nl-ams','pl-waw']
-    registry_types: ['public', 'private']
-    registry_available_regions: ['fr-par', 'nl-ams','pl-waw']
-    instance_configs:
-      - region: fr-par
-        zones:
-          - name: "1"
-            instance_types: *scwInstancesTypes
-          - name: "2"
-            instance_types: *scwInstancesTypes
-      - region: nl-ams
-        zones:
-          - name: "1"
-            instance_types: *scwInstancesTypes
-      - region: pl-waw
-        zones:
-          - name: "1"
-            instance_types: *scwInstancesTypes
   - name: scaleway
     driver: VoidDriver
     regions:  
@@ -173,33 +123,6 @@ providers:
         zones:
           - name: "1"
             instance_types: *scwInstancesTypes
-  - name: aws
-    driver: AwsProviderDriver
-    regions:
-      - name: us-east-1
-        zones: ["a", "b", "c", "d", "e"]
-      - name: us-east-2
-        zones: ["a", "b", "c", "d", "e"]
-      - name: us-west-2
-        zones: ["a", "b", "c", "d", "e"]
-    instance_types: ["t1.micro", "t2.micro"]
-    bucket_types: ["public-read", "private"]
-    bucket_available_regions: ["us-east-1", "us-east2", "us-west-2"]
-    registry_types: ["public", "private"]
-    registry_available_regions: ["fr-par", "nl-ams", "pl-waw"]
-    instance_configs:
-      - region: us-east-1
-        zones:
-          - name: "a"
-            instance_types: *awsInstanceTypes
-          - name: "b"
-            instance_types: *awsInstanceTypes
-          - name: "c"
-            instance_types: *awsInstanceTypes
-          - name: "d"
-            instance_types: *awsInstanceTypes
-          - name: "e"
-            instance_types: *awsInstanceTypes
   - name: ovh
     driver: VoidDriver
     regions:  
@@ -245,33 +168,7 @@ providers:
         zones:
           - name: nova
             instance_types: *ovhInstancesTypes
-  - name: azure
-    driver: AzureDriver
-    regions:
-      - name: westeurope
-        zones: ["1"]
-        az_virtual_network_name: cwcloud-network-westeu
-        az_subnet_name: cwcloud-subnet-westeu
-        az_security_group_name: cwcloud-security-group-westeu
-      - name: northeurope
-        zones: ["1"]
-        az_virtual_network_name: cwcloud-network-northeu
-        az_subnet_name: cwcloud-subnet-northeu
-        az_security_group_name: cwcloud-security-group-northeu
-    instance_types: ["Standard_DS2_v2"]
-    bucket_types: ["Standard_LRS", "Premium_LRS"]
-    bucket_available_regions: ["westeurope", "northeurope"]
-    registry_types: ["public", "private"]
-    registry_available_regions: ["westeurope", "northeurope"]
-    instance_configs:
-      - region: westeurope
-        zones:
-          - name: "1"
-            instance_types: *azureInstanceTypes
-      - region: northeurope
-        zones:
-          - name: "1"
-            instance_types: *azureInstanceTypes
+
 dns_zones:
   - name: comwork.cloud
     driver: VoidDriver
@@ -302,4 +199,3 @@ images:
   - pl-waw-1: af5dc0c9-4acc-44ea-895d-7a5cc5c0d9c3
   - northeurope-1: CentOS-NorthEurope-1
   - westeurope-1: CentOS-WestEurope-1
-

@@ -3,7 +3,7 @@ import os
 
 from jose import jwt
 
-_jwt_secret_key = os.getenv("JWT_SECRET_KEY")
+_jwt_secret_key = os.getenv("JWT_SECRET_KEY", "changeit")
 
 def jwt_decode(token):
     return jwt.decode(re.sub("^[A-Za-z]+\ +", "", token), _jwt_secret_key)

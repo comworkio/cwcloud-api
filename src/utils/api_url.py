@@ -3,19 +3,19 @@ from utils.common import get_env_int, is_empty
 import requests
 from urllib.parse import urlparse
 
+from utils.env_vars import APP_ENV
 from utils.http import HTTP_REQUEST_TIMEOUT
 
 def get_api_url():
     api_url = os.getenv('API_URL')
 
     if is_empty(api_url):
-        ENV = os.getenv('APP_ENV')
-        if ENV == "local":
+        if APP_ENV == "local":
             return "http://localhost:5000"
-        elif ENV == "prod":
+        elif APP_ENV == "prod":
             return "https://api.cwcloud"
         else:
-            return "https://api.{}.cwcloud.tech".format(ENV)
+            return "https://api.{}.cwcloud.tech".format(APP_ENV)
 
     return api_url
 

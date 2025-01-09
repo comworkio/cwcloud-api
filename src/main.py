@@ -1,5 +1,3 @@
-import os
-
 from uuid import uuid4
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
@@ -19,7 +17,7 @@ from utils.observability.monitor import monitors
 from utils.observability.cid import get_current_cid
 from utils.observability.metrics import metrics
 from utils.observability.otel import init_otel_metrics, init_otel_tracer, init_otel_logger
-from utils.version import APP_VERSION
+from utils.env_vars import APP_ENV, APP_VERSION
 
 log_msg("INFO", "[main] the application is starting with version = {}".format(APP_VERSION), True)
 Base.metadata.create_all(bind = dbEngine)
@@ -37,7 +35,7 @@ app.add_middleware(
     generator = lambda: "{}".format(uuid4())
 )
 
-if os.getenv('APP_ENV') == 'local' or get_env_bool('ENABLE_CORS_ALLOW_ALL'):
+if APP_ENV == 'local' or get_env_bool('ENABLE_CORS_ALLOW_ALL'):
     app.add_middleware(
         CORSMiddleware,
         allow_origins = ["*"],

@@ -1,11 +1,13 @@
-import os
+from fastapi.responses import JSONResponse
+from fastapi import HTTPException
+
 from controllers.user import create_customer
 from entities.iot.Device import Device
 from entities.User import User
-from fastapi.responses import JSONResponse
-from fastapi import HTTPException
 from schemas.User import UserRegisterSchema
+
 from utils.common import generate_hash_password, get_admin_status, is_empty, is_false, is_not_empty, is_true
+from utils.env_vars import DOMAIN
 from utils.gitlab import create_gitlab_user
 from utils.logger import log_msg
 from utils.mail import send_device_confirmation_email, send_user_and_device_confirmation_email, send_user_confirmation_email_without_activation_link
@@ -30,7 +32,7 @@ def add_device(current_user, payload, db):
             if is_false(is_admin):
                 log_msg("INFO", f"[add_device] device confirmation email sent to {existing_user.email}")
                 token = generate_token(existing_user)
-                device_activation_link = '{}/device-confirmation/{}'.format(os.getenv("DOMAIN"), token)
+                device_activation_link = '{}/device-confirmation/{}'.format(DOMAIN, token)
                 send_device_confirmation_email(email, device_activation_link, "Device confirmation")
         else:
             password = random_password(8)
@@ -54,7 +56,7 @@ def add_device(current_user, payload, db):
             else:
                 log_msg("INFO", f"[add_device] user and device confirmation email sent to {created_user.email}")
                 token = generate_token(created_user)
-                activation_link = '{}/confirmation/{}'.format(os.getenv("DOMAIN"), token)
+                activation_link = '{}/confirmation/{}'.format(DOMAIN, token)
                 send_user_and_device_confirmation_email(email, password, activation_link, "User and device confirmation")
 
         new_device = Device(**payload.dict())

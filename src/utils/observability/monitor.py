@@ -19,10 +19,8 @@ from utils.observability.enums import Method
 from utils.observability.gauge import create_gauge, set_gauge
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
-from utils.version import APP_VERSION
+from utils.env_vars import APP_ENV, APP_VERSION, DOMAIN
 
-URL = os.environ["DOMAIN"]
-ENV = os.environ["APP_ENV"]
 MONITOR_SRC = os.getenv("MONITOR_SRC", "cwcloud-api")
 MONITOR_WAIT_TIME = get_env_int("MONITOR_WAIT_TIME", 300)
 _supported_monitor_types = ["http", "tcp"]
@@ -96,8 +94,8 @@ def init_vars_monitor(monitor):
         'name': monitor['name'],
         'family': monitor['family'] if is_not_empty_key(monitor, 'family') else monitor['name'],
         'source': MONITOR_SRC,
-        'url': URL,
-        'env': ENV,
+        'url': DOMAIN,
+        'env': APP_ENV,
         'version': APP_VERSION
     }
 

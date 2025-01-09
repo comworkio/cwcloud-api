@@ -1,4 +1,3 @@
-import os
 import json
 
 from datetime import datetime, timedelta
@@ -13,6 +12,7 @@ from entities.User import User
 
 from utils.common import generate_hash_password, is_boolean, is_empty, is_false, is_not_empty, is_true, verify_password
 from utils.encoder import AlchemyEncoder
+from utils.env_vars import DOMAIN
 from utils.jwt import jwt_decode, jwt_encode
 from utils.logger import log_msg
 from utils.payment import PAYMENT_ADAPTER
@@ -107,7 +107,7 @@ def create_user_account(payload, db):
             "email": new_user.email,
             "time": datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         })
-        activation_link = "{}/confirmation/{}".format(os.getenv("DOMAIN"), token)
+        activation_link = "{}/confirmation/{}".format(DOMAIN, token)
         log_msg("INFO", f"[api_user_signup] User {email} has joined comwork cloud")
         log_msg("INFO", f"[api_user_signup] Sending confirmation email to {email}")
 
@@ -244,7 +244,7 @@ def forget_password_email(payload, db):
             "email": user.email,
             "time": datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         })
-        activation_link = "{}/reset-password/{}".format(os.getenv("DOMAIN"), token)
+        activation_link = "{}/reset-password/{}".format(DOMAIN, token)
         send_forget_password_email(user.email, activation_link, subject)
         log_msg("INFO", f"[api_reset_password] User {user.email} requested a reset password email")
 
@@ -477,7 +477,7 @@ def confirmation_email(payload, db):
             "email": user.email,
             "time": datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         })
-        activation_link = "{}/confirmation/{}".format(os.getenv("DOMAIN"), token)
+        activation_link = "{}/confirmation/{}".format(DOMAIN, token)
         log_msg("INFO", f"[api_confirm_account] User {user.email} requested a confirm account email")
         send_confirmation_email(user.email, activation_link, subject)
 

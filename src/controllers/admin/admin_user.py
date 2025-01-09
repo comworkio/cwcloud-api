@@ -1,4 +1,3 @@
-import os
 import json
 
 from urllib.error import HTTPError
@@ -14,6 +13,7 @@ from entities.iot.Device import Device
 from entities.User import User
 
 from utils.common import is_false, is_numeric, generate_hash_password
+from utils.env_vars import DOMAIN
 from utils.flag import is_flag_enabled
 from utils.jwt import jwt_encode
 from utils.logger import log_msg
@@ -236,7 +236,7 @@ def admin_add_user(current_user, payload, db):
             'email': new_user.email,
             'time': datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         })
-        activation_link = '{}/confirmation/{}'.format(os.getenv("DOMAIN"), token)
+        activation_link = '{}/confirmation/{}'.format(DOMAIN, token)
         log_msg("INFO", f"[api_admin_user_register] User {email} has joined comwork cloud")
         send_confirmation_email(new_user.email, activation_link, subject)
 
