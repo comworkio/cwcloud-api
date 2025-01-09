@@ -6,7 +6,7 @@ from utils.common import get_env_int
 if __name__ == "__main__":
     uvicorn.run(
         "main:app", 
-        host=os.genenv('LISTEN_ADDR', '0.0.0.0'), 
+        host=os.getenv('LISTEN_ADDR'), 
         port=get_env_int('LISTEN_PORT', 5000), 
         workers=get_env_int('UVICORN_WORKERS', 10),
         timeout_keep_alive=get_env_int('UVICORN_TIMEOUT_KEEP_ALIVE', 30),

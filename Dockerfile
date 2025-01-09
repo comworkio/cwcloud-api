@@ -8,6 +8,7 @@ FROM python:${PYTHON_VERSION} as api
 ENV PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
     SLACK_TRIGGER="off" \
+    LISTEN_ADDR="0.0.0.0" \
     PATH="/root/.pulumi/bin:${PATH}" \
     WAIT_TIME=10
 
