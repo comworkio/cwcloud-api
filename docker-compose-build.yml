@@ -7,8 +7,6 @@ services:
       context: .
       dockerfile: ./Dockerfile
       target: api
-    env_file:
-      - .env
   comwork_cloud_consumer:
     restart: always
     image: cwcloud-consumer:latest
@@ -16,8 +14,6 @@ services:
       context: .
       dockerfile: ./Dockerfile
       target: consumer
-    env_file:
-      - .env
   comwork_cloud_scheduler:
     restart: always
     image: cwcloud-scheduler:latest
@@ -25,8 +21,6 @@ services:
       context: .
       dockerfile: ./Dockerfile
       target: scheduler
-    env_file:
-      - .env
   comwork_cloud_tests:
     image: cwcloud-tests:latest
     build:
@@ -35,16 +29,12 @@ services:
       target: unit_tests
     volumes:
       - ./cloud_environments_prod.yml:/app/cloud_environments.yml
-    env_file:
-      - .env
   comwork_cloud_linter:
     image: cwcloud-linter:latest
     build:
       context: .
       dockerfile: ./Dockerfile
       target: linter
-    env_file:
-      - .env
   comwork_cloud_bandit:
     image: cwcloud-bandit:latest
     build:
@@ -53,5 +43,4 @@ services:
       target: code_scanner
     volumes:
       - .:/app
-    env_file:
-      - .env
+
