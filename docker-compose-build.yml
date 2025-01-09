@@ -28,7 +28,7 @@ services:
       dockerfile: ./Dockerfile
       target: unit_tests
     volumes:
-      - ./cloud_environments_prod.yml:/app/cloud_environments.yml
+      - ./cloud_environments_local.yml.dist:/app/cloud_environments.yml
   comwork_cloud_linter:
     image: cwcloud-linter:latest
     build:
@@ -43,4 +43,3 @@ services:
       target: code_scanner
     volumes:
       - .:/app
-
