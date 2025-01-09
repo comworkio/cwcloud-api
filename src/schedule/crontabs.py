@@ -6,7 +6,7 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from dateutil.parser import parse
 
-from utils.common import get_env_int, is_empty_key, is_not_empty
+from utils.common import is_empty_key, is_not_empty
 from utils.bytes_generator import generate_random_bytes
 from utils.cron import parse_crontab
 from utils.date import is_after_current_time
