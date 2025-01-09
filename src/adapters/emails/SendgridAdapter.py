@@ -6,8 +6,8 @@ from sendgrid.helpers.mail import Mail, Email, To, Content, Attachment, FileCont
 from utils import common
 from adapters.emails.EmailAdapter import EmailAdapter
 from utils.logger import log_msg
+from utils.mail import EMAIL_EXPEDITOR
 
-_email_expeditor = os.environ['EMAIL_EXPEDITOR']
 _sendgrid_api_key = os.getenv('SENDGRID_API_KEY')
 
 class SendgridAdapter(EmailAdapter):
@@ -15,11 +15,11 @@ class SendgridAdapter(EmailAdapter):
         return common.is_disabled(_sendgrid_api_key)
 
     def send(self, email):
-        from_email = Email(_email_expeditor)
+        from_email = Email(EMAIL_EXPEDITOR)
         if common.is_not_empty_key(email, "from"):
             from_email = Email(email['from'])
 
-        to_email = Email(_email_expeditor)
+        to_email = Email(EMAIL_EXPEDITOR)
         if common.is_not_empty_key(email, "to"):
             to_email = To(email['to'])
 

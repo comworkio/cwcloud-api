@@ -3,8 +3,7 @@ import os
 from adapters.emails.EmailAdapter import EmailAdapter
 from utils.common import is_not_empty_key
 from utils.logger import log_msg
-
-_email_expeditor = os.environ['EMAIL_EXPEDITOR']
+from utils.mail import EMAIL_EXPEDITOR
 
 class LogAdapter(EmailAdapter):
     def is_disabled(self):
@@ -13,11 +12,11 @@ class LogAdapter(EmailAdapter):
         return is_disabled
 
     def send(self, email):
-        from_email = _email_expeditor
+        from_email = EMAIL_EXPEDITOR
         if is_not_empty_key(email, "from"):
             from_email = email['from']
 
-        to_email = _email_expeditor
+        to_email = EMAIL_EXPEDITOR
         if is_not_empty_key(email, "to"):
             to_email = email['to']
 
