@@ -10,7 +10,7 @@ from utils.logger import quiet_log_msg
 postgres_db_name = os.getenv("POSTGRES_DB")
 postgres_user = os.getenv("POSTGRES_USER")
 postgres_password = os.getenv("POSTGRES_PASSWORD")
-postgres_port = os.getenv("POSTGRES_PORT")
+postgres_port = get_env_int("POSTGRES_PORT", 5432)
 postgres_host = os.getenv("POSTGRES_HOST")
 postgres_pool_size = get_env_int("POSTGRES_SIZE_POOL", 30)
 postgres_max_overflow = get_env_int("POSTGRES_MAX_OVERFLOW", 10)
