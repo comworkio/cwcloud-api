@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from utils.dns_zones import get_first_dns_zone_doc
 from utils.provider import get_provider_infos
 
-DEFAULT_PROVIDER = os.getenv('DEFAULT_PROVIDER', 'void')
+DEFAULT_PROVIDER = os.getenv('DEFAULT_PROVIDER', 'scaleway')
 
 class InstanceUpdateSchema(BaseModel):
     status: Optional[str]
