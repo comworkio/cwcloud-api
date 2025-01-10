@@ -14,6 +14,7 @@ from utils.bucket import upload_to_invoices_bucket
 from utils.common import is_empty, is_not_empty, is_true, AUTOESCAPE_EXTENSIONS
 
 from entities.Invoice import Invoice
+from utils.mail import EMAIL_EXPEDITOR
 
 def generate_invoice_pdf(invoice_ref, client, consumptions, subscriptions, from_date, to_date, total_ht, total_ttc, without_tva):
     invoice_date = str(datetime.now()).split(" ")[0]
@@ -46,10 +47,8 @@ def generate_invoice_pdf(invoice_ref, client, consumptions, subscriptions, from_
     invoice_company_city = os.getenv('INVOICE_COMPANY_CITY')
     invoice_company_address = os.getenv('INVOICE_COMPANY_ADDRESS')
     invoice_company_contact = os.getenv('INVOICE_COMPANY_CONTACT')
-    invoice_company_email = os.getenv('INVOICE_COMPANY_EMAIL')
-    registration_number_label = os.getenv('REGISTRATION_NUMBER_LABEL')
-    if is_empty(registration_number_label):
-        registration_number_label = "N° SIRET"
+    invoice_company_email = os.getenv('INVOICE_COMPANY_EMAIL', EMAIL_EXPEDITOR)
+    registration_number_label = os.getenv('REGISTRATION_NUMBER_LABEL', "N° SIRET")
 
     vat_message = "{}%".format((Decimal(ttva)-1)*100)
     timbre_fiscal_message = None
