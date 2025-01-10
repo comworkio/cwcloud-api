@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import QueuePool
 
 from utils.common import get_env_int
-from utils.logger import quiet_log_msg
+from utils.logger import log_msg
 
 postgres_db_name = os.getenv("POSTGRES_DB")
 postgres_user = os.getenv("POSTGRES_USER")
@@ -39,6 +39,6 @@ def get_db():
     try:
         yield db
     except Exception as e:
-        quiet_log_msg("ERROR", f"[get_db] unexpected error: e.type = {type(e).__name__}, e.file = {__file__}, e.lno = {e.__traceback__.tb_lineno}, e.msg={e}")
+        log_msg("ERROR", f"[get_db] unexpected error: e.type = {type(e).__name__}, e.file = {__file__}, e.lno = {e.__traceback__.tb_lineno}, e.msg={e}")
     finally:
         db.close()
