@@ -57,12 +57,12 @@ class Environment(Base):
     def getByType(type, db):
         env = db.query(Environment).filter(Environment.type == type).all()
         return env
-    
+
     @staticmethod
     def getAllPaginated(page, limit, db):
         env = db.query(Environment).limit(limit).offset(page * limit).all()
         return env
-    
+
     def getByTypePaginated(type, page, limit, db):
         env = db.query(Environment).filter(Environment.type == type).limit(limit).offset(page * limit).all()
         return env
@@ -81,12 +81,12 @@ class Environment(Base):
     def getAllAvailableEnvironmentsByType(type, db):
         env = db.query(Environment).filter(Environment.is_private is False, Environment.type == type).all()
         return env
-    
+
     @staticmethod
     def getAllAvailableEnvironmentsByTypePaged(type, page, limit, db):
         env = db.query(Environment).filter(Environment.is_private is False, Environment.type == type).limit(limit).offset(page * limit).all()
         return env
-    
+
     @staticmethod
     def deleteOne(envId, db):
         db.query(Environment).filter(Environment.id == envId).delete()

@@ -3,13 +3,12 @@ import re
 import pdfkit
 
 from datetime import datetime
-from decimal import Decimal
 
 from pathlib import Path
 from datetime import datetime
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from utils.billing import TIMBRE_FISCAL
+from utils.billing import TIMBRE_FISCAL, TTVA
 from utils.bucket import upload_to_invoices_bucket
 from utils.common import is_empty, is_not_empty, is_true, AUTOESCAPE_EXTENSIONS
 
@@ -33,10 +32,6 @@ def generate_invoice_pdf(invoice_ref, client, consumptions, subscriptions, from_
     elif is_empty(client.company_name):
         registration_number = "Particulier"
 
-    ttva = os.getenv('TTVA')
-    if is_empty(ttva):
-        ttva = "1.2"
-
     price_unit = os.getenv('PRICE_UNIT')
     if is_empty(price_unit):
         price_unit = "Euros"
@@ -50,7 +45,7 @@ def generate_invoice_pdf(invoice_ref, client, consumptions, subscriptions, from_
     invoice_company_email = os.getenv('INVOICE_COMPANY_EMAIL', EMAIL_EXPEDITOR)
     registration_number_label = os.getenv('REGISTRATION_NUMBER_LABEL', "N° SIRET")
 
-    vat_message = "{}%".format((Decimal(ttva)-1)*100)
+    vat_message = "{}%".format((TTVA-1)*100)
     timbre_fiscal_message = None
     if is_true(without_tva):
         vat_message = "Pas de TVA"
@@ -106,11 +101,7 @@ def generate_receipt_pdf(invoice_ref, invoice_date, client, total_ht, total_ttc,
     elif is_empty(client['company_name']):
         registration_number = "Particulier"
 
-    ttva = os.getenv('TTVA')
-    if is_empty(ttva):
-        ttva = "1.2"
-
-    vat_message = "{}%".format((Decimal(ttva)-1)*100)
+    vat_message = "{}%".format((TTVA-1)*100)
 
     timbre_fiscal_message = None
 

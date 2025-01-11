@@ -90,7 +90,8 @@ def create_custom_invoice(current_user: Annotated[UserSchema, Depends(admin_requ
             items_dict.append(itemd)
 
         total_ttc = 0
-        if is_flag_disabled(target_user.enabled_features, 'without_vat'):
+        without_tva = is_flag_enabled(target_user.enabled_features, 'without_vat')
+        if without_tva:
             total_ttc = round(total_ht, 4)
         elif is_not_empty(TIMBRE_FISCAL):
             total_ttc = round((total_ht * TTVA) + TIMBRE_FISCAL, 4)
@@ -107,7 +108,7 @@ def create_custom_invoice(current_user: Annotated[UserSchema, Depends(admin_requ
         new_invoice.to_date = invoice_date
         new_invoice.user_id = target_user.id
         new_invoice.total_price = total_ttc
-        name_file = generate_invoice_pdf(invoice_ref, target_user, [], items_dict, invoice_date, invoice_date, total_ht, total_ttc, is_flag_enabled(target_user.enabled_features, 'without_vat'))
+        name_file = generate_invoice_pdf(invoice_ref, target_user, [], items_dict, invoice_date, invoice_date, total_ht, total_ttc, without_tva)
         min_amount = get_min_amount()
 
         try:

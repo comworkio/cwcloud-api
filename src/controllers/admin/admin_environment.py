@@ -279,17 +279,14 @@ def admin_add_environment(payload, db):
 
     return JSONResponse(content = env_json, status_code = 201)
 
-def admin_get_environments(type:Literal["vm", "k8s", "all"], page, limit, db):
-    if (page is None and limit is None) or (page < 0 or limit < 0):
-        if(type == "all"):
-            envs = Environment.getAll(db)
-        else:
-            envs = Environment.getByType(type, db)
+def admin_get_environments(type: Literal["vm", "k8s", "all"], page, limit, db):
+    if (page is None and limit is None) or page < 0 or limit < 0:
+        envs = Environment.getAll(db) if type == "all" else Environment.getByType(type, db)
+    elif type == "all":
+        envs = Environment.getAllPaginated(page, limit, db)
     else:
-        if(type == "all"):
-            envs = Environment.getAllPaginated(page, limit, db)
-        else:
-            envs = Environment.getByTypePaginated(type, page, limit, db)
+        envs = Environment.getByTypePaginated(type, page, limit, db)
+
     envs_json = json.loads(json.dumps(envs, cls=AlchemyEncoder))
     return JSONResponse(content=envs_json, status_code=200)
 

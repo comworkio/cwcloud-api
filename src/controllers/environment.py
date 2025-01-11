@@ -10,7 +10,6 @@ from utils.encoder import AlchemyEncoder
 from utils.flag import is_flag_disabled
 from utils.observability.cid import get_current_cid
 
-
 def get_environment(current_user, environment_id, db):
     if not is_numeric(environment_id):
         return JSONResponse(content = {
@@ -47,22 +46,15 @@ def get_environment(current_user, environment_id, db):
         }, status_code = 403)
 
     env_json = json.loads(json.dumps(env, cls = AlchemyEncoder))
-
     return JSONResponse(content = env_json, status_code = 200)
 
 def get_environments(type: Literal["vm", "k8s", "all"], page, limit, db):
-    if (page is None and limit is None) or (page < 0 or limit < 0):
-        if type == "all":
-            envs = Environment.getAllAvailableEnvironments(db)
-        else:
-            envs = Environment.getAllAvailableEnvironmentsByType(type, db)
+    if (page is None and limit is None) or page < 0 or limit < 0:
+        envs = Environment.getAllAvailableEnvironments(db) if type == "all" else Environment.getAllAvailableEnvironmentsByType(type, db)
+    elif type == "all":
+        envs = Environment.getAllAvailableEnvironmentsPaged(page, limit, db)
     else:
-        if type == "all":
-            envs = Environment.getAllAvailableEnvironmentsPaged(page, limit, db)
-        else:
-            envs = Environment.getAllAvailableEnvironmentsByTypePaged(
-                type, page, limit, db
-            )
+        envs = Environment.getAllAvailableEnvironmentsByTypePaged(type, page, limit, db)
 
     envs_json = json.loads(json.dumps(envs, cls = AlchemyEncoder))
     return JSONResponse(content = envs_json, status_code = 200)

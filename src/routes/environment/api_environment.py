@@ -26,9 +26,7 @@ def get_all_environments(
     db: Session = Depends(get_db),
 ):
     check_permissions(current_user, type, db)
-    with get_otel_tracer().start_as_current_span(
-        span_format(_span_prefix, Method.GET, Action.ALL)
-    ):
+    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.ALL)):
         increment_counter(_counter, Method.GET, Action.ALL)
         if current_user.is_admin:
             return admin_get_environments(type, page, limit, db)
