@@ -141,7 +141,8 @@ def generate_invoice(current_user: Annotated[UserSchema, Depends(admin_required)
             encoded_string = ""
             with open(name_file, "rb") as pdf_file:
                 encoded_string = base64.b64encode(pdf_file.read()).decode()
-            pdf_file.close()
+                pdf_file.close()
+
             if is_false(preview):
                 if total_ttc <= min_amount:
                     new_invoice.status = "paid"
@@ -243,7 +244,8 @@ def invoice_edition(current_user: Annotated[UserSchema, Depends(admin_required)]
         encoded_string = ""
         with open(name_file, "rb") as pdf_file:
             encoded_string = base64.b64encode(pdf_file.read()).decode()
-        pdf_file.close()
+            pdf_file.close()
+
         if total_ttc <= min_amount:
             updated_invoice.status = "paid"
 
@@ -302,8 +304,8 @@ def download_invoice(current_user: Annotated[UserSchema, Depends(admin_required)
         encoded_string = ""
         with open(target_name, "rb") as pdf_file:
             encoded_string = base64.b64encode(pdf_file.read()).decode()
+            pdf_file.close()
 
-        pdf_file.close()
         quiet_remove(target_name)
         return JSONResponse(content = {
             'status': 'ok',

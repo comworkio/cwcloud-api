@@ -51,8 +51,8 @@ def download_invoice_by_invoice_ref(current_user: Annotated[UserSchema, Depends(
         encoded_string = ""
         with open(target_name, "rb") as pdf_file:
             encoded_string = base64.b64encode(pdf_file.read()).decode()
-
-        pdf_file.close()
+            pdf_file.close()
+    
         quiet_remove(target_name)
         return JSONResponse(content = {"file_name": target_name, "blob": str(encoded_string)}, status_code = 200)
 

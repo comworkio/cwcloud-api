@@ -115,7 +115,8 @@ def create_custom_invoice(current_user: Annotated[UserSchema, Depends(admin_requ
             encoded_string = ""
             with open(name_file, "rb") as pdf_file:
                 encoded_string = base64.b64encode(pdf_file.read()).decode()
-            pdf_file.close()
+                pdf_file.close()
+
             if is_false(preview):
                 if total_ttc <= min_amount:
                     new_invoice.status = "paid"

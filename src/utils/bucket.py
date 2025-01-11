@@ -70,8 +70,8 @@ bucket_region = os.getenv('BUCKET_REGION')
 invoice_bucket_url = os.getenv('BUCKET_URL')
 invoice_bucket_name = os.getenv('BUCKET_NAME')
 
-attachment_bucket_url = os.getenv('ATTACHMENT_BUCKET_URL') or invoice_bucket_url
-attachment_bucket_name = os.getenv('ATTACHMENT_BUCKET_NAME') or invoice_bucket_name
+attachment_bucket_url = os.getenv('ATTACHMENT_BUCKET_URL', invoice_bucket_url)
+attachment_bucket_name = os.getenv('ATTACHMENT_BUCKET_NAME', invoice_bucket_name)
 
 def upload_to_attachment_bucket(target_name, file_path):
     upload_bucket(target_name, file_path, attachment_bucket_url, attachment_bucket_name)
