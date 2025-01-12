@@ -130,7 +130,8 @@ def pay(db, user, invoice, voucher_id = "", auto_pay = False):
         encoded_string = ""
         with open(name_file, 'rb') as pdf_file:
             encoded_string = base64.b64encode(pdf_file.read()).decode()
-        pdf_file.close()
+            pdf_file.close()
+
         log_msg("INFO", f"[api_invoice] Created new receipt of invoice {invoice.ref} for user {user['email']}")
         quiet_remove(name_file)
         log_msg("INFO", f"[api_invoice] User {user['email']} will pay {total_to_pay}")
