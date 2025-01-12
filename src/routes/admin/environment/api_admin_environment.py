@@ -29,10 +29,10 @@ def get_roles(current_user: Annotated[UserSchema, Depends(admin_required)], db: 
 
 @router.get("/all")
 def get_all_environments(current_user: Annotated[UserSchema, Depends(admin_required)],
-                         type: Literal['vm','k8s'] = "vm",page: Optional[int] = None, limit:Optional[int] = None,  db: Session = Depends(get_db)):
+                         type: Literal['vm', 'k8s'] = "vm", start_index: Optional[int] = None, max_results: Optional[int] = None, db: Session = Depends(get_db)):
     with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.ALL)):
         increment_counter(_counter, Method.GET, Action.ALL)
-        return admin_get_environments(type, page, limit, db)
+        return admin_get_environments(type, start_index, max_results, db)
 
 @router.get("/{environment_id}/export")
 def export_environment_by_id(current_user: Annotated[UserSchema, Depends(admin_required)], environment_id: str, db: Session = Depends(get_db)):

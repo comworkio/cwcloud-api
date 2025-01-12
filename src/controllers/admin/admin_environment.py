@@ -273,13 +273,16 @@ def admin_add_environment(payload, db):
 
     return JSONResponse(content = env_json, status_code = 201)
 
-def admin_get_environments(type: Literal["vm", "k8s", "all"], page, limit, db):
-    if (page is None and limit is None) or page < 0 or limit < 0:
+def admin_get_environments(type: Literal["vm", "k8s", "all"], start_index, max_results, db):
+    if is_not_numeric(start_index) or is_not_numeric(max_results):
+        log_msg("DEBUG", f"[admin_get_environments][1] type = {type}, start_index = {start_index}, max_results = {max_results}")
         envs = Environment.getAll(db) if type == "all" else Environment.getByType(type, db)
     elif type == "all":
-        envs = Environment.getAllPaginated(page, limit, db)
+        log_msg("DEBUG", f"[admin_get_environments][2] type = {type}, start_index = {start_index}, max_results = {max_results}")
+        envs = Environment.getAllPaginated(start_index, max_results, db)
     else:
-        envs = Environment.getByTypePaginated(type, page, limit, db)
+        log_msg("DEBUG", f"[admin_get_environments][3] type = {type}, start_index = {start_index}, max_results = {max_results}")
+        envs = Environment.getByTypePaginated(type, start_index, max_results, db)
 
     envs_json = json.loads(json.dumps(envs, cls=AlchemyEncoder))
     return JSONResponse(content=envs_json, status_code=200)

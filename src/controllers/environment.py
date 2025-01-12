@@ -5,9 +5,10 @@ from fastapi.responses import JSONResponse
 
 from entities.Environment import Environment
 from entities.User import User
-from utils.common import is_numeric
+from utils.common import is_not_numeric, is_numeric
 from utils.encoder import AlchemyEncoder
 from utils.flag import is_flag_disabled
+from utils.logger import log_msg
 from utils.observability.cid import get_current_cid
 
 def get_environment(current_user, environment_id, db):
@@ -48,13 +49,16 @@ def get_environment(current_user, environment_id, db):
     env_json = json.loads(json.dumps(env, cls = AlchemyEncoder))
     return JSONResponse(content = env_json, status_code = 200)
 
-def get_environments(type: Literal["vm", "k8s", "all"], page, limit, db):
-    if (page is None and limit is None) or page < 0 or limit < 0:
+def get_environments(type: Literal["vm", "k8s", "all"], start_index, max_results, db):
+    if is_not_numeric(start_index) or is_not_numeric(max_results):
+        log_msg("DEBUG", f"[get_environments][1] type = {type}, start_index = {start_index}, max_results = {max_results}")
         envs = Environment.getAllAvailableEnvironments(db) if type == "all" else Environment.getAllAvailableEnvironmentsByType(type, db)
     elif type == "all":
-        envs = Environment.getAllAvailableEnvironmentsPaged(page, limit, db)
+        log_msg("DEBUG", f"[get_environments][2] type = {type}, start_index = {start_index}, max_results = {max_results}")
+        envs = Environment.getAllAvailableEnvironmentsPaged(start_index, max_results, db)
     else:
-        envs = Environment.getAllAvailableEnvironmentsByTypePaged(type, page, limit, db)
+        log_msg("DEBUG", f"[get_environments][3] type = {type}, start_index = {start_index}, max_results = {max_results}")
+        envs = Environment.getAllAvailableEnvironmentsByTypePaged(type, start_index, max_results, db)
 
     envs_json = json.loads(json.dumps(envs, cls = AlchemyEncoder))
     return JSONResponse(content = envs_json, status_code = 200)
