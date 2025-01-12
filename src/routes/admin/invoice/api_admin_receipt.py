@@ -12,6 +12,7 @@ from schemas.Receipt import ReceiptDownloadSchema
 
 from utils.common import is_false
 from utils.file import quiet_remove
+from utils.logger import log_msg
 from utils.user import user_id_from_body
 from utils.billing import download_billing_file
 from utils.observability.cid import get_current_cid
@@ -59,9 +60,11 @@ def download_receipt(current_user: Annotated[UserSchema, Depends(admin_required)
 
         encoded_string = ""
         with open(target_name, "rb") as pdf_file:
+            log_msg("INFO", f"[download_receipt] writing file {target_name} content in response")
             encoded_string = base64.b64encode(pdf_file.read()).decode()
             pdf_file.close()
 
+        log_msg("INFO", f"[download_receipt] trying to delete {target_name}")
         quiet_remove(target_name)
         return JSONResponse(content = {
             'status': 'ok',

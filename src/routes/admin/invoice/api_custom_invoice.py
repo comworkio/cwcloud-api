@@ -126,7 +126,9 @@ def create_custom_invoice(current_user: Annotated[UserSchema, Depends(admin_requ
                 if total_ttc > min_amount and is_flag_disabled(target_user.enabled_features, 'disable_emails'):
                     send_invoice_email(email, name_file, encoded_string, send)
 
-                log_msg("INFO", f"[api_invoice] Created new invoice for {invoice_date} for user {target_user.email}")
+                log_msg("INFO", f"[api_custom_invoice] Created new invoice for {invoice_date} for user {target_user.email}")
+            else:
+                log_msg("INFO", f"[api_custom_invoice] Preview new invoice for {invoice_date} for user {target_user.email}")
 
             quiet_remove(name_file)
         except HTTPError as e:

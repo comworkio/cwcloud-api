@@ -152,7 +152,9 @@ def generate_invoice(current_user: Annotated[UserSchema, Depends(admin_required)
                 if total_ttc > min_amount and is_flag_disabled(target_user.enabled_features, 'disable_emails'):
                     send_invoice_email(email, name_file, encoded_string, send)
 
-                log_msg("INFO", f"[api_invoice] Created new invoice between {from_date_iso} and {to_date_iso} for user {target_user.email}")
+                log_msg("INFO", f"[api_admin_invoice] Created new invoice between {from_date_iso} and {to_date_iso} for user {target_user.email}")
+            else:
+                log_msg("INFO", f"[api_admin_invoice] Preview new invoice between {from_date_iso} and {to_date_iso} for user {target_user.email}")
 
             quiet_remove(name_file)
         except HTTPError as e:
