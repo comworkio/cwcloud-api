@@ -18,5 +18,5 @@ def download_billing_file(kind, user_id, user_invoice):
         log_msg("INFO", f"[download_billing_file][2] path_file = {path_file}")
         download_status = download_from_invoices_bucket(path_file, target_name)
 
-    log_msg("INFO", f"[download_billing_file] download_status = {download_status["status"]}")
+    log_msg("INFO", f"[download_billing_file] download_status = {download_status}")
     return target_name, download_status

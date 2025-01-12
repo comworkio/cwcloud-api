@@ -62,18 +62,17 @@ async def get_current_not_mandatory_user(user_token: str = Depends(user_token_he
             except JWTError as e:
                 log_msg("DEBUG", "[auth_guard][get_current_not_mandatory_user] e.type = {}, e.msg = {}".format(type(e), e))
                 return None
-        else:
-            if is_not_empty(X_Auth_Token):
-                secret_key = X_Auth_Token
-                user_api_key = ApiKeys.getApiKeyBySecretKey(secret_key, db)
-                if is_empty(user_api_key):
-                    log_msg("DEBUG", "[auth_guard][get_current_not_mandatory_user] user_api_key is not set")
-                    return None
-
-                user = User.getUserById(user_api_key.user_id, db)
-            else:
-                log_msg("DEBUG", "[auth_guard][get_current_not_mandatory_user] auth_token is not set")
+        elif is_not_empty(X_Auth_Token):
+            secret_key = X_Auth_Token
+            user_api_key = ApiKeys.getApiKeyBySecretKey(secret_key, db)
+            if is_empty(user_api_key):
+                log_msg("DEBUG", "[auth_guard][get_current_not_mandatory_user] user_api_key is not set")
                 return None
+
+            user = User.getUserById(user_api_key.user_id, db)
+        else:
+            log_msg("DEBUG", "[auth_guard][get_current_not_mandatory_user] auth_token is not set")
+            return None
 
         if is_empty(user):
             log_msg("DEBUG", "[auth_guard][get_current_not_mandatory_user] user is not found")
@@ -97,15 +96,15 @@ async def get_current_user(user_token: str = Depends(user_token_header), X_Auth_
                 user = User.getUserByEmail(token_data.email, db)
             except JWTError:
                 raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
-        else:
-            if is_not_empty(X_Auth_Token):
-                secret_key = X_Auth_Token
-                user_api_key = ApiKeys.getApiKeyBySecretKey(secret_key, db)
-                if is_empty(user_api_key):
-                    raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
-                user = User.getUserById(user_api_key.user_id, db)
-            else:
+        elif is_not_empty(X_Auth_Token):
+            secret_key = X_Auth_Token
+            user_api_key = ApiKeys.getApiKeyBySecretKey(secret_key, db)
+            if is_empty(user_api_key):
                 raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
+            user = User.getUserById(user_api_key.user_id, db)
+        else:
+            raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
+
         if is_empty(user):
             raise CwHTTPException(message = {"error": "authentification failed", "i18n_code": "auth_failed"}, status_code = status.HTTP_401_UNAUTHORIZED)
 
