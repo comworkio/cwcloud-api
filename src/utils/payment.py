@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from adapters.AdapterConfig import get_adapter
 
 from utils.billing import TTVA
-from utils.file import get_b64_content, quiet_remove
+from utils.file import get_b64_content
 from utils.mail import send_relaunch_email
 from utils.currency import get_payment_currency
 from utils.invoice import generate_receipt_pdf

@@ -12,8 +12,7 @@ from schemas.User import UserSchema
 from utils.billing import download_billing_file
 from utils.common import is_false
 from utils.encoder import AlchemyEncoder
-from utils.file import get_b64_content, quiet_remove
-from utils.logger import log_msg
+from utils.file import get_b64_content
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
 from utils.observability.counter import create_counter, increment_counter

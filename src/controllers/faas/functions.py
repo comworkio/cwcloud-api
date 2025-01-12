@@ -11,7 +11,7 @@ from utils.faas.functions import is_not_supported_language, is_not_supported_cal
 from utils.faas.owner import get_email_owner, get_owner_id, override_owner_id
 from utils.faas.security import has_not_exec_right, has_not_write_right
 from utils.encoder import AlchemyEncoder
-from utils.file import get_b64_content, quiet_remove
+from utils.file import get_b64_content
 from utils.observability.cid import get_current_cid
 
 def add_function(payload, current_user, db):

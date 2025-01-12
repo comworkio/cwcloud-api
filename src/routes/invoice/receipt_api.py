@@ -11,7 +11,7 @@ from middleware.auth_guard import get_current_active_user
 
 from utils.common import is_false
 from utils.billing import download_billing_file
-from utils.file import get_b64_content, quiet_remove
+from utils.file import get_b64_content
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
 from utils.observability.counter import create_counter, increment_counter

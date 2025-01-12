@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from entities.Environment import Environment
 from utils.common import is_empty, is_not_numeric, is_not_empty_key, is_not_empty
 from utils.encoder import AlchemyEncoder
-from utils.file import get_b64_content, quiet_remove
+from utils.file import get_b64_content
 from utils.gitlab import get_helm_charts, get_infra_playbook_roles
 from utils.list import marshall_list_string, unmarshall_list_array
 from utils.observability.cid import get_current_cid

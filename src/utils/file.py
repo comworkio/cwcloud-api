@@ -24,7 +24,7 @@ def create_cert_locally(file_name, file_content):
 def delete_cert_locally(file_name):
     quiet_remove(f"{file_name}.pem")
 
-def get_b64_content(file_name, remove):
+def get_b64_content(file_name: str, remove: bool):
     b64_content = ""
     with open(file_name, "rb") as file:
         log_msg("INFO", f"[get_b64_content] writing file {file_name} content in response")

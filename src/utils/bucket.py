@@ -77,19 +77,16 @@ def upload_to_attachment_bucket(target_name, file_path):
     upload_bucket(target_name, file_path, attachment_bucket_url, attachment_bucket_name)
 
 def download_from_attachment_bucket(target_name, file_path):
-    download_from_bucket(target_name, file_path, attachment_bucket_url, attachment_bucket_name)
+    return download_from_bucket(target_name, file_path, attachment_bucket_url, attachment_bucket_name)
 
 def delete_from_attachment_bucket(target_name, file_path):
-    delete_from_bucket(target_name, file_path, attachment_bucket_url, attachment_bucket_name)
+    return delete_from_bucket(target_name, file_path, attachment_bucket_url, attachment_bucket_name)
 
 def upload_to_invoices_bucket(target_name, file_path):
     upload_bucket(target_name, file_path, invoice_bucket_url, invoice_bucket_name)
 
 def download_from_invoices_bucket(target_name, file_path):
-    download_from_bucket(target_name, file_path, invoice_bucket_url, invoice_bucket_name)
-
-def delete_from_invoices_bucket(target_name, file_path):
-    delete_from_bucket(target_name, file_path, invoice_bucket_url, invoice_bucket_name)
+    return download_from_bucket(target_name, file_path, invoice_bucket_url, invoice_bucket_name)
 
 def upload_bucket(target_name, file_path, url, bucket_name):
     if url and access_key and secret_key and bucket_name and bucket_region:

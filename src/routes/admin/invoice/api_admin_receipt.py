@@ -9,8 +9,7 @@ from middleware.auth_guard import admin_required
 from schemas.Receipt import ReceiptDownloadSchema
 
 from utils.common import is_false
-from utils.file import get_b64_content, quiet_remove
-from utils.logger import log_msg
+from utils.file import get_b64_content
 from utils.user import user_id_from_body
 from utils.billing import download_billing_file
 from utils.observability.cid import get_current_cid

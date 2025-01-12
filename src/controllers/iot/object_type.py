@@ -8,7 +8,7 @@ from entities.iot.ObjectType import ObjectType
 
 from utils.common import is_true
 from utils.encoder import AlchemyEncoder
-from utils.file import get_b64_content, quiet_remove
+from utils.file import get_b64_content
 from utils.iot.object_type import object_type_user_content_check
 from utils.observability.cid import get_current_cid
 
