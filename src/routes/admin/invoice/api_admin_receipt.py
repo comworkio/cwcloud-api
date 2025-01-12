@@ -1,5 +1,3 @@
-import base64
-
 from typing import Annotated
 from fastapi import Depends, APIRouter
 from fastapi.responses import JSONResponse
@@ -11,7 +9,7 @@ from middleware.auth_guard import admin_required
 from schemas.Receipt import ReceiptDownloadSchema
 
 from utils.common import is_false
-from utils.file import quiet_remove
+from utils.file import get_b64_content, quiet_remove
 from utils.logger import log_msg
 from utils.user import user_id_from_body
 from utils.billing import download_billing_file
@@ -58,14 +56,7 @@ def download_receipt(current_user: Annotated[UserSchema, Depends(admin_required)
                 'cid': get_current_cid()
             }, status_code = download_status["http_code"])
 
-        encoded_string = ""
-        with open(target_name, "rb") as pdf_file:
-            log_msg("INFO", f"[download_receipt] writing file {target_name} content in response")
-            encoded_string = base64.b64encode(pdf_file.read()).decode()
-            pdf_file.close()
-
-        log_msg("INFO", f"[download_receipt] trying to delete {target_name}")
-        quiet_remove(target_name)
+        encoded_string = get_b64_content(target_name, True)
         return JSONResponse(content = {
             'status': 'ok',
             'file_name': target_name,

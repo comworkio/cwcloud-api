@@ -1,12 +1,14 @@
-import base64
-from datetime import datetime
 import json
-from entities.iot.ObjectType import ObjectType
-from fastapi.responses import JSONResponse
+
+from datetime import datetime
 from fastapi import HTTPException
+from fastapi.responses import JSONResponse
+
+from entities.iot.ObjectType import ObjectType
+
 from utils.common import is_true
 from utils.encoder import AlchemyEncoder
-from utils.file import quiet_remove
+from utils.file import get_b64_content, quiet_remove
 from utils.iot.object_type import object_type_user_content_check
 from utils.observability.cid import get_current_cid
 
@@ -133,11 +135,7 @@ def export_object_type(current_user, object_type_id, db):
     with open(file_name, "w") as outfile:
         outfile.write(object_type_json)
 
-    encoded_string = ""
-    with open(file_name, "rb") as json_file:
-        encoded_string = base64.b64encode(json_file.read()).decode()
-        json_file.close()
-    quiet_remove(file_name)
+    encoded_string = get_b64_content(file_name, True)
 
     return JSONResponse(content = {
         "file_name": file_name,

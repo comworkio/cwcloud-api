@@ -1,5 +1,4 @@
 import json
-import base64
 
 from typing import Annotated
 from fastapi import Depends, APIRouter, Query
@@ -13,7 +12,7 @@ from schemas.User import UserSchema
 from utils.billing import download_billing_file
 from utils.common import is_false
 from utils.encoder import AlchemyEncoder
-from utils.file import quiet_remove
+from utils.file import get_b64_content, quiet_remove
 from utils.logger import log_msg
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
@@ -49,14 +48,7 @@ def download_invoice_by_invoice_ref(current_user: Annotated[UserSchema, Depends(
                 'cid': get_current_cid()
             }, status_code = download_status["http_code"])
 
-        encoded_string = ""
-        with open(target_name, "rb") as pdf_file:
-            log_msg("INFO", f"[download_invoice_by_invoice_ref] writing file {target_name} content in response")
-            encoded_string = base64.b64encode(pdf_file.read()).decode()
-            pdf_file.close()
-    
-        log_msg("INFO", f"[download_invoice_by_invoice_ref] trying to delete {target_name}")
-        quiet_remove(target_name)
+        encoded_string = get_b64_content(target_name, True)
         return JSONResponse(content = {"file_name": target_name, "blob": str(encoded_string)}, status_code = 200)
 
 @router.get("")

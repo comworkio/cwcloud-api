@@ -1,4 +1,3 @@
-import base64
 import json
 import copy
 
@@ -12,7 +11,7 @@ from utils.faas.functions import is_not_supported_language, is_not_supported_cal
 from utils.faas.owner import get_email_owner, get_owner_id, override_owner_id
 from utils.faas.security import has_not_exec_right, has_not_write_right
 from utils.encoder import AlchemyEncoder
-from utils.file import quiet_remove
+from utils.file import get_b64_content, quiet_remove
 from utils.observability.cid import get_current_cid
 
 def add_function(payload, current_user, db):
@@ -251,12 +250,7 @@ def export_function(id, db):
     with open(file_name, "w") as outfile:
         outfile.write(function_json)
 
-    encoded_string = ""
-    with open(file_name, "rb") as json_file:
-        encoded_string = base64.b64encode(json_file.read()).decode()
-        json_file.close()
-    quiet_remove(file_name)
-
+    encoded_string = get_b64_content(file_name, True)
     return JSONResponse(content = {"file_name": file_name, "blob": str(encoded_string)}, status_code = 200)
 
 def import_new_function(current_user, function_file, db):

@@ -1,14 +1,13 @@
-import base64
 import json
-from typing import Literal, Optional
 
+from typing import Literal, Optional
 from fastapi import UploadFile
 from fastapi.responses import JSONResponse
 
 from entities.Environment import Environment
 from utils.common import is_empty, is_not_numeric, is_not_empty_key, is_not_empty
 from utils.encoder import AlchemyEncoder
-from utils.file import quiet_remove
+from utils.file import get_b64_content, quiet_remove
 from utils.gitlab import get_helm_charts, get_infra_playbook_roles
 from utils.list import marshall_list_string, unmarshall_list_array
 from utils.observability.cid import get_current_cid
@@ -125,12 +124,7 @@ def admin_export_environment(current_user, environment_id, db):
     with open(file_name, "w") as outfile:
         outfile.write(env_json)
 
-    encoded_string = ""
-    with open(file_name, "rb") as json_file:
-        encoded_string = base64.b64encode(json_file.read()).decode()
-        json_file.close()
-
-    quiet_remove(file_name)
+    encoded_string = get_b64_content(file_name, True)
     return JSONResponse(content = {
         'status': 'ok',
         'file_name': file_name, 

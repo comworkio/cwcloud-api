@@ -1,5 +1,3 @@
-import os
-import base64
 import json
 
 from fastapi import Depends, APIRouter, Query
@@ -17,7 +15,7 @@ from middleware.auth_guard import admin_required
 
 from utils.encoder import AlchemyEncoder
 from utils.common import get_env_int, is_false, is_not_empty
-from utils.file import quiet_remove
+from utils.file import get_b64_content, quiet_remove
 from utils.flag import is_flag_disabled, is_flag_enabled
 from utils.security import is_not_ref_invoice_valid
 from utils.user import pick_user_id_if_exists, user_from_body, user_id_from_body
@@ -138,10 +136,7 @@ def generate_invoice(current_user: Annotated[UserSchema, Depends(admin_required)
         }
 
         try:
-            encoded_string = ""
-            with open(name_file, "rb") as pdf_file:
-                encoded_string = base64.b64encode(pdf_file.read()).decode()
-                pdf_file.close()
+            encoded_string = get_b64_content(name_file, False)
 
             if is_false(preview):
                 if total_ttc <= min_amount:
@@ -243,10 +238,7 @@ def invoice_edition(current_user: Annotated[UserSchema, Depends(admin_required)]
         }
 
     try:
-        encoded_string = ""
-        with open(name_file, "rb") as pdf_file:
-            encoded_string = base64.b64encode(pdf_file.read()).decode()
-            pdf_file.close()
+        encoded_string = get_b64_content(name_file, False)
 
         if total_ttc <= min_amount:
             updated_invoice.status = "paid"
@@ -303,12 +295,7 @@ def download_invoice(current_user: Annotated[UserSchema, Depends(admin_required)
                 'cid': get_current_cid()
             }, status_code = download_status['http_code'])
 
-        encoded_string = ""
-        with open(target_name, "rb") as pdf_file:
-            encoded_string = base64.b64encode(pdf_file.read()).decode()
-            pdf_file.close()
-
-        quiet_remove(target_name)
+        encoded_string = get_b64_content(target_name, True)
         return JSONResponse(content = {
             'status': 'ok',
             'file_name': target_name,

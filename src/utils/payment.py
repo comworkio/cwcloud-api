@@ -1,5 +1,4 @@
 import os
-import base64
 import datetime
 
 from urllib.error import HTTPError
@@ -8,7 +7,7 @@ from fastapi.responses import JSONResponse
 from adapters.AdapterConfig import get_adapter
 
 from utils.billing import TTVA
-from utils.file import quiet_remove
+from utils.file import get_b64_content, quiet_remove
 from utils.mail import send_relaunch_email
 from utils.currency import get_payment_currency
 from utils.invoice import generate_receipt_pdf
@@ -127,13 +126,8 @@ def pay(db, user, invoice, voucher_id = "", auto_pay = False):
         name_file = generate_receipt_pdf(invoice.ref, invoice.date_created, user, total_ht, total_ttc, total_to_pay, 0, None, False)
 
     try:
-        encoded_string = ""
-        with open(name_file, 'rb') as pdf_file:
-            encoded_string = base64.b64encode(pdf_file.read()).decode()
-            pdf_file.close()
-
+        encoded_string = get_b64_content(name_file, True)
         log_msg("INFO", f"[api_invoice] Created new receipt of invoice {invoice.ref} for user {user['email']}")
-        quiet_remove(name_file)
         log_msg("INFO", f"[api_invoice] User {user['email']} will pay {total_to_pay}")
         if total_to_pay > min_amount:
             final_amount = int(round(total_to_pay, 4) * 100)

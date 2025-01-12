@@ -1,6 +1,3 @@
-import os
-import base64
-
 from urllib.error import HTTPError
 from typing import Annotated
 
@@ -16,7 +13,7 @@ from middleware.auth_guard import admin_required
 
 from utils.billing import TIMBRE_FISCAL, TTVA
 from utils.common import is_false, is_not_empty
-from utils.file import quiet_remove
+from utils.file import get_b64_content, quiet_remove
 from utils.flag import is_flag_disabled, is_flag_enabled
 from utils.date import parse_date
 from utils.invoice import get_invoice_ref
@@ -112,10 +109,7 @@ def create_custom_invoice(current_user: Annotated[UserSchema, Depends(admin_requ
         min_amount = get_min_amount()
 
         try:
-            encoded_string = ""
-            with open(name_file, "rb") as pdf_file:
-                encoded_string = base64.b64encode(pdf_file.read()).decode()
-                pdf_file.close()
+            encoded_string = get_b64_content(name_file, True)
 
             if is_false(preview):
                 if total_ttc <= min_amount:
