@@ -40,7 +40,7 @@ class Environment(Base):
 
     @staticmethod
     def getAvailableEnvironmentById(envId, db):
-        env = db.query(Environment).filter(Environment.id == envId, Environment.is_private is False).first()
+        env = db.query(Environment).filter(Environment.id == envId, Environment.is_private == False).first()
         return env
 
     @staticmethod
@@ -69,22 +69,22 @@ class Environment(Base):
 
     @staticmethod
     def getAllAvailableEnvironments(db):
-        env = db.query(Environment).filter(Environment.is_private is False).all()
+        env = db.query(Environment).filter(Environment.is_private == False).all()
         return env
 
     @staticmethod
     def getAllAvailableEnvironmentsPaged(start_index, max_results, db):
-        env = db.query(Environment).filter(Environment.is_private is False).limit(int(max_results)).offset(int(start_index)).all()
+        env = db.query(Environment).filter(Environment.is_private == False).limit(int(max_results)).offset(int(start_index)).all()
         return env
 
     @staticmethod
     def getAllAvailableEnvironmentsByType(type, db):
-        env = db.query(Environment).filter(Environment.is_private is False, Environment.type == type).all()
+        env = db.query(Environment).filter(Environment.is_private == False, Environment.type == type).all()
         return env
 
     @staticmethod
     def getAllAvailableEnvironmentsByTypePaged(type, start_index, max_results, db):
-        env = db.query(Environment).filter(Environment.is_private is False, Environment.type == type).limit(int(max_results)).offset(int(start_index)).all()
+        env = db.query(Environment).filter(Environment.is_private == False, Environment.type == type).limit(int(max_results)).offset(int(start_index)).all()
         return env
 
     @staticmethod
