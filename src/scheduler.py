@@ -1,5 +1,3 @@
-import os
-
 from schedule.handler import handle, pubsub_adapter
 from schedule.crontabs import init_triggered_functions
 from utils.consumer import TRIGGERS_CHANNEL, TRIGGERS_GROUP

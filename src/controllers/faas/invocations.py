@@ -1,11 +1,11 @@
 import json
-import os
 import time
 import asyncio
-from datetime import datetime
 import requests
-from adapters.AdapterConfig import get_adapter
 
+from datetime import datetime
+
+from adapters.AdapterConfig import get_adapter
 from entities.faas.Function import FunctionEntity
 from entities.faas.Invocation import InvocationEntity
 from entities.faas.InvocationExecutionTrace import InvocationExecutionTraceEntity

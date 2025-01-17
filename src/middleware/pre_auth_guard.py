@@ -1,5 +1,4 @@
 from fastapi import Depends, status
-from fastapi.security import APIKeyHeader
 from sqlalchemy.orm import Session
 
 from adapters.AdapterConfig import get_adapter
@@ -8,13 +7,12 @@ from entities.User import User
 from schemas.Token import TokenData
 from exceptions.CwHTTPException import CwHTTPException
 from schemas.User import UserSchema
-
+from middleware.auth_headers import user_token_header
 from utils.common import is_empty, is_not_empty
 from utils.flag import ALL_FLAGS, is_flag_enabled
 from utils.jwt import jwt_decode
 from utils.logger import log_msg
 
-user_token_header = APIKeyHeader(name = "X-User-Token", auto_error = False)
 CACHE_ADAPTER = get_adapter('cache')
 
 def add_flag_if_not_present(key, decoded_user, user):

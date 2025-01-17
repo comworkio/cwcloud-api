@@ -9,7 +9,7 @@ from pulumi import automation as auto
 from urllib.error import HTTPError
 
 from drivers.ProviderDriver import ProviderDriver
-from utils.common import get_env_int, is_not_empty, is_true
+from utils.common import is_not_empty, is_true
 from utils.dns_zones import get_dns_zone_driver, register_scaleway_domain
 from utils.driver import convert_instance_state, sanitize_project_name
 from utils.dynamic_name import rehash_dynamic_name

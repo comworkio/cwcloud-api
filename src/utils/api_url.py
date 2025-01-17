@@ -1,6 +1,7 @@
 import os
-from utils.common import get_env_int, is_empty
 import requests
+
+from utils.common import is_empty
 from urllib.parse import urlparse
 
 from utils.env_vars import APP_ENV

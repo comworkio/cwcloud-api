@@ -1,5 +1,3 @@
-import os
-
 from datetime import datetime
 from croniter import croniter
 from adapters.AdapterConfig import get_adapter

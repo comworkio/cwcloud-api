@@ -1,5 +1,4 @@
 import json
-import os
 
 from datetime import datetime
 from fastapi import Depends, APIRouter

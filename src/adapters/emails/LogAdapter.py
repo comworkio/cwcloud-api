@@ -1,5 +1,3 @@
-import os
-
 from adapters.emails.EmailAdapter import EmailAdapter
 from utils.common import is_not_empty_key
 from utils.logger import log_msg

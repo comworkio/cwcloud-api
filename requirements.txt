@@ -70,10 +70,4 @@ paho-mqtt==1.6.1
 Pillow
 ua-parser
 user-agents
-torch
-transformers
 accelerate>=0.26.0
-textblob
-nltk
-numpy
-scipy

@@ -1,5 +1,3 @@
-import os
-
 from fastapi import Depends, status
 from sqlalchemy.orm import Session
 

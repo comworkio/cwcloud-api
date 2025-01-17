@@ -1,5 +1,3 @@
-import os
-
 from consume.handler import handle, pubsub_adapter
 from utils.consumer import CONSUMER_CHANNEL, CONSUMER_GROUP
 from utils.observability.otel import init_otel_metrics, init_otel_tracer, init_otel_logger

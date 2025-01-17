@@ -1,6 +1,6 @@
 import os
-from typing import Any, Dict, Optional
 
+from typing import Any, Dict, Optional
 from pydantic import BaseModel
 
 from utils.dns_zones import get_first_dns_zone_doc

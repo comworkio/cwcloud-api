@@ -1,11 +1,12 @@
+import os
+import secrets
+import string
 import json
+
 from unittest import TestCase
 from unittest.mock import Mock, patch
 from fastapi.responses import JSONResponse
 from entities.User import User
-import os
-import secrets
-import string
 
 class TestConstants:
     TEST_EMAIL = "test@example.com"

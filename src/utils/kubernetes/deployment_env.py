@@ -24,6 +24,7 @@ def push_charts(
     gitlab_host,
     deployment_name: str,
     namespace: str,
+    environment_name: str,
     values: str,
     readme: str,
     token: str,
@@ -78,7 +79,11 @@ def push_charts(
             },
             {
                 "path": "/values.yaml",
-                "content": value_template.render(args=args),
+                "content": value_template.render(
+                    env_hashed_name=namespace,
+                    environment=environment_name,
+                    args=args
+                ),
             },
             {
                 "path": "/README.md",

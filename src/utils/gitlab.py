@@ -641,12 +641,13 @@ def get_helm_charts():
     }, status_code=400)
 
     if is_disabled(GIT_HELMCHARTS_REPO_ID) or is_disabled(GIT_DEFAULT_TOKEN):
+        log_msg("DEBUG", "[get_helm_charts] helm charts repo id ({}) or gitlab token ({}) is disabled".format(GIT_HELMCHARTS_REPO_ID, GIT_DEFAULT_TOKEN)) 
         return gitlab_connexion_error, []
 
     parsed_url = urlparse(f'{GIT_HELMCHARTS_REPO_URL}')
     host = f"{parsed_url.scheme}://{parsed_url.netloc}"
     charts_response = requests.get(
-        f'{host}/api/v4/projects/{GIT_HELMCHARTS_REPO_URL}/repository/tree?path=charts&per_page=200&ref=main', 
+        f'{host}/api/v4/projects/{GIT_HELMCHARTS_REPO_ID}/repository/tree?path=charts&per_page=200&ref=main', 
         headers={"PRIVATE-TOKEN": GIT_DEFAULT_TOKEN},
         timeout=HTTP_REQUEST_TIMEOUT
     )
@@ -657,7 +658,8 @@ def get_helm_charts():
     try:
         charts = charts_response.json()
         return None, charts
-    except ValueError:
+    except ValueError as e:
+        log_msg("DEBUG", "[get_helm_charts] can not get helm charts from gitlab with url with error = {}".format(e))
         return gitlab_connexion_error, []
 
 def push_selected_chart(charts:list[str], gitlab_connection: gitlab.Gitlab, git_repo_id: str):
