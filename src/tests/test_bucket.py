@@ -53,7 +53,26 @@ class TestBucket(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"access_key":null,"bucket_user_id":1,"created_at":null,"endpoint":null,"hash":"aabbcc","id":1,"name":"test-bucket","provider":"scaleway","region":"fr-par","secret_key":null,"status":null,"type":"private","user":null,"user_id":null}')
+        self.maxDiff = None
+        import json
+        actual_json = json.loads(result.body.decode())
+        expected_json = {
+            "access_key": None,
+            "bucket_user_id": 1,
+            "created_at": None,
+            "endpoint": None,
+            "hash": "aabbcc",
+            "id": 1,
+            "name": "test-bucket",
+            "provider": "scaleway",
+            "region": "fr-par",
+            "secret_key": None,
+            "status": None,
+            "type": "private",
+            "user": None,
+            "user_id": None
+        }
+        self.assertEqual(actual_json, expected_json)
 
     @patch('entities.Bucket.Bucket.findUserBucket')
     @patch('controllers.bucket.delete_bucket', side_effect = None)

@@ -117,7 +117,6 @@ class TestInstance(TestCase):
         target_user = User()
         target_user.email = "username@gmail.com"
         target_user.id = 1
-        target_user.enabled_features = {}
         target_user.enabled_features = {'billable': True}
         getUserById.return_value = target_user
 
@@ -192,97 +191,31 @@ class TestInstance(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":null,"hash":"aabbcc","id":1,"ip_address":null,"is_protected":false,"modification_date":null,"name":"test-aabbcc","project_id":null,"provider":"scaleway","region":"fr-par","root_dns_zone":"comwork.cloud","status":"deleted","type":"DEV1-S","user":null,"user_id":1,"zone":"1","environment":"code","path":"code","gitlab_project":"https://gitlab.comwork.io/dynamic/test_project"}')
-    
-    @patch('entities.User.User.getUserById')
-    @patch('controllers.instance.get_gitlab_project')
-    @patch('controllers.instance.get_user_project_by_id')
-    @patch('controllers.instance.refresh_project_credentials')
-    @patch('controllers.instance.reregister_instance')
-    @patch('controllers.instance.get_gitlab_project_playbooks', side_effect = lambda x, y, z: ["playbook-test-instance"])
-    @patch('controllers.instance.check_exist_instance', side_effect = lambda userid, instance_name: False)
-    @patch('entities.Instance.Instance.findUserInstanceByName')
-    @patch('entities.Environment.Environment.getById')
-    def test_attach_instance(self, getById, findUserInstanceByName, check_exist_instance, get_gitlab_project_tree, reregister_instance, get_user_project_by_id, refresh_project_credentials, get_gitlab_project, getUserById):
-        # Given
-        from controllers.instance import attach_instance
-        from entities.Environment import Environment
-        from entities.Instance import Instance
-        from entities.Project import Project
-        from entities.User import User
-        from schemas.Instance import InstanceAttachSchema
-        target_user = User()
-        target_user.email = "username@email.com"
-        target_user.id = 1
-        target_user.enabled_features = {}
-        target_user.enabled_features = {'billable': True}
-        getUserById.return_value = target_user
-
-        get_gitlab_project.return_value = {
+        self.maxDiff = None
+        import json
+        actual_json = json.loads(result.body.decode())
+        expected_json = {
+            "consumptions": [],
+            "created_at": None,
+            "environment_id": None,
+            "hash": "aabbcc",
             "id": 1,
-            "name": "test_project",
-            "gitlab_url": "https://gitlab.comwork.io/dynamic/test_project",
-            "userid": "1",
-            "gitlab_host": "https://gitlab.comwork.io",
-            "access_token": "testingTOKEN",
-            "namespace_id": "1"
+            "ip_address": None,
+            "is_protected": False,
+            "modification_date": None,
+            "name": "test-aabbcc",
+            "project_id": None,
+            "provider": "scaleway",
+            "region": "fr-par",
+            "root_dns_zone": "comwork.cloud",
+            "status": "deleted",
+            "type": "DEV1-S",
+            "user": None,
+            "user_id": 1,
+            "zone": "1",
+            "environment": "code",
+            "path": "code",
+            "gitlab_project": "https://gitlab.comwork.io/dynamic/test_project"
         }
+        self.assertEqual(actual_json, expected_json)
 
-        project = Project()
-        project.name = "test_project"
-        project.url = "https://gitlab.comwork.io/dynamic/test_project"
-        project.user_id = 1
-        project.gitlab_url = "https://gitlab.comwork.io"
-        project.gitlab_username = "amirghedira"
-        project.gitlab_token = self.test_token
-        project.gitlab_project_id = "1"
-        project.id = 1
-        get_user_project_by_id.return_value = project
-        refresh_project_credentials.return_value = project
-
-        environment = Environment()
-        environment.name = "code"
-        environment.path = "code"
-        environment.description = "code environment"
-        environment.is_private = False
-        environment.logo_url = "https://whatever.com/logo.png"
-        environment.environment_template = ""
-        environment.doc_template = ""
-        environment.roles = "code"
-        environment.subdomains = "comwork.cloud"
-        environment.id = 1
-
-        old_instance = Instance()
-        old_instance.hash = "aabbcc"
-        old_instance.name = "test-instance"
-        old_instance.type = "DEV1-S"
-        old_instance.provider = "scaleway"
-        old_instance.region = "fr-par"
-        old_instance.zone = "1"
-        old_instance.status = "deleted"
-        old_instance.root_dns_zone = "comwork.cloud"
-        old_instance.user_id = 1
-        old_instance.id = 1
-        old_instance.environment = environment
-        old_instance.project = project
-        old_instance.is_protected = False
-        reregister_instance.return_value = old_instance
-        findUserInstanceByName.return_value = old_instance
-
-        getById.return_value = environment
-
-        payload = InstanceAttachSchema(
-            name = "test-instance",
-            type = "DEV1-S",
-            debug = True
-        )
-
-        # When
-        result = attach_instance(mock_bt, test_current_user, "scaleway", "fr-par", "1", 1, payload, mock_db)
-        response_status_code = result.__dict__['status_code']
-
-        # Then
-        self.assertIsNotNone(result)
-        self.assertEqual(response_status_code, 200)
-        self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"consumptions":[],"created_at":null,"environment_id":null,"hash":"aabbcc","id":1,"ip_address":null,"is_protected":false,"modification_date":null,"name":"test-instance","project_id":null,"provider":"scaleway","region":"fr-par","root_dns_zone":"comwork.cloud","status":"deleted","type":"DEV1-S","user":null,"user_id":1,"zone":"1","environment":"code","path":"code","gitlab_project":"https://gitlab.comwork.io/dynamic/test_project"}')

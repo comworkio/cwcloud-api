@@ -33,23 +33,45 @@ class TestEnvironment(TestCase):
         environment.subdomains = "test"
         environment.type = "vm"
         getAvailableEnvironmentById.return_value = environment
+
         userId = 1
         enabled_features = {
             "daasapi": True,
             "k8sapi": True
         }
-        test_user = User(id= userId, enabled_features=enabled_features)
+        test_user = User(id=userId, enabled_features=enabled_features)
         getUserById.return_value = test_user
 
-        #When
+        # When
         result = get_environment(test_user, environment_id, mock_db)
         response_status_code = result.__dict__['status_code']
-       
-        #Then
+
+        # Then
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"args":null,"created_at":null,"description":"test","doc_template":"test","environment_template":"test","external_roles":null,"id":1,"instances":[],"is_private":false,"logo_url":"test","name":"test","path":"test","roles":"test","subdomains":"test","type":"vm"}')
+
+        self.maxDiff = None
+        import json
+        actual_json = json.loads(result.body.decode())
+        expected_json = {
+            "args": None,
+            "created_at": None,
+            "description": "test",
+            "doc_template": "test",
+            "environment_template": "test",
+            "external_roles": None,
+            "id": 1,
+            "instances": [],
+            "is_private": False,
+            "logo_url": "test",
+            "name": "test",
+            "path": "test",
+            "roles": "test",
+            "subdomains": "test",
+            "type": "vm"
+        }
+        self.assertEqual(actual_json, expected_json)
 
     @patch('entities.Environment.Environment.getAllAvailableEnvironmentsByType',side_effect = lambda x,y : [])
     def test_get_environments(self,getAllAvailableEnvironmentsByType):

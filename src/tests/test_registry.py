@@ -44,12 +44,31 @@ class TestRegistry(TestCase):
         # When
         result = get_registry(test_current_user, "scaleway", "fr-par", registry_id, mock_db)
         response_status_code = result.__dict__['status_code']
-       
+
         # Then
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"access_key":null,"created_at":null,"endpoint":null,"hash":"aabbcc","id":1,"name":null,"provider":"scaleway","region":"fr-par","secret_key":null,"status":null,"type":"private","user":null,"user_id":null}')
+        self.maxDiff = None
+        import json
+        actual_json = json.loads(result.body.decode())
+        expected_json = {
+            "access_key": None,
+            "created_at": None,
+            "endpoint": None,
+            "hash": "aabbcc",
+            "id": 1,
+            "name": None,
+            "provider": "scaleway",
+            "region": "fr-par",
+            "secret_key": None,
+            "status": None,
+            "type": "private",
+            "user": None,
+            "user_id": None
+        }
+        self.assertEqual(actual_json, expected_json)
+
 
     @patch('entities.Registry.Registry.findUserRegistry')
     @patch('controllers.registry.delete_registry', side_effect = None)

@@ -56,7 +56,46 @@ class TestAdminBucket(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"access_key":null,"bucket_user_id":1,"created_at":null,"endpoint":null,"hash":"aabbcc","id":1,"name":"test-bucket","provider":"scaleway","region":"fr-par","secret_key":null,"status":null,"type":"private","user_id":null,"user":{"address":null,"api_keys":[],"company_name":null,"confirmed":null,"contact_info":null,"created_at":null,"email":"username@email.com","enabled_features":null,"id":1,"instances":[],"is_admin":null,"password":null,"projects":[],"registration_number":null,"registries":[],"st_customer_id":null,"st_payment_method_id":null,"support_ticket":[],"support_ticket_logs":[]}}')    
+        self.maxDiff = None
+        import json
+        actual_json = json.loads(result.body.decode())
+        expected_json = {
+            "access_key": None,
+            "bucket_user_id": 1,
+            "created_at": None,
+            "endpoint": None,
+            "hash": "aabbcc",
+            "id": 1,
+            "name": "test-bucket",
+            "provider": "scaleway",
+            "region": "fr-par",
+            "secret_key": None,
+            "status": None,
+            "type": "private",
+            "user_id": None,
+            "user": {
+                "address": None,
+                "api_keys": [],
+                "company_name": None,
+                "confirmed": None,
+                "contact_info": None,
+                "created_at": None,
+                "email": "username@email.com",
+                "enabled_features": None,
+                "id": 1,
+                "instances": [],
+                "is_admin": None,
+                "password": None,
+                "projects": [],
+                "registration_number": None,
+                "registries": [],
+                "st_customer_id": None,
+                "st_payment_method_id": None,
+                "support_ticket": [],
+                "support_ticket_logs": []
+            }
+        }
+        self.assertEqual(actual_json, expected_json)
     
     @patch('entities.Bucket.Bucket.findById')
     @patch('controllers.admin.admin_bucket.delete_bucket', side_effect = None)
@@ -93,10 +132,10 @@ class TestAdminBucket(TestCase):
         self.assertEqual(result.body.decode(), '{"status":"ok","message":"bucket successfully deleted","i18n_code":"bucket_deleted"}')
    
     @patch('entities.User.User.getUserByEmail')
-    @patch('utils.common.generate_hash_password', side_effect = lambda p: p)
-    @patch('utils.dynamic_name.generate_hashed_name', side_effect = lambda p: ("aabbcc", p, "test-aabbcc"))
+    @patch('utils.common.generate_hash_password', side_effect=lambda p: p)
+    @patch('utils.dynamic_name.generate_hashed_name', side_effect=lambda p: ("aabbcc", p, "test-aabbcc"))
     @patch('controllers.admin.admin_bucket.register_bucket')
-    @patch('controllers.admin.admin_bucket.create_bucket', side_effect = None)
+    @patch('controllers.admin.admin_bucket.create_bucket', side_effect=None)
     def test_admin_add_bucket(self, create_bucket, register_bucket, generate_hash_password, generate_hashed_name, getUserByEmail):
         # Given
         from controllers.admin.admin_bucket import admin_create_bucket
@@ -122,9 +161,9 @@ class TestAdminBucket(TestCase):
         register_bucket.return_value = bucket
 
         payload = BucketSchema(
-            name = "test",
-            type = "private",
-            email = "username@email.com"
+            name="test",
+            type="private",
+            email="username@email.com"
         )
 
         # When
@@ -135,7 +174,26 @@ class TestAdminBucket(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"access_key":null,"bucket_user_id":1,"created_at":null,"endpoint":null,"hash":"aabbcc","id":1,"name":"test-aabbcc","provider":"scaleway","region":"fr-par","secret_key":null,"status":null,"type":"private","user_id":null}')
+
+        self.maxDiff = None
+        import json
+        actual_json = json.loads(result.body.decode())
+        expected_json = {
+            "access_key": None,
+            "bucket_user_id": 1,
+            "created_at": None,
+            "endpoint": None,
+            "hash": "aabbcc",
+            "id": 1,
+            "name": "test-aabbcc",
+            "provider": "scaleway",
+            "region": "fr-par",
+            "secret_key": None,
+            "status": None,
+            "type": "private",
+            "user_id": None
+        }
+        self.assertEqual(actual_json, expected_json)
 
     @patch('entities.User.User.getUserByEmail')
     @patch('entities.Bucket.Bucket.findById')

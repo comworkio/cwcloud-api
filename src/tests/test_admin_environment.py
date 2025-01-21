@@ -32,11 +32,13 @@ class TestAdminEnvironnement(TestCase):
         self.assertIsInstance(result, JSONResponse)
         self.assertEqual(result.body.decode(), '{"roles":[]}') 
        
-    @patch('controllers.admin.admin_environment.Environment.getById',side_effect = None)     
+    @patch('controllers.admin.admin_environment.Environment.getById', side_effect=None)
     def test_admin_get_environment(self, getById):
-        # Given  
-        from controllers.admin.admin_environment import admin_get_environment 
+        # Given
+        from controllers.admin.admin_environment import admin_get_environment
         from entities.Environment import Environment
+        import json
+
         environment_id = 1
         environment = Environment()
         environment.id = environment_id
@@ -53,22 +55,45 @@ class TestAdminEnvironnement(TestCase):
         environment.is_private = True
         getById.return_value = environment
 
+        expected_json = {
+            "args": None,
+            "created_at": "test",
+            "description": "test",
+            "doc_template": "test",
+            "environment_template": "test",
+            "external_roles": None,
+            "id": 1,
+            "instances": [],
+            "is_private": True,
+            "logo_url": "test",
+            "name": "test",
+            "path": "test",
+            "roles": "test",
+            "subdomains": "test",
+            "type": "vm",
+        }
+
         # When
-        result = admin_get_environment(1, mock_db)
-        response_status_code = result.__dict__['status_code']
+        result = admin_get_environment(environment_id, mock_db)
+        response_status_code = result.__dict__["status_code"]
 
         # Then
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"args":null,"created_at":"test","description":"test","doc_template":"test","environment_template":"test","external_roles":null,"id":1,"instances":[],"is_private":true,"logo_url":"test","name":"test","path":"test","roles":"test","subdomains":"test","type":"vm"}')
 
-    @patch('controllers.admin.admin_environment.Environment.getByPath',side_effect = lambda x, y: [] )
+        actual_json = json.loads(result.body.decode())
+        self.maxDiff = None
+        self.assertEqual(actual_json, expected_json)
+
+    @patch('controllers.admin.admin_environment.Environment.getByPath', side_effect=lambda x, y: [])
     def test_admin_add_environment(self, getByPath):
         # Given  
-        from controllers.admin.admin_environment import admin_add_environment 
+        from controllers.admin.admin_environment import admin_add_environment
         from entities.Environment import Environment
         from schemas.Environment import EnvironmentSchema
+        import json
+
         environment = Environment()
         environment.name = "test"
         environment.path = "test"
@@ -82,26 +107,47 @@ class TestAdminEnvironnement(TestCase):
         getByPath.return_value = None
 
         payload = EnvironmentSchema(
-            name = "test",
-            path = "test",
-            description = "test",
-            environment_template = "test",
-            doc_template = "test",
-            roles = ["test"],
-            subdomains = ["test"],
-            is_private= True,
-            logo_url = "test"
+            name="test",
+            path="test",
+            description="test",
+            environment_template="test",
+            doc_template="test",
+            roles=["test"],
+            subdomains=["test"],
+            is_private=True,
+            logo_url="test"
         )
+
+        expected_response = {
+            "args": "[]",
+            "created_at": None,
+            "description": "test",
+            "doc_template": "test",
+            "environment_template": "test",
+            "external_roles": None,
+            "id": None,
+            "instances": [],
+            "is_private": True,
+            "logo_url": "test",
+            "name": "test",
+            "path": "test",
+            "roles": "test",
+            "subdomains": "test",
+            "type": "vm"
+        }
 
         # When
         result = admin_add_environment(payload, mock_db)
-        response_status_code = result.__dict__['status_code']
+        response_status_code = result.__dict__["status_code"]
 
         # Then
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 201)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"args":"[]","created_at":null,"description":"test","doc_template":"test","environment_template":"test","external_roles":null,"id":null,"instances":[],"is_private":true,"logo_url":"test","name":"test","path":"test","roles":"test","subdomains":"test","type":"vm"}')
+
+        actual_response = json.loads(result.body.decode())
+        self.maxDiff = None
+        self.assertEqual(actual_response, expected_response)
 
     @patch('controllers.admin.admin_environment.Environment.getByType',side_effect = lambda x,y: [])
     def test_admin_get_all_environments(self, getByType):
@@ -207,7 +253,6 @@ class TestAdminEnvironnement(TestCase):
     def test_admin_import_environment(self, json, getByPath, save):
         # Given
         from controllers.admin.admin_environment import admin_import_environment 
-        from entities.Environment import Environment 
         env_string = '{"name": "Test Environment", "path": "test", "description": "Test Description", "roles": [], "subdomains": [], "environment_template": "template", "doc_template": "template", "is_private": False, "type": "vm"}'
         env_file = UploadFile(filename="test.json", file=io.BytesIO(env_string.encode()))
         getByPath.return_value = None
