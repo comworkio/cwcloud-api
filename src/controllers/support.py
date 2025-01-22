@@ -11,7 +11,7 @@ from entities.SupportTicketLog import SupportTicketLog
 from entities.User import User
 from utils.bucket import delete_from_attachment_bucket, download_from_attachment_bucket, upload_to_attachment_bucket
 from utils.logger import log_msg
-from utils.common import get_env_int, is_not_numeric
+from utils.common import get_env_int, is_false, is_not_numeric
 from utils.encoder import AlchemyEncoder
 from utils.gitlab import add_gitlab_issue, add_gitlab_issue_comment
 from utils.observability.cid import get_current_cid
@@ -408,7 +408,15 @@ def download_file_from_ticket_by_id(current_user, ticket_id, attachment_id, db):
             'cid': get_current_cid()
         }, status_code = 404)
     
-    download_from_attachment_bucket(attachment.name, attachment.storage_key)
+    result = download_from_attachment_bucket(attachment.name, attachment.storage_key)
+    if is_false(result['status']):
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': result['error'],
+            'i18n_code': result['i18n_code'],
+            'cid': result['cid']
+        }, status_code = result['http_code'])
+
     return FileResponse(attachment.storage_key, filename = attachment.name)
             
         
@@ -439,11 +447,17 @@ def delete_file_from_ticket_by_id(current_user: User, ticket_id, attachment_id, 
         }, status_code=403)
 
     SupportTicketAttachment.deleteAttachmentById(attachment.id, db)
-    delete_from_attachment_bucket(attachment.name, attachment.storage_key)
+    result = delete_from_attachment_bucket(attachment.name, attachment.storage_key)
+    if is_false(result['status']):
+        return JSONResponse(content = {
+            'status': 'ko',
+            'error': result['error'],
+            'i18n_code': result['i18n_code'],
+            'cid': result['cid']
+        }, status_code = result['http_code'])
 
     return JSONResponse(content={
         'status': 'ok',
         'message': 'file successfully deleted',
         'i18n_code': 'file_deleted_successfully'
     }, status_code=200)
-            

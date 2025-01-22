@@ -2,11 +2,11 @@ import os
 import importlib
 
 from minio import Minio
-from minio.error import S3Error
 from time import sleep
 
 from entities.Bucket import Bucket
 
+from utils.common import is_empty
 from utils.logger import log_msg
 from utils.observability.cid import get_current_cid
 from utils.provider import get_driver
@@ -98,39 +98,67 @@ def upload_bucket(target_name, file_path, url, bucket_name):
         client.fput_object(bucket_name, target_name, file_path)
 
 def download_from_bucket(target_name, file_path, url, bucket_name):
-    if url and access_key and secret_key and bucket_name and bucket_region:
-        try:
-            client = Minio(url, region = bucket_region, access_key = access_key, secret_key = secret_key)
-            client.fget_object(bucket_name, target_name, file_path)
-            return {
-                'status': 'ok',
-            }
-        except S3Error as e:
-            not_found_msg = "File not found: target_name = {}, file_path = {}".format(target_name, file_path)
-            log_msg("WARN", "[bucket][download_from_bucket] {}, e = {}".format(not_found_msg, e))
-            return {
-                'status': 'ko',
-                'message': not_found_msg,
-                'i18n_code': 'file_not_found',
-                'http_code': 404,
-                'cid': get_current_cid()
-            }
-        
+    if any(is_empty(setting) for setting in [url, access_key, secret_key, bucket_name, bucket_region]):
+        return {
+            'status': 'ko',
+            'error': 'Bucket settings are not configured',
+            'i18n_code': 'bucket_settings_not_configured',
+            'http_code': 405,
+            'cid': get_current_cid()
+        }
+
+    try:
+        client = Minio(url, region = bucket_region, access_key = access_key, secret_key = secret_key)
+        client.fget_object(bucket_name, target_name, file_path)
+        return {
+            'status': 'ok',
+        }
+    except Exception as e:
+        not_found_msg = "File not found: target_name = {}, file_path = {}".format(target_name, file_path)
+        log_msg("WARN", "[bucket][download_from_bucket] {}, e.type = {}, e.msg = {}".format(not_found_msg, type(e), e))
+
+        basename = os.path.basename(file_path)
+        if basename != file_path:
+           log_msg("INFO", "[bucket][download_from_bucket] switch file_path file_path = {} with basename = {}".format(file_path, basename))
+           return download_from_bucket(target_name, basename, url, bucket_name)
+
+        return {
+            'status': 'ko',
+            'error': not_found_msg,
+            'i18n_code': 'file_not_found',
+            'http_code': 404,
+            'cid': get_current_cid()
+        }
+
 def delete_from_bucket(target_name, file_path, url, bucket_name):
-    if url and access_key and secret_key and bucket_name and bucket_region:
-        try:
-            client = Minio(url, region = bucket_region, access_key = access_key, secret_key = secret_key)
-            client.remove_object(bucket_name, target_name)
-            return {
-                'status': 'ok',
-            }
-        except S3Error as e:
-            not_found_msg = "File not found: target_name = {}, file_path = {}".format(target_name, file_path)
-            log_msg("WARN", "[bucket][delete_from_bucket] {}, e = {}".format(not_found_msg, e))
-            return {
-                'status': 'ko',
-                'message': not_found_msg,
-                'i18n_code': 'file_not_found',
-                'http_code': 404,
-                'cid': get_current_cid()
-            }
+    if any(is_empty(setting) for setting in [url, access_key, secret_key, bucket_name, bucket_region]):
+        return {
+            'status': 'ko',
+            'error': 'Bucket settings are not configured',
+            'i18n_code': 'bucket_settings_not_configured',
+            'http_code': 405,
+            'cid': get_current_cid()
+        }
+
+    try:
+        client = Minio(url, region = bucket_region, access_key = access_key, secret_key = secret_key)
+        client.remove_object(bucket_name, target_name)
+        return {
+            'status': 'ok',
+        }
+    except Exception as e:
+        not_found_msg = "File not found: target_name = {}, file_path = {}".format(target_name, file_path)
+        log_msg("WARN", "[bucket][delete_from_bucket] {}, e.type = {}, e.msg = {}".format(not_found_msg, type(e), e))
+
+        basename = os.path.basename(file_path)
+        if basename != file_path:
+           log_msg("INFO", "[bucket][delete_from_bucket] switch file_path file_path = {} with basename = {}".format(file_path, basename))
+           return delete_from_bucket(target_name, basename, url, bucket_name)
+
+        return {
+            'status': 'ko',
+            'error': not_found_msg,
+            'i18n_code': 'file_not_found',
+            'http_code': 404,
+            'cid': get_current_cid()
+        }
