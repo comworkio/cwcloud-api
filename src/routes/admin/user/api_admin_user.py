@@ -5,7 +5,7 @@ from fastapi import Depends, APIRouter
 from database.postgres_db import get_db
 from middleware.auth_guard import admin_required
 from schemas.User import UserSchema, UserAdminUpdateSchema, UserAdminUpdateRoleSchema, UserAdminAddSchema
-from controllers.admin.admin_user import admin_add_user, admin_delete_user_2fa, admin_get_billable_users, admin_get_user, admin_get_users, admin_remove_user, admin_update_user, admin_update_user_confirmation, admin_update_user_role, admin_get_autopayment_users
+from controllers.admin.admin_user import admin_add_user, admin_delete_user_2fa, admin_get_user, admin_get_users, admin_remove_user, admin_update_user, admin_update_user_confirmation, admin_update_user_role
 
 from utils.observability.otel import get_otel_tracer
 from utils.observability.traces import span_format
