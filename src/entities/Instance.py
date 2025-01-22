@@ -3,7 +3,6 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 
 from database.postgres_db import Base
-from entities.Consumption import Consumption
 
 class Instance(Base):
     __tablename__ = "instance"
@@ -15,7 +14,6 @@ class Instance(Base):
     user_id = Column(Integer, ForeignKey("user.id"))
     environment_id = Column(Integer, ForeignKey("environment.id"))
     project_id = Column(Integer, ForeignKey("project.id"))
-    consumptions = relationship("Consumption", backref = "instance", lazy = "select")
     region = Column(String(100))
     zone = Column(String(100))
     provider = Column(String(100))

@@ -8,8 +8,6 @@ class UserSchema(BaseModel):
     address: str
     company_name: str
     contact_info: str
-    st_customer_id: str
-    st_payment_method_id: str
     password: str
     is_admin: bool
     confirmed: Optional[bool] = False
@@ -33,13 +31,6 @@ class UserRegisterSchema(BaseModel):
     company_name: Optional[str]
     contact_info: Optional[str]
 
-
-class UserPaymentSchema(BaseModel):
-    status: str
-
-class UserPaymentMethodSchema(BaseModel):
-    payment_method: str
-
 class UserUpdatePasswordSchema(BaseModel):
     old_password: str
     new_password: str
@@ -61,7 +52,7 @@ class UserAdminUpdateRoleSchema(BaseModel):
     is_admin: bool = False
 
 class EnabledFeatures(BaseModel):
-    billable: Optional[bool] = False
+    billable: Optional[bool] = True
     without_vat: Optional[bool] = False
     auto_pay: Optional[bool] = False
     daasapi: Optional[bool] = False
@@ -94,5 +85,4 @@ class UserAdminAddSchema(BaseModel):
     address: Optional[str]
     company_name: Optional[str]
     contact_info: Optional[str]
-    st_customer_id: Optional[str]
     enabled_features: Optional[EnabledFeatures]

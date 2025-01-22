@@ -89,8 +89,6 @@ class TestAdminBucket(TestCase):
                 "projects": [],
                 "registration_number": None,
                 "registries": [],
-                "st_customer_id": None,
-                "st_payment_method_id": None,
                 "support_ticket": [],
                 "support_ticket_logs": []
             }

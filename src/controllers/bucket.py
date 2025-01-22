@@ -25,7 +25,7 @@ def get_bucket(current_user, provider, region, bucket_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid bucket id',
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_numeric_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -56,7 +56,7 @@ def remove_bucket(current_user, provider, region, bucket_id, db, bt: BackgroundT
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid bucket id',
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_numeric_id',
             'cid': get_current_cid()
         }, status_code = 400)
     
@@ -107,7 +107,7 @@ def update_bucket(current_user, provider, region, bucket_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid bucket id',
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_numeric_id',
             'cid': get_current_cid()
         }, status_code = 400)
 

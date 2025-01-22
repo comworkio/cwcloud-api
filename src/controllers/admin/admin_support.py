@@ -143,7 +143,7 @@ def reply_support_ticket(current_user, ticket_id, payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid ticket id', 
-                'i18n_code': 'invalid_payment_method_id',
+                'i18n_code': 'invalid_numeric_id',
                 'cid': get_current_cid()
             }, status_code = 400)
 

@@ -25,7 +25,7 @@ def get_registry(current_user, provider, region, registryId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid registry id', 
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_numeric_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -57,7 +57,7 @@ def remove_registry(current_user, provider, region, registryId, db, bt: Backgrou
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid registry id', 
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_numeric_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -110,7 +110,7 @@ def update_registry(current_user, provider, region, registryId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid registry id', 
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_numeric_id',
             'cid': get_current_cid()
         }, status_code = 400)
 

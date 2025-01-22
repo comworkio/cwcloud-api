@@ -32,8 +32,7 @@ class TestAdminUser(TestCase):
             email='Test@gmail.com', 
             password=self.test_password, 
             confirmed=True, 
-            is_admin=True, 
-            st_customer_id='1'
+            is_admin=True
         )
         get_paginated_list.return_value = [test_user]
         getAllUsers.return_value = test_user
@@ -149,38 +148,6 @@ class TestAdminUser(TestCase):
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
         self.assertEqual(result.body.decode(), '{"status":"ok","message":"2fa successfully deleted","i18n_code":"2fa_deleted"}')
-  
-    @patch('entities.User.User.getActiveAutoPaymentUsers', side_effect = lambda x: [])
-    def test_admin_get_autopayment_users(self, getActiveAutoPaymentUsers):
-        # Given
-        from controllers.admin.admin_user import admin_get_autopayment_users
-        from entities.User import User
-
-        # When
-        result = admin_get_autopayment_users(test_current_user, mock_db)
-        response_status_code = result.__dict__['status_code']
-
-        # Then
-        self.assertIsNotNone(result)
-        self.assertEqual(response_status_code, 200)
-        self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(),'{"result":[]}')
-    
-    @patch('entities.User.User.getActiveBillableUsers', side_effect = lambda x: [])    
-    def test_admin_get_billable_users(self, getActiveBillableUsers):
-        # Given
-        from controllers.admin.admin_user import admin_get_billable_users
-        from entities.User import User
-
-        # When
-        result = admin_get_billable_users(test_current_user, mock_db)
-        response_status_code = result.__dict__['status_code']
-        
-        # Then
-        self.assertIsNotNone(result)
-        self.assertEqual(response_status_code, 200) 
-        self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(),'{"result":[]}')
 
     @patch('utils.security.is_not_email_valid')
     @patch('entities.User.User.getUserByEmail', side_effect = lambda x,y: User(id=1, email='john.doe@example.com'))
@@ -191,7 +158,6 @@ class TestAdminUser(TestCase):
         from schemas.User import UserAdminUpdateSchema, EnabledFeatures
         userId = 1
         enabled_features = EnabledFeatures(
-            billable= False,
             without_vat= False,
             auto_pay= False,
             emailapi= False,

@@ -50,9 +50,6 @@ def admin_transfer_project (project_id, payload, db):
         projectsInstances = Instance.getAllActiveInstancesByProject(project.id, db)
         projectInstancesIds = [instance.id for instance in projectsInstances]
 
-        from entities.Consumption import Consumption
-        Consumption.updateConsumptionInstanceOwner(projectInstancesIds, user.id, db)
-
         from entities.Access import Access
         Access.updateObjectsAccessesOwner("instance", projectInstancesIds, user.id, db)
         Access.updateObjectAccessesOwner("project", project.id, user.id, db)

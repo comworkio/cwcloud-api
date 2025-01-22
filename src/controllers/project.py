@@ -48,7 +48,7 @@ def transfer_project(current_user, payload, projectId, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid project id',
-                'i18n_code': 'invalid_payment_method_id',
+                'i18n_code': 'invalid_numeric_id',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -81,8 +81,6 @@ def transfer_project(current_user, payload, projectId, db):
         projectsInstances = Instance.getAllActiveInstancesByProject(project.id, db)
         projectInstancesIds = [instance.id for instance in projectsInstances]
 
-        from entities.Consumption import Consumption
-        Consumption.updateConsumptionInstanceOwner(projectInstancesIds, user.id, db)
         Access.updateObjectsAccessesOwner("instance", projectInstancesIds, user.id, db)
         Access.updateObjectAccessesOwner("project", project.id, user.id, db)
 
@@ -177,7 +175,7 @@ def get_project(current_user, projectId, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid project id', 
-                'i18n_code': 'invalid_payment_method_id',
+                'i18n_code': 'invalid_numeric_id',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -222,7 +220,7 @@ def delete_project(current_user, projectId, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid project id', 
-                'i18n_code': 'invalid_payment_method_id',
+                'i18n_code': 'invalid_numeric_id',
                 'cid': get_current_cid()
             }, status_code = 400)
 

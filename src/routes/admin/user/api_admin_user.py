@@ -64,15 +64,3 @@ def delete_user_2fa_by_id(current_user: Annotated[UserSchema, Depends(admin_requ
     with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.DELETE, Action.MFA)):
         increment_counter(_counter, Method.DELETE, Action.MFA)
         return admin_delete_user_2fa(current_user, user_id, db)
-
-@router.get("/auto-payment/all")
-def get_all_autopayment_users(current_user: Annotated[UserSchema, Depends(admin_required)], db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.AUTOPAY)):
-        increment_counter(_counter, Method.GET, Action.AUTOPAY)
-        return admin_get_autopayment_users(current_user, db)
-
-@router.get("/billable/all")
-def get_all_billable_users(current_user: Annotated[UserSchema, Depends(admin_required)], db: Session = Depends(get_db)):
-    with get_otel_tracer().start_as_current_span(span_format(_span_prefix, Method.GET, Action.BILLABLE)):
-        increment_counter(_counter, Method.GET, Action.BILLABLE)
-        return admin_get_billable_users(current_user, db)

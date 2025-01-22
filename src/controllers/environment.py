@@ -16,7 +16,7 @@ def get_environment(current_user, environment_id, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid environment id',
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_numeric_id',
             'cid': get_current_cid()
         }, status_code = 400)
 

@@ -1,7 +1,6 @@
 from fastapi.responses import JSONResponse
 from fastapi import HTTPException
 
-from controllers.user import create_customer
 from entities.iot.Device import Device
 from entities.User import User
 from schemas.User import UserRegisterSchema
@@ -40,10 +39,9 @@ def add_device(current_user, payload, db):
                 email = email,
                 password = password
             )
-            customer = create_customer(email)
+
             register_payload.password = generate_hash_password(password)
             new_user = User(**register_payload.dict())
-            new_user.st_customer_id = customer["id"]
             new_user.save(db)
             create_gitlab_user(email)
             log_msg("INFO", f"[add_device] user account created with {email}")

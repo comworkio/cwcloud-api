@@ -12,7 +12,6 @@ def import_resources(app):
     from routes.ai import api_model, api_prompt
     from routes.api_keys import api_keys
     from routes.bucket import api_bucket
-    from routes.consumption import api_consumption
     from routes.contact import api_contact
     from routes.control import api_control
     from routes.dns_zones import api_dns_zones
@@ -20,10 +19,7 @@ def import_resources(app):
     from routes.environment import api_environment
     from routes.instance import api_instance
     from routes.instance_types import api_instance_types
-    from routes.invoice import invoice_api, receipt_api
     from routes.mfa import api_mfa
-    from routes.payment import api_payment, api_webhook
-    from routes.voucher import api_voucher
     from routes.pricing import api_pricing
     from routes.project import api_project
     from routes.provider import api_provider
@@ -33,21 +29,14 @@ def import_resources(app):
     from routes.config import api_config
     from routes.admin.user import api_admin_user
     from routes.admin.bucket import api_admin_bucket
-    from routes.admin.consumption import api_admin_consumption
     from routes.admin.faas import api_admin_invocation, api_admin_functions, api_admin_trigger
     from routes.admin.email import api_admin_email
     from routes.admin.environment import api_admin_environment
     from routes.admin.instance import api_admin_instance
-    from routes.admin.invoice import api_admin_invoice
-    from routes.admin.invoice import api_custom_invoice
-    from routes.admin.invoice import api_admin_receipt
     from routes.admin.mfa import api_admin_mfa
-    from routes.admin.payment import api_admin_payment
-    from routes.admin.payment import api_admin_relaunch
     from routes.admin.project import api_admin_project
     from routes.admin.registry import api_admin_registry
     from routes.admin.support import api_admin_support
-    from routes.admin.voucher import api_admin_voucher
     from routes.admin.kubernetes import api_admin_object, api_admin_cluster
     from routes.kubernetes import api_cluster, api_deployments
     from routes.iot import api_object_type
@@ -102,12 +91,6 @@ def import_resources(app):
     app.include_router(api_contact.router, tags = ['Contact and Support'], prefix = f'/{version}/contact')
     app.include_router(api_support.router, tags = ['Contact and Support'], prefix = f'/{version}/support')
     app.include_router(api_pricing.router, tags = ['Pricing'])
-    app.include_router(api_consumption.router, tags = ['Consumption'], prefix = f'/{version}/consumption')
-    app.include_router(invoice_api.router, tags = ['Invoice'], prefix = f'/{version}/invoice')
-    app.include_router(receipt_api.router, tags = ['Invoice'], prefix = f'/{version}/receipt')
-    app.include_router(api_payment.router, tags = ['Payment and Voucher'], prefix = f'/{version}/pay')
-    app.include_router(api_webhook.router, tags = ['Payment and Voucher'], prefix = f'/{version}/webhook')
-    app.include_router(api_voucher.router, tags = ['Payment and Voucher'], prefix = f'/{version}/voucher')
     app.include_router(api_admin_user.router, tags = ['Admin User'], prefix = f'/{version}/admin/user')
     app.include_router(api_admin_mfa.router, tags = ['Admin Multi-Factor Authentication'], prefix = f'/{version}/admin/mfa')
     app.include_router(api_admin_environment.router, tags = ['Admin Environment'], prefix = f'/{version}/admin/environment')
@@ -127,11 +110,4 @@ def import_resources(app):
     app.include_router(api_admin_monitor.router, tags = ['Admin Monitor'], prefix = f'/{version}/admin/monitor')
     app.include_router(api_admin_email.router, tags = ['Admin Email'], prefix = f'/{version}/admin/email')
     app.include_router(api_admin_support.router, tags = ['Admin Support Tickets'], prefix = f'/{version}/admin/support')
-    app.include_router(api_admin_consumption.router, tags = ['Admin Consumption'], prefix = f'/{version}/admin/consumption')
-    app.include_router(api_admin_invoice.router, tags = ['Admin Invoices'], prefix = f'/{version}/admin/invoice')
-    app.include_router(api_custom_invoice.router, tags = ['Admin Invoices'], prefix = f'/{version}/admin/invoice/custom')
-    app.include_router(api_admin_receipt.router, tags = ['Admin Invoices'], prefix = f'/{version}/admin/receipt')
-    app.include_router(api_admin_payment.router, tags = ['Admin Payment and Voucher'], prefix = f'/{version}/admin/pay')
-    app.include_router(api_admin_relaunch.router, tags = ['Admin Payment and Voucher'], prefix = f'/{version}/admin/relaunch')
-    app.include_router(api_admin_voucher.router, tags = ['Admin Payment and Voucher'], prefix = f'/{version}/admin/voucher')
     app.include_router(api_admin_dns.router, tags = ['Admin DNS'], prefix = f'/{version}/admin/dns')

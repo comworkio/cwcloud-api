@@ -105,7 +105,7 @@ def reply_support_ticket(current_user, payload, ticket_id, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid ticket id',
-                'i18n_code': 'invalid_payment_method_id',
+                'i18n_code': 'invalid_numeric_id',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -148,7 +148,7 @@ def update_reply_support_ticket(current_user, ticket_id, reply_id, payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid ticket id or reply id',
-                'i18n_code': 'invalid_payment_method_id',
+                'i18n_code': 'invalid_numeric_id',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -203,7 +203,7 @@ def delete_reply_support_ticket(current_user, ticket_id, reply_id, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid ticket id or reply id',
-                'i18n_code': 'invalid_payment_method_id',
+                'i18n_code': 'invalid_numeric_id',
                 'cid': get_current_cid()
             }, status_code = 400)
 
@@ -289,7 +289,7 @@ def update_support_ticket(current_user, ticket_id, payload, db):
             return JSONResponse(content = {
                 'status': 'ko',
                 'error': 'Invalid ticket id',
-                'i18n_code': 'invalid_payment_method_id',
+                'i18n_code': 'invalid_numeric_id',
                 'cid': get_current_cid()
             }, status_code = 400)
 

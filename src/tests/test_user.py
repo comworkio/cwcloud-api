@@ -69,11 +69,10 @@ class TestUser(TestCase):
         super(TestUser, self).__init__(*args, **kwargs)
 
     @patch('entities.User.User.getUserByEmail')
-    @patch('controllers.user.create_customer', side_effect = lambda x: {"id": "st_test"})
     @patch('controllers.user.create_gitlab_user', side_effect = None)
     @patch('controllers.user.send_confirmation_email', side_effect = None)
     @patch('entities.User.User.save')
-    def test_user_signup(self, save_user, send_confirmation_email, create_gitlab_user, create_customer, getUserByEmail):
+    def test_user_signup(self, save_user, send_confirmation_email, create_gitlab_user, getUserByEmail):
         getUserByEmail.return_value = None
         from controllers.user import create_user_account
         from schemas.User import UserRegisterSchema
@@ -245,35 +244,6 @@ class TestUser(TestCase):
         self.assertIsInstance(result, JSONResponse)  
         self.assertEqual(result.body.decode(), '{"status":"ok","email":"test@example.com","message":"user verified","i18n_code":"user_verified"}')
 
-    @patch('entities.User.User.getUserById',side_effect = lambda x,y: User(st_payment_method_id='some_id')  )  
-    def test_update_user_autopayment(self , getUserById):
-        #Given
-        from controllers.user import update_user_autopayment
-        from schemas.User import UserPaymentSchema
-        from entities.User import User
-        current_user = User(id=1)
-        payload = UserPaymentSchema(
-            status = True
-        )
-        userId = 1
-        user = User()
-        user.id = userId
-        user.email = "test@example.com"
-        user.is_admin = True
-        user.confirmed = True
-        user.confirmed = True
-        getUserById.return_value = user
-
-        # When
-        result = update_user_autopayment(current_user, payload, mock_db)
-        response_status_code = result.__dict__['status_code']
-
-        # Then
-        self.assertIsNotNone(result)
-        self.assertEqual(response_status_code, 200)
-        self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"successfully updated auto payment status"}')
-
     @patch('jose.jwt.decode')
     @patch('controllers.user.send_confirmation_email', side_effect = None)
     @patch('entities.User.User.save', side_effect = lambda x,y:[])  
@@ -325,30 +295,6 @@ class TestUser(TestCase):
         self.assertIsInstance(result, JSONResponse)
         self.assertEqual(result.body.decode(), '{"status":"ok","message":"successfully send email confirmation","i18n_code":"success_confirmation_email"}')
 
-    @patch('controllers.user.listPaymentMethods', side_effect = lambda x: {"id": "1"})
-    @patch('entities.User.User.getUserById',side_effect = lambda x,y: User(st_payment_method_id='1')  )  
-    def test_get_payment_methods(self, listPaymentMethods, getUserById):
-        # Given
-        from controllers.user import get_payment_methods
-        from entities.User import User
-
-        user = User(id=1)
-        user.email = self.constants.TEST_EMAIL
-        user.is_admin = True
-        user.st_customer_id = "1"
-        user.confirmed = True
-        getUserById.return_value = user
-
-        # When
-        result = get_payment_methods(user, mock_db)
-        response_status_code = result.__dict__['status_code']
-
-        # Then
-        self.assertIsNotNone(result)
-        self.assertEqual(response_status_code, 200)
-        self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"payment_method":{"id":"1"}}')
-
     @patch('entities.User.User.updateUser',side_effect = None)    
     @patch('entities.User.User.getUserById', side_effect = lambda x,y: User(id=1))  
     def test_update_user_informations(self, getUserById, updateUser):
@@ -386,79 +332,3 @@ class TestUser(TestCase):
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
         self.assertEqual(result.body.decode(), '{"status":"ok","message":"user successfully updated","i18n_code":"user_updated"}')
-
-    @patch('controllers.user.retrievePaymentMethod')
-    @patch('entities.User.User.getUserById',side_effect = None)
-    @patch('controllers.user.attachPaymentMethodWithUser')    
-    def test_add_payment_method(self, retrievePaymentMethod, getUserById, attachPaymentMethodWithUser):
-         # Given
-        from controllers.user import add_payment_method
-        from schemas.User import UserPaymentMethodSchema
-        from entities.User import User
-
-        retrievePaymentMethod.return_value = True
-        payload = UserPaymentMethodSchema(
-            payment_method = "credit_card"
-        )
-        getUserById.return_value = User(id=1, st_payment_method_id="some_id")
-        attachPaymentMethodWithUser.return_value = True
-
-        # When
-        result = add_payment_method(test_current_user,payload, mock_db)
-        response_status_code = result.__dict__['status_code']
-
-        # Then
-        self.assertIsNotNone(result)
-        self.assertEqual(response_status_code, 204)
-        self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"payment method successfully added","i18n_code":"payment_method_added"}')
-
-    @patch('controllers.user.retrievePaymentMethod')
-    @patch('entities.User.User.getUserById',side_effect = None) 
-    @patch('controllers.user.User.activateUserPayment')
-    @patch('controllers.user.User.setUserStripePaymentMethodId')
-    def test_update_payment_method(self, retrievePaymentMethod, getUserById, activateUserPayment, setUserStripePaymentMethodId):
-        # Given
-        from controllers.user import update_payment_method
-        from entities.User import User
-        retrievePaymentMethod.return_value = True
-        payment_method_id = '1'
-        user = User(id=1, st_payment_method_id=payment_method_id)
-        getUserById.return_value = user
-
-        # When
-        result = update_payment_method (test_current_user,payment_method_id, mock_db)
-        response_status_code = result.__dict__['status_code']
-       
-        # Then
-        self.assertIsNotNone(result)
-        self.assertEqual(response_status_code, 204)
-        self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"payment method successfully updated","i18n_code":"payment_method_updated"}')
-
-    @patch('controllers.user.PAYMENT_ADAPTER.retrieve_payment_method', side_effect = None)
-    @patch('entities.User.User.getUserById',side_effect = lambda x,y: User(st_payment_method_id='some_id')  )  
-    @patch('controllers.user.User.desactivateUserPayment')
-    @patch('controllers.user.PAYMENT_ADAPTER.detach_payment_method', side_effect = None)      
-    def test_remove_payment_method(self, getUserById, desactivateUserPayment , detach_payment_method, retrieve_payment_method):
-        # Given
-        from controllers.user import remove_payment_method
-        from entities.User import User
-
-        payment_method = 'some_id'
-        user = User(id=1)
-        getUserById.return_value= user
-        retrieve_payment_method.return_value = payment_method
-        detach_payment_method.return_value = False
-        desactivateUserPayment.return_value = True
-        test_current_user = User(id=1)
-
-        # When
-        result = remove_payment_method (test_current_user,payment_method , mock_db)
-        response_status_code = result.__dict__['status_code']
-
-        # Then
-        self.assertIsNotNone(result)
-        self.assertEqual(response_status_code, 204)
-        self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), '{"status":"ok","message":"payment method successfully removed","i18n_code":"payment_method_removed"}')

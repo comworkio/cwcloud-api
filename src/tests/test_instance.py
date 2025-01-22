@@ -93,7 +93,7 @@ class TestInstance(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(response_status_code, 200)
         self.assertIsInstance(result, JSONResponse)
-        self.assertEqual(result.body.decode(), f'{{"consumptions":[],"created_at":null,"environment_id":1,"hash":"aabbcc","id":1,"ip_address":"127.0.0.1","is_protected":false,"modification_date":null,"name":"test-instance","project_id":1,"provider":"scaleway","region":"fr-par","root_dns_zone":null,"status":"active","type":"DEV1-S","user":null,"user_id":1,"zone":"comwork.cloud","environment":"test_environment","path":"environemnt_path","project":{{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"{self.test_token}","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}}}}')
+        self.assertEqual(result.body.decode(), f'{{"created_at":null,"environment_id":1,"hash":"aabbcc","id":1,"ip_address":"127.0.0.1","is_protected":false,"modification_date":null,"name":"test-instance","project_id":1,"provider":"scaleway","region":"fr-par","root_dns_zone":null,"status":"active","type":"DEV1-S","user":null,"user_id":1,"zone":"comwork.cloud","environment":"test_environment","path":"environemnt_path","project":{{"access_token":null,"created_at":null,"git_username":null,"gitlab_host":null,"gitlab_project_id":"1","gitlab_token":"{self.test_token}","gitlab_url":"https://gitlab.comwork.io","gitlab_username":"amirghedira","id":1,"name":"test_project","namespace_id":null,"type":"vm","url":"https://gitlab.comwork.io/dynamic/test_project","user":null,"user_id":1,"userid":null}}}}')
     
     @patch('utils.dynamic_name.generate_hashed_name', side_effect = lambda p: ("aabbcc", p, "test-aabbcc"))
     @patch('entities.User.User.getUserById')
@@ -117,7 +117,7 @@ class TestInstance(TestCase):
         target_user = User()
         target_user.email = "username@gmail.com"
         target_user.id = 1
-        target_user.enabled_features = {'billable': True}
+        target_user.enabled_features = {}
         getUserById.return_value = target_user
 
         get_gitlab_project.return_value = {
@@ -195,7 +195,6 @@ class TestInstance(TestCase):
         import json
         actual_json = json.loads(result.body.decode())
         expected_json = {
-            "consumptions": [],
             "created_at": None,
             "environment_id": None,
             "hash": "aabbcc",

@@ -76,7 +76,7 @@ def remove_instance(current_user, provider, region, instance_id, db, bt: Backgro
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid instance id',
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_numeric_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -340,16 +340,6 @@ def attach_instance(bt: BackgroundTasks, current_user, provider, region, zone, p
     hashed_instance_name = rehash_dynamic_name(instance_name, hash)
     log_msg("DEBUG", "[instance][attach_instance] hash = {}, hashed_instance_name = {}".format(hash, hashed_instance_name))
 
-    from entities.User import User
-    user = User.getUserById(current_user.id, db)
-    if is_flag_disabled(user.enabled_features, 'billable') and not user.is_admin:
-        return JSONResponse(content = {
-            'status': 'ko',
-            'error': 'you dont have access to create resources',
-            'i18n_code': 'can_not_create_ressources',
-            'cid': get_current_cid()
-        }, status_code = 400)
-
     if not exist_provider(provider):
         return JSONResponse(content = {
             'status': 'ko',
@@ -530,16 +520,6 @@ def provision_instance(current_user, payload, provider, region, zone, environmen
     #? Cloud init will mv _gitlab-ci.yml ./.gitlab-ci.yml And create all the roles and playbook
     centralized = "none"
     exist_project = None
-
-    from entities.User import User
-    user = User.getUserById(current_user.id, db)
-    if is_flag_disabled(user.enabled_features, 'billable') and not user.is_admin:
-        return JSONResponse(content = {
-            'status': 'ko',
-            'error': 'you dont have access to create resources',
-            'i18n_code': 'can_not_create_ressources',
-            'cid': get_current_cid()
-        }, status_code = 400)
 
     if not exist_provider(provider):
         return JSONResponse(content = {

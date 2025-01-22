@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import text, Column, String, Boolean, Integer
+from sqlalchemy import Column, String, Boolean, Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -13,7 +13,6 @@ from entities.SupportTicketLog import SupportTicketLog
 from entities.SupportTicket import SupportTicket
 
 from utils.common import generate_hash_password
-from utils.flag import sql_filter_flag_enabled
 
 class User(Base):
     __tablename__ = "user"
@@ -24,8 +23,6 @@ class User(Base):
     address = Column(String(300))
     company_name = Column(String(200))
     contact_info = Column(String(300))
-    st_customer_id = Column(String(300))
-    st_payment_method_id = Column(String(300))
     password = Column(String(200))
     is_admin = Column(Boolean, default = False)
     confirmed = Column(Boolean, default = False)
@@ -46,8 +43,6 @@ class User(Base):
             "confirmed": self.confirmed,
             "is_admin": self.is_admin,
             "registration_number": self.registration_number,
-            "st_payment_method_id": self.st_payment_method_id,
-            "st_customer_id": self.st_customer_id,
             "company_name": self.company_name,
             "contact_info": self.contact_info,
             "address": self.address,
@@ -70,16 +65,6 @@ class User(Base):
         return user
 
     @staticmethod
-    def getActiveAutoPaymentUsers(db):
-        users = db.query(User).filter(sql_filter_flag_enabled('auto_pay')).filter(sql_filter_flag_enabled('billable')).all()
-        return users
-
-    @staticmethod
-    def getActiveBillableUsers(db):
-        users = db.query(User).filter(sql_filter_flag_enabled('billable')).all()
-        return users
-
-    @staticmethod
     def deleteUserById(userId, db):
         db.query(User).filter(User.id == userId).delete()
         db.commit()
@@ -87,11 +72,6 @@ class User(Base):
     @staticmethod
     def updateConfirmation(userId, confirmedStatus, db):
         db.query(User).filter(User.id == userId).update({"confirmed": confirmedStatus})
-        db.commit()
-
-    @staticmethod
-    def updateCustomerId(email, customerId, db):
-        db.query(User).filter(User.email == email).update({"st_customer_id": customerId})
         db.commit()
 
     @staticmethod
@@ -114,9 +94,9 @@ class User(Base):
             "address": payload.address,
             "contact_info": payload.contact_info,
             "enabled_features": {
-                "billable": payload.enabled_features.billable,
-                "without_vat": payload.enabled_features.without_vat,
-                "auto_pay": payload.enabled_features.auto_pay,
+                "billable": True,
+                "without_vat": False,
+                "auto_pay": False,
                 "emailapi": payload.enabled_features.emailapi,
                 "cwaiapi": payload.enabled_features.cwaiapi,
                 "faasapi": payload.enabled_features.faasapi,
@@ -142,40 +122,6 @@ class User(Base):
     @staticmethod
     def updateUserPasswordAndConfirm(id, password, db):
         db.query(User).filter(User.id == id).update({"password": generate_hash_password(password), "confirmed": True})
-        db.commit()
-
-    @staticmethod
-    def setUserStripeCustomerId(userId, customer_id, db):
-        db.query(User).filter(User.id == userId).update({"st_customer_id": customer_id})
-        db.commit()
-
-    @staticmethod
-    def setUserStripePaymentMethodId(userId, payment_method_id, db):
-        db.query(User).filter(User.id == userId).update({"st_payment_method_id": payment_method_id})
-        db.commit()
-
-    @staticmethod
-    def desactivateUserPayment(userId, db):
-        update_query = text("UPDATE public.user SET st_payment_method_id = :payment_method_id, enabled_features = jsonb_set(COALESCE(enabled_features, '{}')::jsonb, '{billable}', to_jsonb(:billable), true) WHERE id = :userId")
-        db.execute(update_query, {"payment_method_id": None, "billable": False, "userId": userId})
-        db.commit()
-
-    @staticmethod
-    def activateUserPayment(userId, payment_method_id, db):
-        update_query = text("UPDATE public.user SET st_payment_method_id = :payment_method_id, enabled_features = jsonb_set(COALESCE(enabled_features, '{}')::jsonb, '{billable}', to_jsonb(:billable), true) WHERE id = :userId")
-        db.execute(update_query, {"payment_method_id": payment_method_id, "billable": True, "userId": userId})
-        db.commit()
-
-    @staticmethod
-    def updateUserBillableStatus(userId, billable, db):
-        update_query = text("UPDATE public.user SET enabled_features = jsonb_set(COALESCE(enabled_features, '{}')::jsonb, '{billable}', to_jsonb(:billable)), true) WHERE id = :userId")
-        db.execute(update_query, {"billable": billable, "userId": userId})
-        db.commit()
-
-    @staticmethod
-    def updateUserAutoPayment(userId, auto_payment, db):
-        update_query = text("UPDATE public.user SET enabled_features = jsonb_set(COALESCE(enabled_features, '{}')::jsonb, '{auto_pay}', to_jsonb(:auto_payment), true) WHERE id = :userId")
-        db.execute(update_query, {"auto_payment": auto_payment, "userId": userId})
         db.commit()
 
     @staticmethod

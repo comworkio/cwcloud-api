@@ -89,8 +89,6 @@ class TestAdminRegistry(TestCase):
                 "password": None,
                 "projects": [],
                 "registration_number": None,
-                "st_customer_id": None,
-                "st_payment_method_id": None,
                 "support_ticket": [],
                 "support_ticket_logs": []
             }

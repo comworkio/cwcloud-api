@@ -18,7 +18,6 @@ from utils.flag import is_flag_enabled
 from utils.jwt import jwt_encode
 from utils.logger import log_msg
 from utils.mail import send_confirmation_email
-from utils.payment import PAYMENT_ADAPTER
 from utils.paginator import get_paginated_list
 from utils.gitlab import create_gitlab_user
 from utils.encoder import AlchemyEncoder
@@ -30,7 +29,7 @@ def admin_delete_user_2fa(current_user, userId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid user id',
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_numeric_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -66,7 +65,7 @@ def admin_update_user(current_user, userId, payload, db):
         return JSONResponse(content = {
             'status': 'ko',           
             'error': 'the email is not valid', 
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_email',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -91,7 +90,7 @@ def admin_remove_user(current_user, userId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid user id', 
-            'i18n_code': 'invalid_payment_method_id'
+            'i18n_code': 'invalid_numeric_id'
         }, status_code = 400)
 
     user = User.getUserById(userId, db)
@@ -124,7 +123,7 @@ def admin_update_user_confirmation(current_user, userId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid user id', 
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_numeric_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -144,23 +143,13 @@ def admin_update_user_confirmation(current_user, userId, db):
         'i18n_code': 'user_confirmed'
     }, status_code = 200)
 
-def admin_get_autopayment_users(current_user, db):
-    users = User.getActiveAutoPaymentUsers(db)
-    usersJson = json.loads(json.dumps(users, cls = AlchemyEncoder))
-    return JSONResponse(content = {"result": usersJson}, status_code = 200)
-
-def admin_get_billable_users(current_user, db):
-    users = User.getActiveBillableUsers(db)
-    usersJson = json.loads(json.dumps(users, cls = AlchemyEncoder))
-    return JSONResponse(content = {"result": usersJson}, status_code = 200)
-
 def admin_update_user_role(current_user, userId, payload, db):
     is_admin = payload.is_admin
     if not is_numeric(userId):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid user id', 
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_numeric_id',
             'cid': get_current_cid()
         }, status_code = 400)
 
@@ -179,9 +168,6 @@ def admin_update_user_role(current_user, userId, payload, db):
         'message' : 'user successfully updated', 
         'i18n_code': 'user_updated'
     }, status_code = 200)
-
-def create_customer(email):
-    return PAYMENT_ADAPTER().create_customer(email)
 
 def admin_add_user(current_user, payload, db):
     try:
@@ -214,9 +200,7 @@ def admin_add_user(current_user, payload, db):
                 'cid': get_current_cid()
             }, status_code = 409)
 
-        customer = create_customer(email)
         payload.password = generate_hash_password(password)
-        payload.st_customer_id = customer['id']
         new_user = User(**payload.dict())
         new_user.save(db)
 
@@ -271,7 +255,7 @@ def admin_get_user(current_user, userId, db):
         return JSONResponse(content = {
             'status': 'ko',
             'error': 'Invalid user id', 
-            'i18n_code': 'invalid_payment_method_id',
+            'i18n_code': 'invalid_numeric_id',
             'cid': get_current_cid()
         }, status_code = 400)
 

@@ -8,7 +8,6 @@ gitlab_public_instances:
 
 adapters:
   emails: log
-  payments: log
   pubsub: nats
   cache: redis
 

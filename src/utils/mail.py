@@ -1,15 +1,13 @@
 import os
 
-from urllib.error import HTTPError
 from datetime import datetime
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from adapters.AdapterConfig import get_adapter, get_default_adapter
 
-from utils.common import is_empty, is_not_empty, is_true, AUTOESCAPE_EXTENSIONS
+from utils.common import is_not_empty, AUTOESCAPE_EXTENSIONS
 from utils.logger import log_msg
-from utils.bucket import upload_to_invoices_bucket
 
 EMAIL_EXPEDITOR = os.getenv('EMAIL_EXPEDITOR', 'cloud@changeit.com')
 EMAIL_ACCOUNTING = os.getenv('EMAIL_ACCOUNTING') if is_not_empty(os.getenv('EMAIL_ACCOUNTING')) else EMAIL_EXPEDITOR
@@ -153,74 +151,6 @@ def send_contact_email(from_email, receiver_email, body, subject):
         'content': content,
         'subject': subject
     })
-
-def send_relaunch_email(email, total_to_pay, invoice_ref):
-    if EMAIL_ADAPTER().is_disabled():
-        return {}
-
-    subject = "Payment issue cwcloud"
-
-    price_unit = os.getenv('PRICE_UNIT')
-    if is_empty(price_unit):
-        price_unit = "Euros"
-
-    message = "<p>There is an issue with the payment of your invoice {} with an amount of {} {}.</p>".format(invoice_ref, total_to_pay, price_unit.lower()) + \
-        "<p>This problem can occur if you have a 3DSecure security notification that has been sent and not confirmed or if there are not enough funds in your payment method.</p>"
-
-    billing_url = os.getenv('BILLING_PROCEDURE_URL')
-    if is_not_empty(billing_url):
-        message += "<p>You'll have to proceed to the payment manually following <a href = \"{}\">this procedure</a>.</p>".format(billing_url)
-
-    file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
-    template = env.get_template('email.j2')
-    content = template.render(body = message, currentYear = current_year)
-
-    return EMAIL_ADAPTER().send({
-        'from': EMAIL_EXPEDITOR,
-        'to': email,
-        'bcc': EMAIL_ACCOUNTING,
-        'content': content,
-        'subject': subject
-    })
-
-def send_invoice_email(email, file_name, encoded_file, send, edition = False, date_path = datetime.now().strftime('%Y-%m')):
-    if EMAIL_ADAPTER().is_disabled():
-        return {}
-
-    message = "<p> Your monthly invoice is available. Please find the PDF document attached at the bottom of this email. <p>"
-    subject = "Invoice cwcloud"
-    if edition:
-        subject = "Edited invoice cwcloud"
-        message = "<p> Your previous invoice has been edited. Please find the PDF document attached at the bottom of this email. <p>"
-
-    file_loader = FileSystemLoader(str(Path(__file__).resolve().parents[1]) + '/templates')
-    env = Environment(loader=file_loader, autoescape=select_autoescape(AUTOESCAPE_EXTENSIONS))
-    template = env.get_template('email.j2')
-    content = template.render(body = message, currentYear = current_year)
-
-    email_payload = {
-        'from': EMAIL_EXPEDITOR,
-        'to': email,
-        'bcc': EMAIL_ACCOUNTING,
-        'content': content,
-        'subject': subject,
-        'attachment': {
-            'content': encoded_file,
-            'mime_type': 'application/pdf',
-            'file_name': file_name
-        }
-    }
-
-    try:
-        response = EMAIL_ADAPTER().send(email_payload) if is_true(send) else DEFAULT_EMAIL_ADAPTER().send(email_payload)
-        log_msg("DEBUG", "[mail][send_invoice_email] file_name = {}, date_path = {}".format(file_name, date_path))
-        path_file = "{}/{}".format(date_path, file_name)
-        upload_to_invoices_bucket(path_file, file_name)
-        return response
-    except Exception as ex:
-        log_msg("ERROR", "[mail] unexpected error : type = {}, file = {}, lno = {}, msg = {}".format(type(ex).__name__, __file__, ex.__traceback__.tb_lineno, ex))
-        raise HTTPError("could_not_send_invoice_email", 409, 'could not send invoice pdf email', hdrs = {"i18n_code": "could_not_invoice_email"}, fp = None)
 
 def send_create_instance_email(user_email, project_repo_url, instance_name, environment, access_password, root_dns_zone):
     if EMAIL_ADAPTER().is_disabled():

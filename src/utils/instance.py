@@ -18,7 +18,6 @@ from utils.file import create_dir_if_not_exists, quiet_remove
 from utils.gitlab import delete_runner, get_project_runners, inject_default_credentials_to_url, inject_git_credentials_to_url, GIT_USERNAME, GIT_EMAIL
 from utils.bytes_generator import generate_random_bytes
 from utils.dynamic_name import rehash_dynamic_name
-from utils.consumption import generate_instance_consumption
 from utils.provider import get_driver
 from utils.list import unmarshall_list_array
 from utils.mail import send_create_instance_email
@@ -242,19 +241,9 @@ def update_instance_status(instance, server_id, action, db):
     }
 
     from entities.Instance import Instance
-    Instance.updateStatus(instance.id, switcher.get(action), db)
     nowDate = datetime.now()
-    if action == 'poweroff' or action == 'delete':
-        # create consumption
-        try:
-            instance_modification_date = datetime.fromisoformat(str(instance.modification_date))
-            if is_not_empty(instance.user):
-                generate_instance_consumption(instance.user.id, instance, instance_modification_date, nowDate, True, db)
-        except Exception as e:
-            message = e
-            raise HTTPError("unable_generate_consumption", 400, message, hdrs = {"i18n_code": "unable_generate_consumption"}, fp = None)
-    else:
-        Instance.updateModificationDate(instance.id, nowDate.isoformat(), db)
+    Instance.updateStatus(instance.id, switcher.get(action), db)
+    Instance.updateModificationDate(instance.id, nowDate.isoformat(), db)
 
 def generic_remove_instance(userInstance, db, bt: BackgroundTasks):
     if is_empty(userInstance):

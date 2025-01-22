@@ -67,16 +67,6 @@ def is_email_valid(email):
 def is_not_email_valid(email):
     return not is_email_valid(email)
 
-def is_ref_invoice_valid(ref):
-    if is_empty(ref):
-        return False
-
-    pattern = r"^\d{5,}$"
-    return re.match(pattern, ref) is not None
-
-def is_not_ref_invoice_valid(ref):
-    return not is_ref_invoice_valid(ref)
-
 def is_forbidden(var):
     forbidden_chars = ["'" , "\"", "&", ";", "|", "\\", "$"]
     return any(char in var for char in forbidden_chars)
