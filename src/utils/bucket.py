@@ -73,31 +73,54 @@ invoice_bucket_name = os.getenv('BUCKET_NAME')
 attachment_bucket_url = os.getenv('ATTACHMENT_BUCKET_URL', invoice_bucket_url)
 attachment_bucket_name = os.getenv('ATTACHMENT_BUCKET_NAME', invoice_bucket_name)
 
-def upload_to_attachment_bucket(target_name, file_path):
-    upload_bucket(target_name, file_path, attachment_bucket_url, attachment_bucket_name)
+def upload_to_attachment_bucket(path_file, target_name):
+    return upload_bucket(path_file, target_name, attachment_bucket_url, attachment_bucket_name)
 
-def download_from_attachment_bucket(target_name, file_path):
-    return download_from_bucket(target_name, file_path, attachment_bucket_url, attachment_bucket_name)
+def download_from_attachment_bucket(path_file, target_name):
+    return download_from_bucket(path_file, target_name, attachment_bucket_url, attachment_bucket_name)
 
-def delete_from_attachment_bucket(target_name, file_path):
-    return delete_from_bucket(target_name, file_path, attachment_bucket_url, attachment_bucket_name)
+def delete_from_attachment_bucket(path_file):
+    return delete_from_bucket(path_file, attachment_bucket_url, attachment_bucket_name)
 
-def upload_to_invoices_bucket(target_name, file_path):
-    upload_bucket(target_name, file_path, invoice_bucket_url, invoice_bucket_name)
+def upload_to_invoices_bucket(path_file, target_name):
+    return upload_bucket(path_file, target_name, invoice_bucket_url, invoice_bucket_name)
 
-def download_from_invoices_bucket(target_name, file_path):
-    return download_from_bucket(target_name, file_path, invoice_bucket_url, invoice_bucket_name)
+def download_from_invoices_bucket(path_file, target_name):
+    return download_from_bucket(path_file, target_name, invoice_bucket_url, invoice_bucket_name)
 
-def upload_bucket(target_name, file_path, url, bucket_name):
-    if url and access_key and secret_key and bucket_name and bucket_region:
-        client = Minio(url, region = bucket_region, access_key = access_key, secret_key = secret_key)
-        found = client.bucket_exists(bucket_name)
-        log_msg("DEBUG", "[upload_bucket] found = {}".format(found))
+def upload_bucket(path_file, target_name, url, bucket_name):
+    if any(is_empty(setting) for setting in [url, access_key, secret_key, bucket_name, bucket_region]):
+        return {
+            'status': 'ko',
+            'error': 'Bucket settings are not configured',
+            'i18n_code': 'bucket_settings_not_configured',
+            'http_code': 405,
+            'cid': get_current_cid()
+        }
+
+    client = Minio(url, region = bucket_region, access_key = access_key, secret_key = secret_key)
+    found = client.bucket_exists(bucket_name)
+    log_msg("DEBUG", "[upload_bucket] found = {}".format(found))
+
+    try:
         if not found:
             client.make_bucket(bucket_name)
-        client.fput_object(bucket_name, target_name, file_path)
+        client.fput_object(bucket_name, path_file, target_name)
+    except Exception as e:
+        log_msg("ERROR", "[upload_bucket] unexpected error when uploading path_file = {} into bucket_name = {} e.type = {}, e.msg = {}".format(path_file, bucket_name, type(e), e))
+        return {
+            'status': 'ko',
+            'error': "bucket upload error",
+            'i18n_code': 'bucket_upload_error',
+            'http_code': 500,
+            'cid': get_current_cid()
+        }
 
-def download_from_bucket(target_name, file_path, url, bucket_name):
+    return {
+        'status': 'ok',
+    }
+
+def download_from_bucket(path_file, target_name, url, bucket_name):
     if any(is_empty(setting) for setting in [url, access_key, secret_key, bucket_name, bucket_region]):
         return {
             'status': 'ko',
@@ -109,18 +132,18 @@ def download_from_bucket(target_name, file_path, url, bucket_name):
 
     try:
         client = Minio(url, region = bucket_region, access_key = access_key, secret_key = secret_key)
-        client.fget_object(bucket_name, target_name, file_path)
+        client.fget_object(bucket_name, path_file, target_name)
         return {
             'status': 'ok',
         }
     except Exception as e:
-        not_found_msg = "File not found: target_name = {}, file_path = {}".format(target_name, file_path)
+        not_found_msg = "File not found: target_name = {}, path_file = {}".format(target_name, path_file)
         log_msg("WARN", "[bucket][download_from_bucket] {}, e.type = {}, e.msg = {}".format(not_found_msg, type(e), e))
 
-        basename = os.path.basename(file_path)
-        if basename != file_path:
-           log_msg("INFO", "[bucket][download_from_bucket] switch file_path file_path = {} with basename = {}".format(file_path, basename))
-           return download_from_bucket(target_name, basename, url, bucket_name)
+        basename = os.path.basename(path_file)
+        if basename != path_file:
+           log_msg("INFO", "[bucket][download_from_bucket] switch file_path path_file = {} with basename = {}".format(path_file, basename))
+           return download_from_bucket(path_file, basename, url, bucket_name)
 
         return {
             'status': 'ko',
@@ -130,7 +153,7 @@ def download_from_bucket(target_name, file_path, url, bucket_name):
             'cid': get_current_cid()
         }
 
-def delete_from_bucket(target_name, file_path, url, bucket_name):
+def delete_from_bucket(path_file, url, bucket_name):
     if any(is_empty(setting) for setting in [url, access_key, secret_key, bucket_name, bucket_region]):
         return {
             'status': 'ko',
@@ -142,18 +165,18 @@ def delete_from_bucket(target_name, file_path, url, bucket_name):
 
     try:
         client = Minio(url, region = bucket_region, access_key = access_key, secret_key = secret_key)
-        client.remove_object(bucket_name, target_name)
+        client.remove_object(bucket_name, path_file)
         return {
             'status': 'ok',
         }
     except Exception as e:
-        not_found_msg = "File not found: target_name = {}, file_path = {}".format(target_name, file_path)
+        not_found_msg = "File not found: path_file = {}".format(path_file)
         log_msg("WARN", "[bucket][delete_from_bucket] {}, e.type = {}, e.msg = {}".format(not_found_msg, type(e), e))
 
-        basename = os.path.basename(file_path)
-        if basename != file_path:
-           log_msg("INFO", "[bucket][delete_from_bucket] switch file_path file_path = {} with basename = {}".format(file_path, basename))
-           return delete_from_bucket(target_name, basename, url, bucket_name)
+        basename = os.path.basename(path_file)
+        if basename != path_file:
+           log_msg("INFO", "[bucket][delete_from_bucket] switch file_path path_file = {} with basename = {}".format(path_file, basename))
+           return delete_from_bucket(path_file, basename, url, bucket_name)
 
         return {
             'status': 'ko',

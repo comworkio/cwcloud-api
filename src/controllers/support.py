@@ -358,14 +358,22 @@ def attach_file_to_ticket_by_id(current_user, ticket_id, files, db):
 
     for file in files:
         os.makedirs('uploaded_files', exist_ok=True)
-        file_name_under_bucket = uuid4().__str__()
-        file_path = os.path.join('uploaded_files', file_name_under_bucket)
-        with open(file_path, "wb") as file_object:
+        target_name = uuid4().__str__()
+        path_file = os.path.join('uploaded_files', target_name)
+        with open(path_file, "wb") as file_object:
             file_object.write(file.file.read())    
-        upload_to_attachment_bucket(file_name_under_bucket, file_path)
+        result = upload_to_attachment_bucket(path_file, target_name)
+        if is_false(result['status']):
+            return JSONResponse(content = {
+                'status': 'ko',
+                'error': result['error'],
+                'i18n_code': result['i18n_code'],
+                'cid': result['cid']
+            }, status_code = result['http_code'])
+
         SupportTicketAttachment(
             mime_type = file.content_type,
-            storage_key = file_path,
+            storage_key = path_file,
             name = file.filename,
             support_ticket_id = ticket_id,
             user_id = current_user.id
@@ -408,7 +416,10 @@ def download_file_from_ticket_by_id(current_user, ticket_id, attachment_id, db):
             'cid': get_current_cid()
         }, status_code = 404)
     
-    result = download_from_attachment_bucket(attachment.name, attachment.storage_key)
+    target_name = attachment.name
+    path_file = attachment.storage_key
+
+    result = download_from_attachment_bucket(path_file, target_name)
     if is_false(result['status']):
         return JSONResponse(content = {
             'status': 'ko',
@@ -417,9 +428,8 @@ def download_file_from_ticket_by_id(current_user, ticket_id, attachment_id, db):
             'cid': result['cid']
         }, status_code = result['http_code'])
 
-    return FileResponse(attachment.storage_key, filename = attachment.name)
-            
-        
+    return FileResponse(target_name, filename = target_name)
+
 def delete_file_from_ticket_by_id(current_user: User, ticket_id, attachment_id, db):
     if is_not_numeric(ticket_id):
         return JSONResponse(content={
@@ -447,7 +457,7 @@ def delete_file_from_ticket_by_id(current_user: User, ticket_id, attachment_id, 
         }, status_code=403)
 
     SupportTicketAttachment.deleteAttachmentById(attachment.id, db)
-    result = delete_from_attachment_bucket(attachment.name, attachment.storage_key)
+    result = delete_from_attachment_bucket(attachment.storage_key)
     if is_false(result['status']):
         return JSONResponse(content = {
             'status': 'ko',
