@@ -99,7 +99,8 @@ def upload_bucket(path_file, target_name, url, bucket_name):
     try:
         if not found:
             client.make_bucket(bucket_name)
-        client.fput_object(bucket_name, path_file, target_name)
+
+        client.fput_object(bucket_name, target_name, path_file)
     except Exception as e:
         log_msg("ERROR", "[upload_bucket] unexpected error when uploading path_file = {} into bucket_name = {} e.type = {}, e.msg = {}".format(path_file, bucket_name, type(e), e))
         return {

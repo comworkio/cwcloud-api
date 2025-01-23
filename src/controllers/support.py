@@ -357,11 +357,13 @@ def attach_file_to_ticket_by_id(current_user, ticket_id, files, db):
         }, status_code = 400)
 
     for file in files:
-        os.makedirs('uploaded_files', exist_ok=True)
+        os.makedirs('uploaded_files', exist_ok = True)
         target_name = uuid4().__str__()
         path_file = os.path.join('uploaded_files', target_name)
+
         with open(path_file, "wb") as file_object:
-            file_object.write(file.file.read())    
+            file_object.write(file.file.read())
+
         result = upload_to_attachment_bucket(path_file, target_name)
         if is_false(result['status']):
             return JSONResponse(content = {
