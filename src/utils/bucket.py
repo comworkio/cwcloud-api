@@ -82,12 +82,6 @@ def download_from_attachment_bucket(path_file, target_name):
 def delete_from_attachment_bucket(path_file):
     return delete_from_bucket(path_file, attachment_bucket_url, attachment_bucket_name)
 
-def upload_to_invoices_bucket(path_file, target_name):
-    return upload_bucket(path_file, target_name, invoice_bucket_url, invoice_bucket_name)
-
-def download_from_invoices_bucket(path_file, target_name):
-    return download_from_bucket(path_file, target_name, invoice_bucket_url, invoice_bucket_name)
-
 def upload_bucket(path_file, target_name, url, bucket_name):
     if any(is_empty(setting) for setting in [url, access_key, secret_key, bucket_name, bucket_region]):
         return {
@@ -143,7 +137,7 @@ def download_from_bucket(path_file, target_name, url, bucket_name):
         basename = os.path.basename(path_file)
         if basename != path_file:
            log_msg("INFO", "[bucket][download_from_bucket] switch file_path path_file = {} with basename = {}".format(path_file, basename))
-           return download_from_bucket(path_file, basename, url, bucket_name)
+           return download_from_bucket(basename, target_name, url, bucket_name)
 
         return {
             'status': 'ko',
@@ -176,7 +170,7 @@ def delete_from_bucket(path_file, url, bucket_name):
         basename = os.path.basename(path_file)
         if basename != path_file:
            log_msg("INFO", "[bucket][delete_from_bucket] switch file_path path_file = {} with basename = {}".format(path_file, basename))
-           return delete_from_bucket(path_file, basename, url, bucket_name)
+           return delete_from_bucket(basename, url, bucket_name)
 
         return {
             'status': 'ko',
